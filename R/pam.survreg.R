@@ -92,6 +92,8 @@ pam.survreg<-function(fit.survreg){
   num.L2<- sum(weight.km*(y-calibrate.fitted)^2)
   denom.L2<- sum(weight.km*(y-t.predicted)^2)
   L2 <-format(round(num.L2/denom.L2,digits=4),nsmall=4)
-
-  return(list(R.squared=R2,L.squared=L2))
+  SR <- round(R2 * L2, digits = 4)
+  return(list(R.squared = format(R2, nsmall = 4), 
+              L.squared = format(L2, nsmall = 4), 
+              Psuedo.R = format(SR, nsmall = 4)))
 }
