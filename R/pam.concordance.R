@@ -48,6 +48,9 @@
 #' R package version 3.7-0. DOI: \doi{10.32614/CRAN.package.survival}. Available at \url{https://CRAN.R-project.org/package=survival}.
 #' 
 #' @examples
+#' library(PAmeasures)
+#' library(survival)
+#'
 #' # Use Mayo Clinic Primary Biliary Cirrhosis Data
 #' data(pbc)
 #' pbc <- pbc %>% 

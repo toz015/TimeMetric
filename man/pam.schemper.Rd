@@ -22,6 +22,9 @@ the `rms` package. It uses survival estimates to assess the concordance between 
 survival outcomes.
 }
 \examples{
+library(PAmeasures)
+library(survival)
+
 # Use Mayo Clinic Primary Biliary Cirrhosis Data
 data(pbc)
 pbc <- pbc \%>\% 

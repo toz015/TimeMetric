@@ -5,7 +5,7 @@
 #' The RE measure is sourced from:
 #' \url{https://ibmi3.mf.uni-lj.si/ibmi-english/biostat-center/programje/Re.r}
 #'
-#' The package includes the following functions:
+#' It includes the following functions:
 #' 
 #' \itemize{
 #'   \item \code{re} - Function for calculating the RE measure.

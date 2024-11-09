@@ -60,6 +60,9 @@ from the results of this function. This function handles different model types a
 can be used with new data to evaluate but not refit the models.
 }
 \examples{
+library(PAmeasures)
+library(survival)
+
 # Use Mayo Clinic Primary Biliary Cirrhosis Data
 data(pbc)
 pbc <- pbc \%>\% 

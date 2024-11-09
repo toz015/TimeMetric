@@ -19,6 +19,9 @@
 #' R package version 1.3-0. DOI: \doi{10.32614/CRAN.package.survAUC}. Available at \url{https://CRAN.R-project.org/package=survAUC}.
 #'
 #' @examples
+#' library(PAmeasures)
+#' library(survival)
+#'
 #' # Use Mayo Clinic Primary Biliary Cirrhosis Data
 #' data(pbc)
 #' pbc <- pbc %>% 
