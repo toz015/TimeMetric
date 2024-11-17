@@ -56,7 +56,6 @@
 #' fit.coxph.full <- coxph(Surv(time, status) ~ age + log_albumin + 
 #'                          log_bili + log_protime + edema, 
 #'                          data = pbc, x = TRUE, y = TRUE)
-#' 
 #' # Calculate the RE measure
 #' re_result <- pam.re(fit.coxph.full)
 #' print(re_result$Re)
@@ -66,9 +65,9 @@
 #' 
 #' @export
 
-
-pam.re <- function (fit, ...) UseMethod("pam.re")
-
+pam.re <- function(fit, ...) {
+  UseMethod("pam.re")
+}
 
 #' @export
 pam.re.coxph <- function(fit,Gmat){

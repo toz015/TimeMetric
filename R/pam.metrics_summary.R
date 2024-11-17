@@ -99,7 +99,7 @@ pam.metrics_summary <- function(data, time_var, status_var, covariates, model = 
     if ("R_sh" %in% metrics) {
       if (fit_name == "coxph" ) {
         rms_coxph <- rms::cph(formula, data = data, x = TRUE, y = TRUE)
-        R_sh_coxph <- schemper(rms_coxph, data, data)$Dx
+        R_sh_coxph <- pam.schemper(rms_coxph, data, data)$Dx
         metrics_results[[fit_name]]$R_sh <- R_sh_coxph 
       } else {
         metrics_results[[fit_name]]$R_sh <- NA
