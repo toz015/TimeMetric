@@ -26,7 +26,6 @@
 #' Zhou, H., Cheng, X., Wang, S., Zou, Y., & Wang, H. (2022). SurvMetrics: Predictive Evaluation Metrics in Survival Analysis. 
 #' R package version 0.5.0. Available at \url{https://github.com/skyee1/SurvMetrics}.
 #' @examples
-#' library(PAmeasures)
 #' library(survival)
 #'
 #'# Use Mayo Clinic Primary Biliary Cirrhosis Data

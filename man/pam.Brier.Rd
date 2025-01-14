@@ -26,7 +26,6 @@ In the context of censored samples, where the exact time of an event (e.g., deat
 The Brier Score is considered a strictly proper score (Gneiting and Raftery, 2007), meaning it achieves its minimum value only when the predicted probabilities align with empirical probabilities. Empirical evidence suggests that predictions of survival duration can be inaccurate; however, incorporating patient-specific survival probabilities along with the Brier Score improves the ability to differentiate between future survivors and failures.
 }
 \examples{
-library(PAmeasures)
 library(survival)
 
 # Use Mayo Clinic Primary Biliary Cirrhosis Data

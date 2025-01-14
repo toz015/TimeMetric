@@ -4,7 +4,7 @@
 \alias{pam.survreg}
 \title{Prediction Accuracy Measures for Parametric Survival Regression Models}
 \usage{
-pam.survreg(fit.survreg)
+pam.survreg(fit.survreg, validation_data = NULL)
 }
 \arguments{
 \item{fit.survreg}{object inheriting from class survreg representing a fitted parametric survival

@@ -6,6 +6,8 @@
 #'regression model. Specifying x = TRUE and y=TRUE are required in the call to coxph( )
 #'to include the design matrix and the response vector in the object fit.
 #' @return  A list containing two components: R-squared and L-squared
+#' @references
+#' Li, G., & Wang, X. (2016). Prediction Accuracy Measures for a Nonlinear Model and for Right-Censored Time-to-Event Data. arXiv preprint arXiv:1611.03063. Available at https://arxiv.org/abs/1611.03063
 #' @examples
 #' library(survival)
 #' library(PAmeasures)

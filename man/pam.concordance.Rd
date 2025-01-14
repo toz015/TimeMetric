@@ -60,23 +60,33 @@ from the results of this function. This function handles different model types a
 can be used with new data to evaluate but not refit the models.
 }
 \examples{
-library(PAmeasures)
 library(survival)
+library(dplyr)
 
-# Use Mayo Clinic Primary Biliary Cirrhosis Data
+# Load the pbc dataset
 data(pbc)
-pbc <- pbc \%>\% 
-  filter(is.na(trt)==F) \%>\% 
-mutate(log_albumin = log(albumin),
-       log_bili = log(bili),
-       log_protime = log(protime),
-       status = ifelse(status==2, 1, 0))
-# Fit a full Cox PH model
-train.fit.full  <- rms::cph(survival::Surv(time, status) ~ age + log_albumin + 
-log_bili + log_protime + edema, 
-data = pbc,x=TRUE,y=TRUE)                  
-                      
-                      
+
+# Data preparation
+pbc <- pbc \%>\%
+  filter(!is.na(trt)) \%>\%
+  mutate(
+    log_albumin = log(albumin),
+    log_bili = log(bili),
+    log_protime = log(protime),
+    status = ifelse(status == 2, 1, 0)
+  )
+
+# Fit a Cox Proportional Hazards model
+cox_model <- cph(
+  Surv(time, status) ~ age + log_albumin + log_bili + log_protime + edema,
+  data = pbc,
+  x = TRUE,
+  y = TRUE
+)
+
+# Compute the concordance statistic
+concordance_result <- pam.concordance(cox_model)
+print(concordance_result)                   
 }
 \references{
 F Harrell, R Califf, D Pryor, K Lee and R Rosati, Evaluating the yield of medical tests, J Am Medical Assoc, 1982.

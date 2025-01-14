@@ -39,3 +39,6 @@ fit2 <- coxph(Surv(time, status==2) ~ bili + protime, data = pbc,x=TRUE,y=TRUE)
 # R.squared and L.squared of Cox PH model
 pam.coxph(fit2)
 }
+\references{
+Li, G., & Wang, X. (2016). Prediction Accuracy Measures for a Nonlinear Model and for Right-Censored Time-to-Event Data. arXiv preprint arXiv:1611.03063. Available at https://arxiv.org/abs/1611.03063
+}

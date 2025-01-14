@@ -9,8 +9,9 @@ pam.metrics_summary(
   time_var,
   status_var,
   covariates,
-  model = "all",
-  metrics = "all"
+  model = "coxph",
+  metrics = "all",
+  newdata = NULL
 )
 }
 \arguments{
@@ -22,9 +23,12 @@ pam.metrics_summary(
 
 \item{covariates}{A character vector of covariate names to include in the model.}
 
-\item{model}{A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "all" to fit all models.}
+\item{model}{A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.}
 
 \item{metrics}{A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics.}
+
+\item{newdata}{(Optional) A data frame containing validation data. If `NULL`, the function 
+uses the same data as `data` for model evaluation.}
 }
 \value{
 A data frame containing the selected model's performance metrics.
@@ -50,6 +54,6 @@ time_var <- "time"
 status_var <- "status"
 covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
 Call the function with all metrics and all models
-results <- generate_performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates)
-results2 <- generate_performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates, model = c("lognormal", "weibull"),  metrics = c("R_square", "L_square", "Brier Score"))
+results <- pam.metrics_summary(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates)
+results2 <- pam.metrics_summary(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates, model = c("lognormal", "weibull"),  metrics = c("R_square", "L_square", "Brier Score"))
 }
