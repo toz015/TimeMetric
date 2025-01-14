@@ -38,6 +38,7 @@
 #'
 #' @references
 #' - Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression. Biometrics 56, 249--255.
+#' - LUSA, L., MICELI, R. and MARIANI, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. Computer methods and programs in biomedicine 87 132–137.
 #' @examples
 #' # Load necessary libraries
 #' library(survival)
@@ -70,13 +71,22 @@ pam.re <- function(fit, ...) {
 }
 
 #' @export
-pam.re.coxph <- function(fit,Gmat){
+pam.re.coxph <- function(fit, test_data = NULL, Gmat){
   require(survival)
-  Y <- fit$y
+  
+  if (!is.null(test_data)){
+    lp <- predict(fit, newdata = test_data, type = "lp")
+    Y <- with(test_data, Surv(get("time"), get("status")))
+    dimnames(Y) <- list(row.names(test_data), c("time", "status"))
+  } else{
+    Y <- fit$y
+    lp <- fit$linear.predictors
+  }
+  
   f.type <- attr(Y, "type")  
   if (f.type== "right") Y <- cbind(rep(0,nrow(Y)),Y)
   sort.it <- order(Y[,2],-Y[,3]) 
-  bx <- fit$linear.predictors[sort.it] - mean(fit$linear.predictors)
+  bx <- lp[sort.it] - mean(lp)
   Y <- Y[sort.it,]
   
   n.ind <- nrow(Y)
@@ -170,13 +180,19 @@ pam.re.coxph <- function(fit,Gmat){
 }
 
 #' @export
-pam.re.aareg <- function(fit,Gmat){
+pam.re.aareg <- function(fit, test_data = NULL, Gmat){
   require(survival)
   if(length(fit$y)==0)stop("The aareg model must be fitted with 'y=TRUE' option")
   if(length(fit$x)==0)stop("The aareg model must be fitted with 'x=TRUE' option")
-  Y <- fit$y
-  sort.it <- order(Y[,2],-Y[,3]) 
-  X <- fit$x
+  if (!is.null(test_data)) {
+    Y <- with(test_data, Surv(get("time"), get("status")))
+    dimnames(Y) <- list(row.names(test_data), c("time", "status"))
+    X <- model.matrix(fit, data = test_data)
+  } else {
+    Y <- fit$y
+    X <- fit$x
+  }
+  sort.it <- order(Y[,2],-Y[,3])
   X <- cbind(rep(1,nrow(X)),X)
   Y[Y[,1]==-1,1] <- 0
   Y <- Y[sort.it,]
@@ -258,8 +274,19 @@ pam.re.aareg <- function(fit,Gmat){
 }
 
 #' @export
-pam.re.survreg <- function(fit,Gmat){
+pam.re.survreg <- function(fit, test_data = NULL, Gmat){
   require(survival)
+  if (!is.null(test_data)){
+    Y <- with(test_data, Surv(get("time"), get("status")))
+    dimnames(Y) <- list(row.names(test_data), c("time", "status"))
+    
+    lp <- predict(fit, newdata = test_data, type = "lp")
+    
+  } else{
+    Y <- fit$y
+    lp <- fit$linear.predictors
+  }
+  
   Y <- fit$y
   Y <- cbind(rep(0,nrow(Y)),Y)
   if(any(Y[,2]<0))warning("Negative follow-up times")
@@ -269,8 +296,8 @@ pam.re.survreg <- function(fit,Gmat){
   sort.it <- order(Y[,2],-Y[,3]) 
   Y <- Y[sort.it,]
   
-  if(fit$dist=="weibull"|fit$dist=="exponential")bx <- -(fit$linear.predictors[sort.it] - fit$coef[1])
-  bx <- -fit$linear.predictors[sort.it]
+  if(fit$dist=="weibull"|fit$dist=="exponential")bx <- -(lp[sort.it] - fit$coef[1])
+  bx <- -lp[sort.it]
   if(fit$dist=="weibull"|fit$dist=="exponential"){
     gamma <- (1/fit$scale)
     lambda <- exp(-fit$coef[1])^gamma

@@ -64,7 +64,6 @@ pbc <- pbc \%>\%
 fit.coxph.full <- coxph(Surv(time, status) ~ age + log_albumin + 
                          log_bili + log_protime + edema, 
                          data = pbc, x = TRUE, y = TRUE)
-
 # Calculate the RE measure
 re_result <- pam.re(fit.coxph.full)
 print(re_result$Re)
@@ -75,4 +74,5 @@ summary_result <- pam.summary(re_result)
 }
 \references{
 - Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression. Biometrics 56, 249--255.
+- LUSA, L., MICELI, R. and MARIANI, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. Computer methods and programs in biomedicine 87 132–137.
 }
