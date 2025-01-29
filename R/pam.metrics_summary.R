@@ -64,7 +64,6 @@ pam.metrics_summary <- function (data, time_var, status_var, covariates, model =
   # Define a list to hold metrics
   metrics_results <- list()
   
-  
   if ("coxph" %in% model_types) {
     fits$coxph <- survival::coxph(formula, data = data, x = TRUE, y = TRUE)
   }
@@ -82,7 +81,7 @@ pam.metrics_summary <- function (data, time_var, status_var, covariates, model =
     if (fit_name == "coxph") {
       r_l_list <- pam.coxph(fits[[fit_name]]) %>% Reduce("c", .) %>% as.numeric()
     } else {
-      r_l_list <- pam.survreg(fits[[fit_name]], validation_data = newdata) %>% Reduce("c", .) %>% as.numeric()
+      r_l_list <- pam.survreg(fits[[fit_name]], validation_data = test_data) %>% Reduce("c", .) %>% as.numeric()
     }
     
     # Extract metrics if requested

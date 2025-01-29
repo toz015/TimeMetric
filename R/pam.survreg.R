@@ -49,10 +49,10 @@ pam.survreg <- function(fit.survreg, validation_data = NULL) {
     y.unsorted <- validation_data$time
     censor.unsorted <- validation_data$status
   }
-  
+  print("2.1")
   
   t.predicted <- predict(fit.survreg, newdata = validation_data, type = "response")
-  
+  print("2.2")
   # Sort the data by survival times
   nsize <- length(y.unsorted)
   y <- sort(y.unsorted)
