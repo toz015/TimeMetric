@@ -39,6 +39,7 @@ taulist <- seq(0, max(pbc$time), 300)
 median_time <- median(pbc$time)
 pam.Brier(fit.coxph.full, pbc, median_time)
 
+
 }
 \references{
 Graf, E., Schmoor, C., Sauerbrei, W., & et al. (1999). Assessment and comparison of prognostic classification schemes for survival data. *Statistical Medicine*, 18(17-18), 2529-2545.

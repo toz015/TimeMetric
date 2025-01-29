@@ -9,6 +9,10 @@
 #'
 #' The Brier Score is considered a strictly proper score (Gneiting and Raftery, 2007), meaning it achieves its minimum value only when the predicted probabilities align with empirical probabilities. Empirical evidence suggests that predictions of survival duration can be inaccurate; however, incorporating patient-specific survival probabilities along with the Brier Score improves the ability to differentiate between future survivors and failures.
 #'
+#' @importFrom survival Surv
+#' @importFrom pec predictSurvProb
+#' @importFrom randomForestSRC predict.rfsrc
+#' @importFrom stats median
 #' @param object An object of class \code{Surv}, created by the \code{Surv} function, or a fitted survival model, such as those produced by \code{coxph}, \code{survreg}, or \code{rfsrc}.
 #' @param pre_sp 
 #' If \code{object} is a fitted survival model, this parameter should be a dataset on which you want to calculate the Brier Score. If \code{object} is a survival object, this parameter should be a vector of predicted survival probabilities for each observation at time \code{t_star}.
@@ -39,10 +43,6 @@
 #' median_time <- median(pbc$time)
 #' pam.Brier(fit.coxph.full, pbc, median_time)
 #' 
-#' @importFrom survival Surv
-#' @importFrom pec predictSurvProb
-#' @importFrom randomForestSRC predict.rfsrc
-#' @importFrom stats median
 #'
 #' @export
 

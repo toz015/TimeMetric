@@ -28,6 +28,24 @@ The Brier score is calculated by partitioning the observations into two groups:
 }
 The score is adjusted for censoring using the Kaplan-Meier estimate of the censoring distribution. Observations are weighted accordingly to account for the censoring bias.
 }
+\examples{
+library(survival)
+# Example dataset
+data(lung)
+lung$SurvObj <- with(lung, Surv(time, status == 2))
+
+# Simulated predicted probabilities
+set.seed(123)
+predicted_probs <- runif(nrow(lung), 0, 1)
+
+# Calculate Brier score at t_star = 200
+brier_score <- pam.Brier.metric(
+  predicted_data = predicted_probs,
+  suvival_time = lung$SurvObj,
+  t_star = 200
+)
+print(brier_score)
+}
 \references{
 Graf, E., Schmoor, C., Sauerbrei, W., & Schumacher, M. (1999). 
 Assessment and comparison of prognostic classification schemes for survival data. \emph{Statistics in Medicine}, 18(17-18), 2529-2545.

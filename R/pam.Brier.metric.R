@@ -32,7 +32,7 @@
 #'
 #' @importFrom survival Surv
 #' @importFrom stats median
-#'
+#' @examples
 #' library(survival)
 #' # Example dataset
 #' data(lung)
