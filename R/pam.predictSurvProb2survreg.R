@@ -24,7 +24,8 @@
 #'
 #' @importFrom stats pnorm predict
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 predictSurvProb2survreg <- function(object, newdata, time_days) {
   lp <- predict(object, newdata = newdata, type = "link") # vector
   B <- object$scale # fixed value

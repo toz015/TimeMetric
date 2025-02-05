@@ -16,10 +16,10 @@
 #' predicted_data <- c(5, 4, 8, 2)
 #' survival_time <- c(6, 5, 10, 3)
 #' status <- c(1, 1, 0, 1)
-#' pam.r2.metrics(predicted_data, survival_time, status)
+#' pam.r2_metrics(predicted_data, survival_time, status)
 #'
 #' @export
-pam.r2.metrics <- function(predicted_data, survival_time, status, tau = NULL) {
+pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
   # Apply restriction if tau is provided
   if (!is.null(tau)) {
     restricted <- restricted_data_gen(survival_time, status, tau)

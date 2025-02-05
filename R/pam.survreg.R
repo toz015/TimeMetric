@@ -49,10 +49,6 @@ pam.survreg <- function(fit.survreg, validation_data = NULL) {
     y.unsorted <- validation_data$time
     censor.unsorted <- validation_data$status
   }
-  print("2.1")
-  
-  t.predicted <- predict(fit.survreg, newdata = validation_data, type = "response")
-  print("2.2")
   # Sort the data by survival times
   nsize <- length(y.unsorted)
   y <- sort(y.unsorted)
@@ -76,13 +72,25 @@ pam.survreg <- function(fit.survreg, validation_data = NULL) {
   
   # Adjust predicted survival times for the distribution
   if (fit.survreg$dist == "exponential") {
-    t.predicted <- t.predicted * gamma(2)
-  } else if (fit.survreg$dist == "weibull") {
-    t.predicted <- t.predicted * gamma(1 + fit.survreg$scale)
-  } else if (fit.survreg$dist == "lognormal") {
-    t.predicted <- t.predicted * exp((fit.survreg$scale)^2 / 2)
-  } else if (fit.survreg$dist == "loglogistic") {
-    t.predicted <- t.predicted * gamma(1 + fit.survreg$scale) * gamma(1 - fit.survreg$scale)
+    t.predicted <- predict(fit.survreg, newdata = data.frame(x.matrix), 
+                           type = "response") * gamma(2)
+  }
+  else if (fit.survreg$dist == "weibull") {
+    t.predicted <- predict(fit.survreg, newdata = data.frame(x.matrix), 
+                           type = "response") * gamma(1 + fit.survreg$scale)
+  }
+  else if (fit.survreg$dist == "lognormal") {
+    t.predicted <- predict(fit.survreg, newdata = data.frame(x.matrix), 
+                           type = "response") * exp((fit.survreg$scale)^2/2)
+  }
+  else if (fit.survreg$dist == "loglogistic") {
+    t.predicted <- predict(fit.survreg, newdata = data.frame(x.matrix), 
+                           type = "response") * gamma(1 + fit.survreg$scale) * 
+      gamma(1 - fit.survreg$scale)
+  }
+  else {
+    t.predicted <- predict(fit.survreg, newdata = data.frame(x.matrix), 
+                           type = "response")
   }
   
   # Weighted least squares fit

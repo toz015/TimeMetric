@@ -30,12 +30,11 @@
 #' status_var <- "status"
 #' covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
 #' Call the function with all metrics and all models
-#' results <- pam.metrics_summary(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates)
-#' results2 <- pam.metrics_summary(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates, model = c("lognormal", "weibull"),  metrics = c("R_square", "L_square", "Brier Score"))
+#' results <- pam.performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates)
+#' results2 <- pam.performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates, model = c("lognormal", "weibull"),  metrics = c("R_square", "L_square", "Brier Score"))
 #' @export
 
-
-pam.metrics_summary <- function (data, time_var, status_var, covariates, model = "coxph", 
+pam.performance_metrics <- function (data, time_var, status_var, covariates, model = "coxph", 
                                  metrics = "all", newdata = NULL) {
   # Validate inputs
   if (missing(data) || missing(time_var) || missing(status_var) || missing(covariates)) {
@@ -105,7 +104,7 @@ pam.metrics_summary <- function (data, time_var, status_var, covariates, model =
     }
     
     if ("R_sph" %in% metrics) {
-      metrics_results[[fit_name]]$R_sph <- pam.re(fits[[fit_name]])$Re
+      metrics_results[[fit_name]]$R_sph <- pam.rsph(fits[[fit_name]])$Re
     }
     
     
