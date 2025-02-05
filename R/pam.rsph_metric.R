@@ -40,12 +40,11 @@
 #' status <- status[complete_cases]
 #' 
 #' # Compute the RE measure
-#' result <- pam.rsph.metric(predicted_data, survival_time, status)
+#' result <- pam.rsph_metricc(predicted_data, survival_time, status)
 #' 
 #' cat("RE Measure:", result$Re, "\n")
 #' @export
-
-pam.rsph.metric <- function(predicted_data, survival_time, status, start_time = NULL) {
+pam.rsph_metric <- function(predicted_data, survival_time, status, start_time = NULL) {
 if (is.null(start_time)) {
   start_time <- rep(0, length(survival_time))
 }

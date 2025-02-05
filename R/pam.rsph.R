@@ -66,12 +66,12 @@
 #' 
 #' @export
 
-pam.re <- function(fit, ...) {
-  UseMethod("pam.re")
+pam.rsph <- function(fit, ...) {
+  UseMethod("pam.rsph")
 }
 
 #' @export
-pam.re.coxph <- function(fit, test_data = NULL, Gmat){
+pam.rsph.coxph <- function(fit, test_data = NULL, Gmat){
   require(survival)
   
   if (!is.null(test_data)){
@@ -175,12 +175,12 @@ pam.re.coxph <- function(fit, test_data = NULL, Gmat){
   else Jfin <- NA     
   
   out <- list(Re=r2,Re.imp=Jfin,Re.fix=Jf,se=newvare,C=(r2+1)/2,sen0=newvar,times=ti,meanr=meanr,ranks=rg,weights=Gmat,perfr=smin,type="coxph",nd=nd,r2nw=r2nw)
-  class(out) <- "re"
+  class(out) <- "rsph"
   out
 }
 
 #' @export
-pam.re.aareg <- function(fit, test_data = NULL, Gmat){
+pam.rsph.aareg <- function(fit, test_data = NULL, Gmat){
   require(survival)
   if(length(fit$y)==0)stop("The aareg model must be fitted with 'y=TRUE' option")
   if(length(fit$x)==0)stop("The aareg model must be fitted with 'x=TRUE' option")
@@ -269,12 +269,12 @@ pam.re.aareg <- function(fit, test_data = NULL, Gmat){
   newvar <- sqrt(sum(newvar1)/den^2-2*sum(newvar3)*num/den^3+sum(newvar2)*num^2/den^4)
   newvare <- sqrt(sum(newvar1)/eden^2-2*sum(newvar3)*enum/eden^3+sum(newvar2)*enum^2/eden^4)
   out <- list(Re=r2,se=newvare,C=(r2+1)/2,sen0=newvar,type="aareg")
-  class(out) <- "re"
+  class(out) <- "rsph"
   out
 }
 
 #' @export
-pam.re.survreg <- function(fit, test_data = NULL, Gmat){
+pam.rsph.survreg <- function(fit, test_data = NULL, Gmat){
   require(survival)
   if (!is.null(test_data)){
     Y <- with(test_data, Surv(get("time"), get("status")))
@@ -379,13 +379,13 @@ pam.re.survreg <- function(fit, test_data = NULL, Gmat){
   newvare <- sqrt(sum(newvar1)/eden^2-2*sum(newvar3)*enum/eden^3+sum(newvar2)*enum^2/eden^4)
   
   out <- list(Re=r2,se=newvare,C=(r2+1)/2,sen0=newvar,times=ti,meanr=meanr,perfr=smin,ranks=rg,weights=Gmat,type="survreg")
-  class(out) <- "re"
+  class(out) <- "rsph"
   out 
 }
 
 
 #' @export
-pam.print.re <- function(x, digits=4, ...){
+pam.print.rsph <- function(x, digits=4, ...){
   
   cat("Re measure=",round(x$Re,digits), ",    SE=", round(x$se,digits), "\n \n",sep="")
   if(x$type=="coxph"){
@@ -405,7 +405,7 @@ pam.print.re <- function(x, digits=4, ...){
 
 
 #' @export
-pam.summary.re <- function(object, times, band=5,...){
+pam.summary.rsph <- function(object, times, band=5,...){
   
   num <- cumsum(object$meanr-object$ranks)
   den <- cumsum(object$meanr-object$perfr) 

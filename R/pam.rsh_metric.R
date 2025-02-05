@@ -27,10 +27,10 @@
 #' predicted_data <- c(0.8, 0.6, 0.4, 0.2)
 #' survival_time <- c(5, 8, 3, 10)
 #' status <- c(1, 0, 1, 1)
-#' pam.rsh.metric(predicted_data, survival_time, status)
+#' pam.rsh_metric(predicted_data, survival_time, status)
 #'
 #' @export
-pam.rsh.metric <- function(predicted_data, survival_time, status) {
+pam.rsh_metric <- function(predicted_data, survival_time, status) {
   if (length(predicted_data) != length(survival_time) || length(predicted_data) != length(status)) {
     stop("All input vectors must have the same length.")
   }

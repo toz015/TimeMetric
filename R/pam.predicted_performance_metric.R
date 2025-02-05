@@ -8,15 +8,18 @@
 #' @param predicted_data A numeric vector of predicted survival probabilities or scores.
 #' @param survival_time A numeric vector of observed survival times.
 #' @param metrics A character vector specifying the desired metrics to compute. Options include:
-#'   - `"R_square"`: \( R^2 \) metric.
-#'   - `"L_square"`: \( L^2 \) metric.
-#'   - `"Pesudo_R"`: Pseudo-\( R^2 \) metric.
-#'   - `"Harrell’s C"`: Harrell's Concordance Index.
-#'   - `"Uno’s C"`: Uno's Concordance Index.
-#'   - `"R_sph"`: Explained variation (\( R_{sph} \)).
-#'   - `"R_sh"`: Explained variation (\( R_{sh} \)).
-#'   - `"Brier Score"`: Brier Score.
-#'   - `"Time Dependent Auc"`: Time-dependent AUC.
+#'   \itemize{
+#'     \item `"R_square"`: R-squared metric.
+#'     \item `"L_square"`: L-squared metric.
+#'     \item `"Pesudo_R"`: Pseudo-R-squared metric.
+#'     \item `"Harrells_C"`: Harrell's Concordance Index.
+#'     \item `"Unos_C"`: Uno's Concordance Index.
+#'     \item `"R_sph"`: Explained variation (R_sph).
+#'     \item `"R_sh"`: Explained variation (R_sh).
+#'     \item `"Brier_Score"`: Brier Score.
+#'     \item `"Time_Dependent_Auc"`: Time-dependent AUC.
+#'   }
+#'
 #' @param status A numeric or logical vector indicating event status (1 for event, 0 for censoring).
 #' @param tau An optional numeric value for restricted time horizon. Default is NULL.
 #' @param t_star An optional numeric value specifying the time point for certain metrics. Default is NULL.
@@ -42,23 +45,23 @@ pam.metrics_summary_predicted <- function(predicted_data, survival_time, metric,
   metric_value <- NULL
   
   if (metric == "R_square" || metric == "L_square" || metric == "Pesudo_R") {
-    r_l_list <- pam.r2.metrics(predicted_data, survival_time, status, tau)
+    r_l_list <- pam.r2_metrics(predicted_data, survival_time, status, tau)
     if (metric == "R_square") metric_value <- r_l_list$R_square
     if (metric == "L_square") metric_value <- r_l_list$L_square
     if (metric == "Pesudo_R") metric_value <- r_l_list$Pseudo_R_squared
   } else if (metric == "Harrell’s C") {
-    metric_value <- round(pam.concordance.metric(predicted_data, survival_time, 
+    metric_value <- round(pam.concordance_metric(predicted_data, survival_time, 
                                                  status, weight = "H", input_tau = tau), 2)
   } else if (metric == "Uno’s C") {
-    metric_value <- round(pam.concordance.metric(predicted_data, survival_time, 
+    metric_value <- round(pam.concordance_metric(predicted_data, survival_time, 
                                                  status, weight = "U", input_tau = tau), 2)
   } else if (metric == "R_sph") {
-    metric_value <- round(pam.rsph.metric(predicted_data, survival_time, status, start_time)$Re, 2)
+    metric_value <- round(pam.rsph_metric(predicted_data, survival_time, status, start_time)$Re, 2)
   } else if (metric == "R_sh") {
-    value_list <-  pam.rsh.metric(predicted_data, survival_time, status)
+    value_list <-  pam.rsh_metric(predicted_data, survival_time, status)
     metric_value <- round(value_list$Dx, 2)
   } else if (metric == "Brier Score") {
-    metric_value <- round(pam.Brier.metric(predicted_data, survival_time, t_star), 2)
+    metric_value <- round(pam.Brier_metric(predicted_data, survival_time, t_star), 2)
   } else if (metric == "Time Dependent Auc") {
     auc <- pam.survivalROC(Stime = survival_time$time, status = survival_time$status, 
                            marker = predicted_data, predict.time = quantile(survival_time$time, 0.5), 

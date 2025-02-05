@@ -40,10 +40,10 @@
 #' predicted_time <- c(2.5, 3.2, 1.8, 4.1)
 #' survival_time <- c(3, 4, 2, 5)
 #' status <- c(1, 0, 1, 1)
-#' pam.concordance.metric(predicted_time, survival_time, status, weight = "H")
+#' pam.concordance_metric(predicted_time, survival_time, status, weight = "H")
 #'
 #' @export
-pam.concordance.metric <- function(predicted_time, survival_time, status, 
+pam.concordance_metric <- function(predicted_time, survival_time, status, 
                            weight = "H", input_tau = NULL) {
   concordant <- 0
   usable_pairs <- 0

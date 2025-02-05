@@ -25,7 +25,8 @@
 #' @importFrom survival Surv
 #' @importFrom survival survfit
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 Gt <- function(object, timepoint) {
   if (!inherits(object, "Surv")) {
     stop("object is not of class Surv")

@@ -43,7 +43,7 @@
 #' predicted_probs <- runif(nrow(lung), 0, 1)
 #' 
 #' # Calculate Brier score at t_star = 200
-#' brier_score <- pam.Brier.metric(
+#' brier_score <- pam.Brier_metric(
 #'   predicted_data = predicted_probs,
 #'   suvival_time = lung$SurvObj,
 #'   t_star = 200
@@ -51,7 +51,7 @@
 #' print(brier_score)
 #' @export
 
-pam.Brier.metric <- function(predicted_data, suvival_time, t_star) {
+pam.Brier_metric <- function(predicted_data, suvival_time, t_star) {
   if (!inherits(suvival_time, "Surv")) {
     stop("suvival_time must be a survival object created using Surv().")
   }
