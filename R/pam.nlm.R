@@ -1,7 +1,6 @@
 #' @title Prediction Accuracy Measures for Nonlinear Regression Models.
 #'
 #' @description This function calculates a pair of measures, R-Squared and L-Squared, for any nonlinear regression model. R-squared is an extension of the classical R2 statistic for a linear model, quantifying the amount of variability in the response that is explained by a corrected prediction based on the original prediction function. L-squared is the proportion of the prediction error of the original prediction function that is explained by the corrected prediction function, quantifying the distance between the corrected and uncorrected predictions. When used together, they give a complete summary of the predictive power of a prediction function.
-#' @export
 #' @param y A numeric vector containing the response values.
 #' @param y.predict A numeric vector containing the predicted response values from a fitted model.
 #' @return  A list containing two components: R-squared and L-squared
@@ -25,7 +24,8 @@
 #'
 #' # R.squared and L.squared of log-linear model
 #' pam.nlm(count, count.predict)
-
+#' @keywords internal
+#' @noRd
 pam.nlm<-function(y,y.predict){
 
 nsize<-length(y)

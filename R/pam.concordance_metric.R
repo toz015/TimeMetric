@@ -41,8 +41,8 @@
 #' survival_time <- c(3, 4, 2, 5)
 #' status <- c(1, 0, 1, 1)
 #' pam.concordance_metric(predicted_time, survival_time, status, weight = "H")
-#'
-#' @export
+#' @keywords internal
+#' @noRd
 pam.concordance_metric <- function(predicted_time, survival_time, status, 
                            weight = "H", input_tau = NULL) {
   concordant <- 0

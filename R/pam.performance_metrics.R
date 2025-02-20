@@ -10,6 +10,9 @@
 #' @param metrics A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics.
 #' @param newdata (Optional) A data frame containing validation data. If `NULL`, the function 
 #' uses the same data as `data` for model evaluation.
+#' @param t_star (Optional) A positive numeric value specifying the time point at which the Brier score and AUC score is calculated.
+#' @param tau (Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.
+#'
 #' @return A data frame containing the selected model's performance metrics.
 #'
 #' @examples
@@ -30,12 +33,22 @@
 #' status_var <- "status"
 #' covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
 #' Call the function with all metrics and all models
-#' results <- pam.performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates)
-#' results2 <- pam.performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates, model = c("lognormal", "weibull"),  metrics = c("R_square", "L_square", "Brier Score"))
+#' results <- pam.performance_metrics(data = pbc, 
+#'                                    time_var = time_var, 
+#'                                    status_var = status_var, 
+#'                                    covariates = covariates
+#'                                    )
+#' results2 <- pam.performance_metrics(data = pbc, 
+#'                                     time_var = time_var,  
+#'                                     status_var = status_var, 
+#'                                     covariates = covariates, 
+#'                                     model = c("lognormal", "weibull"),  
+#'                                     metrics = c("R_square", "L_square", "Brier Score")
+#'                                     )
 #' @export
 
 pam.performance_metrics <- function (data, time_var, status_var, covariates, model = "coxph", 
-                                 metrics = "all", newdata = NULL) {
+                                 metrics = "all", newdata = NULL, t_star = NULL, tau = NULL) {
   # Validate inputs
   if (missing(data) || missing(time_var) || missing(status_var) || missing(covariates)) {
     stop("Please provide 'data', 'time_var', 'status_var', and 'covariates' arguments.")
@@ -77,12 +90,19 @@ pam.performance_metrics <- function (data, time_var, status_var, covariates, mod
   }
   for (fit_name in names(fits)) {
     metrics_results[[fit_name]] <- list()
-    if (fit_name == "coxph") {
-      r_l_list <- pam.coxph(fits[[fit_name]]) %>% Reduce("c", .) %>% as.numeric()
-    } else {
-      r_l_list <- pam.survreg(fits[[fit_name]], validation_data = test_data) %>% Reduce("c", .) %>% as.numeric()
+    if (is.null(tau)) {
+      event_times <- data[[time_var]]
+      if (length(event_times) == 0) {
+        stop("No observed events to determine default tau.")
+      }
+      tau <- max(event_times)
     }
-    
+    if (fit_name == "coxph") {
+      r_l_list <- pam.coxph_restricted(fits[[fit_name]], covariates = covariates, time_var = time_var, status_var = status_var, tau = tau, newdata = test_data) %>% Reduce("c", .) %>% as.numeric()
+    } 
+      else {
+      r_l_list <- pam.surverg_restricted(fits[[fit_name]], covariates = covariates, time_var = time_var, status_var = status_var, tau = tau, newdata = test_data) %>% Reduce("c", .) %>% as.numeric()
+    }
     # Extract metrics if requested
     if ("R_square" %in% metrics) {
       metrics_results[[fit_name]]$R_square <- round(r_l_list[1], 2)
@@ -111,22 +131,47 @@ pam.performance_metrics <- function (data, time_var, status_var, covariates, mod
     if ("R_sh" %in% metrics) {
       if (fit_name == "coxph" ) {
         rms_coxph <- rms::cph(formula, data = data, x = TRUE, y = TRUE)
-        R_sh_coxph <- pam.schemper(rms_coxph, traindata = data, 
-                                   newdata = test_data)$Dx
-        metrics_results[[fit_name]]$R_sh <- R_sh_coxph 
+        check_factors <- function(data) {
+          factors <- sapply(data, is.factor)
+          if (any(factors)) {
+            factor_cols <- names(data)[factors]
+            warning("The following columns are factors: ", 
+                    paste(factor_cols, collapse = ", "),
+                    ". This function to calculate R_sph does not support factor variables. Returning NA.")
+            return(TRUE)
+          }
+          return(FALSE)
+        }
+        
+        # Notify users about factors in both datasets and return NA if any are found
+        if (check_factors(data) || check_factors(test_data)) {
+          metrics_results[[fit_name]]$R_sh <- NA
+        } else {
+          R_sh_coxph <- pam.schemper(rms_coxph, traindata = data, 
+                                     newdata = test_data)$Dx
+          metrics_results[[fit_name]]$R_sh <- R_sh_coxph 
+        }
       } else {
         metrics_results[[fit_name]]$R_sh <- NA
       }
     }
     
     if ("Brier Score" %in% metrics) {
-      median_time <- median(test_data[[time_var]], na.rm = TRUE)
-      taulist <- seq(0, max(test_data$time), 300)
-      metrics_results[[fit_name]]$"Brier Score" <- pam.Brier(fits[[fit_name]], test_data, median_time)
+      if (is.null(t_star)) {
+        metrics_results[[fit_name]]$"Brier Score" <- pam.Brier(fits[[fit_name]], test_data)
+      }
+      else{
+        metrics_results[[fit_name]]$"Brier Score" <- pam.Brier(fits[[fit_name]], test_data, t_star)
+      }
+      
     }
     
     if ("Time Dependent Auc" %in% metrics) {
-      pred_time <- quantile(test_data[[time_var]], 0.5, na.rm = TRUE)
+      if(!is.null(t_star)){
+        pred_time <- t_star
+      } else {
+        pred_time <- quantile(test_data[[time_var]], 0.5, na.rm = TRUE)
+      }
       auc <- pam.survivalROC(Stime = test_data[[time_var]], status = test_data[[status_var]], marker = predict(fits[[fit_name]], newdata = test_data, type = "lp"), predict.time = pred_time, method = "KM")$AUC
       auc <- max(auc, 1- auc)
       metrics_results[[fit_name]]$"Time Dependent Auc" <- auc

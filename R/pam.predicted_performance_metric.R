@@ -31,11 +31,11 @@
 #' survival_time <- c(5, 8, 3, 10)
 #' status <- c(1, 0, 1, 1)
 #' metric <- "R_square"
-#' pam.metrics_summary_predicted(predicted_data, survival_time, metric, status)
+#' pam.predicted_performance_metric(predicted_data, survival_time, metric, status)
 #'
 #' @export
 
-pam.metrics_summary_predicted <- function(predicted_data, survival_time, metric, 
+pam.predicted_performance_metric <- function(predicted_data, survival_time, metric, 
                                           status = NULL, tau = NULL, t_star = NULL, start_time = NULL) {
   
   if (missing(predicted_data) || missing(survival_time) || missing(metric)) {
@@ -51,7 +51,7 @@ pam.metrics_summary_predicted <- function(predicted_data, survival_time, metric,
     if (metric == "Pesudo_R") metric_value <- r_l_list$Pseudo_R_squared
   } else if (metric == "Harrell’s C") {
     metric_value <- round(pam.concordance_metric(predicted_data, survival_time, 
-                                                 status, weight = "H", input_tau = tau), 2)
+                                                 status, weight = "H"), 2)
   } else if (metric == "Uno’s C") {
     metric_value <- round(pam.concordance_metric(predicted_data, survival_time, 
                                                  status, weight = "U", input_tau = tau), 2)
@@ -63,8 +63,14 @@ pam.metrics_summary_predicted <- function(predicted_data, survival_time, metric,
   } else if (metric == "Brier Score") {
     metric_value <- round(pam.Brier_metric(predicted_data, survival_time, t_star), 2)
   } else if (metric == "Time Dependent Auc") {
+    if(!is.null(t_star)){
+      pred_time <- t_star
+    } else {
+      pred_time <- quantile(survival_time$time, 0.5)
+    }
+    
     auc <- pam.survivalROC(Stime = survival_time$time, status = survival_time$status, 
-                           marker = predicted_data, predict.time = quantile(survival_time$time, 0.5), 
+                           marker = predicted_data, predict.time = pred_time, 
                            method = "KM")$AUC
     metric_value <- round(max(auc, 1 - auc), 2)
   } else {

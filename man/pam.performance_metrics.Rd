@@ -11,7 +11,9 @@ pam.performance_metrics(
   covariates,
   model = "coxph",
   metrics = "all",
-  newdata = NULL
+  newdata = NULL,
+  t_star = NULL,
+  tau = NULL
 )
 }
 \arguments{
@@ -29,6 +31,10 @@ pam.performance_metrics(
 
 \item{newdata}{(Optional) A data frame containing validation data. If `NULL`, the function 
 uses the same data as `data` for model evaluation.}
+
+\item{t_star}{(Optional) A positive numeric value specifying the time point at which the Brier score and AUC score is calculated.}
+
+\item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
 }
 \value{
 A data frame containing the selected model's performance metrics.
@@ -54,6 +60,16 @@ time_var <- "time"
 status_var <- "status"
 covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
 Call the function with all metrics and all models
-results <- pam.performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates)
-results2 <- pam.performance_metrics(data = pbc, time_var = time_var, status_var = status_var, covariates = covariates, model = c("lognormal", "weibull"),  metrics = c("R_square", "L_square", "Brier Score"))
+results <- pam.performance_metrics(data = pbc, 
+                                   time_var = time_var, 
+                                   status_var = status_var, 
+                                   covariates = covariates
+                                   )
+results2 <- pam.performance_metrics(data = pbc, 
+                                    time_var = time_var,  
+                                    status_var = status_var, 
+                                    covariates = covariates, 
+                                    model = c("lognormal", "weibull"),  
+                                    metrics = c("R_square", "L_square", "Brier Score")
+                                    )
 }

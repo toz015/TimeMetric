@@ -3,7 +3,8 @@
 #'
 #' A dataset containing the number of transistors and the corresponding #' years. The Moore's Law #'states that the number of transistors in a dense integrated circuit doubles approximately every two #'years.
 #' moore.
-#'
+#' @keywords internal
+#' @noRd
 #' @format A data frame with 48 rows and 3 variables:
 #' \describe{
 #'   \item{year}{year, from 1973 to 2011}
@@ -12,3 +13,4 @@
 #' }
 #'
 "moore"
+#'

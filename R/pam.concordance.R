@@ -75,7 +75,9 @@
 #' # Compute the concordance statistic
 #' concordance_result <- pam.concordance(cox_model)
 #' print(concordance_result)                   
-#' @export
+#' @keywords internal
+#' @noRd
+
 
 pam.concordance <- function(object, ...) {
   survival::concordance(object, ...)

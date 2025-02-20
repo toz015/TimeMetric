@@ -1,6 +1,6 @@
 #' Compute R_sh Metric
 #'
-#' This function calculates the \( R_{sh} \) metric, a measure of explained variation for survival models,
+#' This function calculates the R_{sh} metric, a measure of explained variation for survival models,
 #' using only predicted survival probabilities and observed survival data.
 #'
 #' @param predicted_data A numeric vector of predicted survival probabilities.
@@ -10,7 +10,7 @@
 #' @return A list with the following components:
 #' \item{D}{The total variation in the survival data.}
 #' \item{Dx}{The unexplained variation by the predictions.}
-#' \item{V}{The explained variation (\( R_{sh} \)).}
+#' \item{V}{The explained variation R_{sh}.}
 #' 
 #' @references
 #' Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression.
@@ -28,8 +28,8 @@
 #' survival_time <- c(5, 8, 3, 10)
 #' status <- c(1, 0, 1, 1)
 #' pam.rsh_metric(predicted_data, survival_time, status)
-#'
-#' @export
+#' @keywords internal
+#' @noRd
 pam.rsh_metric <- function(predicted_data, survival_time, status) {
   if (length(predicted_data) != length(survival_time) || length(predicted_data) != length(status)) {
     stop("All input vectors must have the same length.")

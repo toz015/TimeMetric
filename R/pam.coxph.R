@@ -1,7 +1,6 @@
 #' @title Prediction Accuracy Measures for Cox proportional hazards model
 #'
 #' @description This function calculates a pair of measures, R-Squared and L-Squared, for Cox proportional hazards model. R-squared is an extension of the classical R2 statistic for a linear model, quantifying the amount of variability in the response that is explained by a corrected prediction based on the original prediction function. L-squared is the proportion of the prediction error of the original prediction function that is explained by the corrected prediction function, quantifying the distance between the corrected and uncorrected predictions. When used together, they give a complete summary of the predictive power of a prediction function.
-#' @export
 #' @param fit.cox object inheriting from class coxph representing a fitted Cox proportional hazards
 #'regression model. Specifying x = TRUE and y=TRUE are required in the call to coxph( )
 #'to include the design matrix and the response vector in the object fit.
@@ -29,6 +28,8 @@
 #'
 #'# R.squared and L.squared of Cox PH model
 #' pam.coxph(fit2)
+#' @keywords internal
+#' @noRd
 
 
 pam.coxph<-function(fit.cox){

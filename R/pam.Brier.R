@@ -40,11 +40,15 @@
 #'                          log_bili + log_protime + edema, 
 #'                       data = pbc,x=TRUE,y=TRUE)
 #' taulist <- seq(0, max(pbc$time), 300)
-#' median_time <- median(pbc$time)
-#' pam.Brier(fit.coxph.full, pbc, median_time)
+#' # Choose a specific time point (t_star) for calculating the Brier Score 
+#' # For simplicity, we use the median survival time as t_star.
+#' t_star <- median(pbc$time)
+#' 
+#' pam.Brier(fit.coxph.full, pbc, t_star)
 #' 
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 
 pam.Brier <- function(object, pre_sp, t_star = -1) {
   # case1、coxph AND testing set
@@ -52,11 +56,10 @@ pam.Brier <- function(object, pre_sp, t_star = -1) {
     obj <- object
     test_data <- pre_sp
     t_star0 <- t_star
-    
     # the interesting times of training set
     distime <- sort(unique(as.vector(obj$y[obj$y[, 2] == 1])))
     
-    if (t_star0 <= 0) {
+    if ( t_star0 <= 0) {
       t_star0 <- median(distime)
     } # the fixed time point
     
