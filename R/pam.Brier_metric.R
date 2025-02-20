@@ -5,7 +5,7 @@
 #' The Brier score measures the mean squared error between the predicted probabilities and the actual outcomes, adjusted for censoring using the Kaplan-Meier estimator.
 #'
 #' @param suvival_time A survival object created using the \code{Surv} function. It must include survival times and event status indicators.
-#' @param predicted_data A numeric vector of predicted survival probabilities for each observation. The length must match the number of rows in \code{suvival_time}.
+#' @param predicted_data A numeric vector of predicted survival probabilities at the specified time point t_star for each individual in the dataset. The length must match the number of rows in \code{suvival_time}.
 #' @param t_star A positive numeric value specifying the time point at which the Brier score is calculated.
 #'
 #' @return 
@@ -42,16 +42,18 @@
 #' set.seed(123)
 #' predicted_probs <- runif(nrow(lung), 0, 1)
 #' 
-#' # Calculate Brier score at t_star = 200
+#' # Choose a specific time point (t_star) for calculating the Brier Score 
+#' # For simplicity, we use 200 as t_star.
 #' brier_score <- pam.Brier_metric(
 #'   predicted_data = predicted_probs,
 #'   suvival_time = lung$SurvObj,
 #'   t_star = 200
 #' )
 #' print(brier_score)
-#' @export
+#' @keywords internal
+#' @noRd
 
-pam.Brier_metric <- function(predicted_data, suvival_time, t_star) {
+pam.Brier_metric <- function(predicted_data, suvival_time, t_star = -1) {
   if (!inherits(suvival_time, "Surv")) {
     stop("suvival_time must be a survival object created using Surv().")
   }
@@ -60,13 +62,10 @@ pam.Brier_metric <- function(predicted_data, suvival_time, t_star) {
     stop("Length of suvival_time and predicted_data must match.")
   }
   
-  if (t_star <= 0) {
-    stop("t_star must be a positive value.")
-  }
-  
   if (any(is.na(predicted_data))) {
     stop("The input probability vector be calculate by predicted_data cannot have NA")
   }
+
   
   time <- suvival_time[, 1]
   status <- suvival_time[, 2]
@@ -74,6 +73,10 @@ pam.Brier_metric <- function(predicted_data, suvival_time, t_star) {
   time <- time[t_order]
   status <- status[t_order]
   predicted_data <- predicted_data[t_order]
+  
+  if (t_star < 0){
+    t_star <- median(time)
+  }
   
   G_t_star <- Gt(suvival_time, t_star)
   

@@ -48,9 +48,8 @@
 #'
 #' Heagerty, P. J., Saha-Chaudhuri, P. (2022). survivalROC: Time-Dependent ROC Curve Estimation from Censored Survival Data. 
 #' R package version 1.0.3.1. DOI: \doi{10.32614/CRAN.package.survivalROC}. Available at \url{https://CRAN.R-project.org/package=survivalROC}.
-#' 
-#' @export
-
+#' @keywords internal
+#' @noRd
 
 pam.survivalROC <- function (Stime, status, marker, entry = NULL, predict.time, 
                              cut.values = NULL, method = "NNE", lambda = NULL, span = NULL, 

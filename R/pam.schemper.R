@@ -32,8 +32,10 @@
 #'        status = ifelse(status==2, 1, 0))
 #' #Schemper and Henderson's estimator of the absolute deviation between survival functions
 #' schemper(train.fit.full, pbc, pbc)$Dx       
-#' @export
+#' @keywords internal
+#' @noRd
 pam.schemper <- function (train.fit, traindata, newdata) {
+  
     if (!inherits(train.fit, "rms")) 
       stop("\nThe Cox model has to be estimated via the cph function of the rms package.\n")
     f.Mt <- function(tempo, tutti.tempi, stima.surv, tempi.evento, 
@@ -84,6 +86,7 @@ pam.schemper <- function (train.fit, traindata, newdata) {
     }
     tsurv <- as.numeric(newdata$time)
     surv <- as.numeric(newdata$status)
+    
     lin.pred <- rms::predictrms(train.fit, newdata, "lp")
     num.sogg <- length(tsurv)
     km <- survival::survfit(survival::Surv(tsurv, surv) ~ 1)

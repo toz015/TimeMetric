@@ -9,7 +9,7 @@
 #' 
 #' \itemize{
 #'   \item \code{re} - Function for calculating the RE measure.
-#'   \item \code{summary.re} - Function for calculating the RE measure over time (cumulative and in specified time windows).
+#'\item \code{summary.re} - Function for calculating the RE measure over time (cumulative and in specified time windows).
 #' }
 #' 
 #' The \code{re} function can be called with:
@@ -20,14 +20,16 @@
 #'
 #' @details
 #' The \code{re} function calculates the RE measure, which consists of the following components:
-#' - \strong{Re}: The primary RE measure.
-#' - \strong{Re.imp}: The RE measure assuming constant coefficients after the last event time.
-#' - \strong{Re.fix}: The RE measure assuming a constant value of coefficients throughout the follow-up time. (Note: Returns NA for counting process type times.)
-#' - \strong{se}: Standard error of the RE measure.
-#' - \strong{sen0}: Standard error calculated with expected Q.
-#' - \strong{C}: C-index generalized to allow for time-dependent covariates, ensuring independence from the censoring process.
-#' - \strong{r2nw}: An unweighted measure.
-#'
+#' \itemize{
+#'   \item{Re}: The primary RE measure.
+#' \item{Re.imp}: The RE measure assuming constant coefficients after the last event time.
+#' \item{Re.fix}: The RE measure assuming a constant value of coefficients throughout the follow-up time. (Note: Returns NA for counting process type times.)
+#' \item{se}: Standard error of the RE measure.
+#' \item{sen0}: Standard error calculated with expected Q.
+#' \item{C}: C-index generalized to allow for time-dependent covariates, ensuring independence from the censoring process.
+#' \item{r2nw}: An unweighted measure.
+#' }
+#' 
 #' @note
 #' Left-truncated data is not yet implemented. When calculating \code{Re.imp}, the dataset should not be split after the last event time; each data line should represent a different subject.
 #'
@@ -37,8 +39,9 @@
 #' @return A list containing the various RE measures and their associated statistics.
 #'
 #' @references
-#' - Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression. Biometrics 56, 249--255.
-#' - LUSA, L., MICELI, R. and MARIANI, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. Computer methods and programs in biomedicine 87 132–137.
+#' Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression. Biometrics 56, 249--255.
+#' 
+#' LUSA, L., MICELI, R. and MARIANI, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. Computer methods and programs in biomedicine 87 132–137.
 #' @examples
 #' # Load necessary libraries
 #' library(survival)
@@ -64,8 +67,8 @@
 #' # Summarize the RE measure over time
 #' summary_result <- pam.summary(re_result)
 #' 
-#' @export
-
+#' @keywords internal
+#' @noRd
 pam.rsph <- function(fit, ...) {
   UseMethod("pam.rsph")
 }

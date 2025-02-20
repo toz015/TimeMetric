@@ -20,9 +20,10 @@
 #' It adjusts for censoring using Kaplan-Meier weights and computes ranks for the predicted values
 #' to evaluate the explained variation in survival times.
 #' @references
-#' - Schemper, M., & Henderson, R. (2000). Predictive accuracy and explained variation in Cox regression. 
+#' Schemper, M., & Henderson, R. (2000). Predictive accuracy and explained variation in Cox regression. 
 #' Biometrics, 56, 249–255.
-#' - Lusa, L., Miceli, R., & Mariani, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. 
+#' 
+#' Lusa, L., Miceli, R., & Mariani, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. 
 #' Computer Methods and Programs in Biomedicine, 87, 132–137.
 #' 
 #' @examples
@@ -43,7 +44,8 @@
 #' result <- pam.rsph_metricc(predicted_data, survival_time, status)
 #' 
 #' cat("RE Measure:", result$Re, "\n")
-#' @export
+#' @keywords internal
+#' @noRd
 pam.rsph_metric <- function(predicted_data, survival_time, status, start_time = NULL) {
 if (is.null(start_time)) {
   start_time <- rep(0, length(survival_time))

@@ -1,6 +1,6 @@
 #' Compute R^2, L^2, and Pseudo-R^2 for Survival Data
 #'
-#' This function calculates \( R^2 \), \( L^2 \), and pseudo-\( R^2 \) 
+#' This function calculates R^2, L^2, and pseudo-R^2
 #' for survival data using observed and predicted survival times.
 #'
 #' @param predicted_data A numeric vector of predicted survival times.
@@ -8,7 +8,7 @@
 #' @param status A numeric vector indicating the event occurrence (1 for event, 0 for censoring).
 #' @param tau An optional numeric value for restricted time horizon. Default is NULL (no restriction).
 #'
-#' @return A list with \( R^2 \), \( L^2 \), and pseudo-\( R^2 \).
+#' @return A list with R^2 , L^2, and pseudoR^2.
 #'
 #' @examples
 #' 
@@ -18,7 +18,8 @@
 #' status <- c(1, 1, 0, 1)
 #' pam.r2_metrics(predicted_data, survival_time, status)
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
   # Apply restriction if tau is provided
   if (!is.null(tau)) {
