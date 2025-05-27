@@ -46,7 +46,6 @@
 #' 
 #' pam.Brier(fit.coxph.full, pbc, t_star)
 #' 
-#'
 #' @keywords internal
 #' @noRd
 

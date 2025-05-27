@@ -7,10 +7,9 @@
 pam.coxph_restricted(
   fit.cox,
   covariates,
-  time_var,
-  status_var,
   tau = NULL,
-  newdata = NULL
+  predicted_data = NULL,
+  predict = F
 )
 }
 \arguments{
@@ -18,13 +17,9 @@ pam.coxph_restricted(
 
 \item{covariates}{A character vector specifying the names of the covariates used in the model.}
 
-\item{time_var}{A string specifying the name of the time variable in the data.}
-
-\item{status_var}{A string specifying the name of the event indicator variable in the data (1 for event, 0 for censored).}
-
 \item{tau}{(Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.}
 
-\item{newdata}{(Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.}
+\item{predicted_data}{(Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.}
 }
 \value{
 A list containing the following components:
@@ -33,7 +28,8 @@ A list containing the following components:
 \item{Psuedo.R}{A pseudo-R measure, calculated as the product of R-squared and L-squared.}
 }
 \description{
-This function calculates a pair of measures, R-squared and L-squared, for a Cox proportional hazards model. 
+This function calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^2$, for a Cox proportional hazards model. When predict = TRUE, 
+it returns the predicted survival times alongside observed values and event status. 
 R-squared quantifies the proportion of variability in the observed survival times explained by the model's predictions,
 while L-squared measures the proportion of prediction error explained by a corrected prediction function. Together, these metrics provide a comprehensive evaluation of the predictive power of the Cox model.
 }
