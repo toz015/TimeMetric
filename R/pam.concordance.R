@@ -78,7 +78,6 @@
 #' @keywords internal
 #' @noRd
 
-
 pam.concordance <- function(object, ...) {
   survival::concordance(object, ...)
 }

@@ -17,7 +17,6 @@
 #' survival_time <- c(6, 5, 10, 3)
 #' status <- c(1, 1, 0, 1)
 #' pam.r2_metrics(predicted_data, survival_time, status)
-#'
 #' @keywords internal
 #' @noRd
 pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
@@ -28,39 +27,57 @@ pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
     status <- restricted$status
   }
   
+  # Sort survival_time and status
+  y.order <- order(survival_time)
+  y <- survival_time[y.order]
+  delta <- status[y.order]
   
-  wls_fit <- tryCatch(
-    lm(survival_time ~ predicted_data, weights = status),
-    error = function(e) stop("WLS fitting failed: ", e$message)
-  )
+  # Calculate inverse probability of censoring weights (IPCW)
+  fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)
+  sum.km.censoring <- summary(fit.km.censoring, times = y, extend = TRUE)
+  km.censoring <- sum.km.censoring$surv
+  km.censoring.minus <- c(1, km.censoring[-length(km.censoring)])
+  ratio.km <- delta / km.censoring.minus
   
+  # Handle NaN and Inf values
+  ratio.km[is.nan(ratio.km)] <- 0
+  ratio.km[is.infinite(ratio.km)] <- 0
   
-  calibrated <- tryCatch(
-    predict(wls_fit),
-    error = function(e) stop("Calibration failed: ", e$message)
-  )
+  # Calculate weights
+  weight.km <- ratio.km / sum(ratio.km)
   
-  # Calculate R^2
-  mean_weighted <- sum(status * survival_time) / sum(status)
-  num_r2 <- sum(status * (calibrated - mean_weighted)^2)
-  denom_r2 <- sum(status * (survival_time - mean_weighted)^2)
-  r2 <- round(num_r2 / denom_r2, 4)
+  # Fit weighted least squares (WLS) regression
+  wls.fitted <- tryCatch({
+    lm(y ~ predicted_data, weights = weight.km)
+  }, error = function(e) {
+    warning("WLS regression failed: ", e$message)
+    return(NULL)
+  })
   
-  # Calculate L^2
-  num_l2 <- sum(status * (survival_time - calibrated)^2)
-  denom_l2 <- sum(status * (survival_time - predicted_data)^2)
-  l2 <- round(num_l2 / denom_l2, 4)
+  if (is.null(wls.fitted)) {
+    return(list(R.squared = NA, L.squared = NA, Psuedo.R = NA))
+  }
   
-  # Calculate pseudo-R^2
-  pseudo_r2 <- round(r2 * l2, 4)
+  # Calculate fitted values
+  calibrate.fitted <- predict(wls.fitted)
   
-  return(list(
-    R_squared = format(round(r2, 2), nsmall = 4),
-    L_squared = format(round(l2, 2), nsmall = 4),
-    Pseudo_R_squared = format(round(pseudo_r2, 2), nsmall = 4)
-  ))
+  # Calculate R² components
+  weighted_mean_y <- sum(weight.km * y)
+  num.rho2 <- sum(weight.km * (calibrate.fitted - weighted_mean_y)^2)
+  denom.rho2 <- sum(weight.km * (y - weighted_mean_y)^2)
+  R2 <- round(num.rho2 / denom.rho2, digits = 2)
+  
+  # Calculate L² components
+  num.L2 <- sum(weight.km * (y - calibrate.fitted)^2)
+  denom.L2 <- sum(weight.km * (y - predicted_data)^2)
+  L2 <- round(num.L2 / denom.L2, digits = 2)
+  
+  # Calculate Psuedo R²
+  SR <- round(R2 * L2, digits = 2)
+  
+  # Return results
+  return(list(R_squared = R2, L_squared = L2, Pseudo_R_squared = SR))
 }
-
 # Helper function to restrict survival data
 restricted_data_gen <- function(time, status, tau) {
   output <- data.frame(

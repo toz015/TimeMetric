@@ -69,11 +69,12 @@
 #' 
 #' @keywords internal
 #' @noRd
+#' 
 pam.rsph <- function(fit, ...) {
   UseMethod("pam.rsph")
 }
-
-#' @export
+#' @keywords internal
+#' @noRd
 pam.rsph.coxph <- function(fit, test_data = NULL, Gmat){
   require(survival)
   
@@ -182,7 +183,8 @@ pam.rsph.coxph <- function(fit, test_data = NULL, Gmat){
   out
 }
 
-#' @export
+#' @keywords internal
+#' @noRd
 pam.rsph.aareg <- function(fit, test_data = NULL, Gmat){
   require(survival)
   if(length(fit$y)==0)stop("The aareg model must be fitted with 'y=TRUE' option")
@@ -276,7 +278,8 @@ pam.rsph.aareg <- function(fit, test_data = NULL, Gmat){
   out
 }
 
-#' @export
+#' @keywords internal
+#' @noRd
 pam.rsph.survreg <- function(fit, test_data = NULL, Gmat){
   require(survival)
   if (!is.null(test_data)){
@@ -386,8 +389,8 @@ pam.rsph.survreg <- function(fit, test_data = NULL, Gmat){
   out 
 }
 
-
-#' @export
+#' @keywords internal
+#' @noRd
 pam.print.rsph <- function(x, digits=4, ...){
   
   cat("Re measure=",round(x$Re,digits), ",    SE=", round(x$se,digits), "\n \n",sep="")
@@ -406,8 +409,8 @@ pam.print.rsph <- function(x, digits=4, ...){
   invisible(x)
 }
 
-
-#' @export
+#' @keywords internal
+#' @noRd
 pam.summary.rsph <- function(object, times, band=5,...){
   
   num <- cumsum(object$meanr-object$ranks)

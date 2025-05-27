@@ -16,7 +16,7 @@ Description: We propose a pair of summary measures for the predictive power of a
     mean regression function. When used together, they give a complete summary of
     the predictive power of a prediction function. Please refer to Gang Li and Xiaoyan Wang (2016) <arXiv:1611.03063> for more details.
 Depends: R (>= 3.1)
-Imports: survival, stats
+Imports: survival, stats, tdROC
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

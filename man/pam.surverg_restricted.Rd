@@ -7,10 +7,9 @@
 pam.surverg_restricted(
   fit.survreg,
   covariates,
-  time_var,
-  status_var,
   tau = NULL,
-  newdata = NULL
+  predicted_data = NULL,
+  predict = F
 )
 }
 \arguments{
@@ -18,11 +17,9 @@ pam.surverg_restricted(
 
 \item{covariates}{A vector of covariate names to be used for prediction when newdata is provided.}
 
-\item{time_var}{The name of the time variable in newdata.}
-
-\item{status_var}{The name of the status variable in newdata.}
-
 \item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
+
+\item{predict}{(Optional) A logical value indicating whether to return individual predictions. Default is FALSE.}
 
 \item{newdata}{(Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.}
 }
@@ -33,7 +30,8 @@ A list containing three components:
 - Psuedo.R: A pseudo R-squared measure, calculated as the product of R-squared and L-squared.
 }
 \description{
-This function computes two complementary measures, R-squared and L-squared, for evaluating the predictive accuracy of parametric survival regression models. R-squared quantifies the proportion of variability in the response that is explained by a corrected prediction function derived from the original model. L-squared measures the proportion of the prediction error from the original model that is explained by the corrected prediction function, effectively capturing the improvement in prediction accuracy. Together, these metrics provide a comprehensive assessment of the predictive performance of a survival regression model.
+This function computes Calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^2$ for evaluating the predictive accuracy of parametric survival regression models. 
+R-squared quantifies the proportion of variability in the response that is explained by a corrected prediction function derived from the original model. L-squared measures the proportion of the prediction error from the original model that is explained by the corrected prediction function, effectively capturing the improvement in prediction accuracy. Together, these metrics provide a comprehensive assessment of the predictive performance of a survival regression model.
 }
 \examples{
 library(survival)
