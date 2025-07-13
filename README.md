@@ -1,7 +1,5 @@
 <!-- README.md for PAmeasure ---------------------------------------------- -->
 
-# PAmeasure <img src="man/figures/logo.png" align="right" width="120"/>
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 <!-- Optional: add coverage, pkgdown, DOI badges here -->
 
