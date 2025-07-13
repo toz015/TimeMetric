@@ -6,11 +6,11 @@
 `PAmeasure` provides a tidy, pipe-friendly toolkit for **prediction-accuracy
 metrics in competing-risks and survival settings**, including  
   
-* **Li–Wang pseudo-R<sup>2</sup>**, and  
-* **Li–Wang pseudo-R<sup>2</sup>** for competing risk models.
+* **Li–Wang pseudo-R<sup>2</sup>**,
 * **C-index**,  
 * time-dependent **AUC**,
-* Brier score  
+* Brier score,  
+Each metric can be computed for both single-event and competing-risk models.
 
 The package is aimed at researchers who need to evaluate their model's prediction performace.
 
