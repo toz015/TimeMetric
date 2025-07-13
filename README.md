@@ -10,6 +10,7 @@ metrics in competing-risks and survival settings**, including
 * **C-index**,  
 * time-dependent **AUC**,
 * Brier score,  
+
 Each metric can be computed for both single-event and competing-risk models.
 
 The package is aimed at researchers who need to evaluate their model's prediction performace.
