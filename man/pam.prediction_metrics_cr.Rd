@@ -46,7 +46,7 @@ Rows represent subjects, columns correspond to time points in time.cif.}
 \item{event.type}{Numeric value specifying which event in fstatus is the primary event
 (default = 1).}
 
-\item{tau}{Optional truncation time for evaluation. Times beyond tau are truncated, and
+\item{tau}{truncation time for evaluation. Times beyond tau are truncated, and
 competing events are treated as censored at tau (default = NULL).}
 
 \item{t_star}{Optional time point for metrics requiring fixed-time evaluation (e.g., Brier score).}

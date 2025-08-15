@@ -21,8 +21,8 @@ If NULL, it defaults to the maximum observed survival time.}
   \item "Pseudo_R_square" - Pseudo R-squared measure
   \item "R_square" - Explained variation R²
   \item "L_square" - L-squared measure
-  \item "Harrells_C" - Harrell’s concordance index
-  \item "Unos_C" - Uno’s concordance index
+  \item "Harrell’s C" - Harrell’s concordance index
+  \item "Uno's C" - Uno’s concordance index
   \item "R_sh" - Schemper-Henderson explained variation (R_sh)
   \item "Brier Score" - Brier score for calibration
   \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)

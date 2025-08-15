@@ -12,8 +12,8 @@
 #'     \item "Pseudo_R_square" - Pseudo R-squared measure
 #'     \item "R_square" - Explained variation R²
 #'     \item "L_square" - L-squared measure
-#'     \item "Harrells_C" - Harrell’s concordance index
-#'     \item "Unos_C" - Uno’s concordance index
+#'     \item "Harrell’s C" - Harrell’s concordance index
+#'     \item "Uno's C" - Uno’s concordance index
 #'     \item "R_sh" - Schemper-Henderson explained variation (R_sh)
 #'     \item "Brier Score" - Brier score for calibration
 #'     \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)
@@ -92,9 +92,9 @@ pam.predicted_survial_eval <- function (event_time, predicted_probability, statu
   
   valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
                      "Harrell’s C", "Uno’s C",
-                      "R_sph","Brier Score", "Time Dependent Auc")
+                      "R_sph","R_sh", "Brier Score", "Time Dependent Auc")
   default_metrics <- c("Pseudo_R_square", "Harrell’s C", "Uno’s C",
-                       "R_sph","Brier Score", "Time Dependent Auc")
+                       "R_sph","R_sh", "Brier Score", "Time Dependent Auc")
   if (is.null(metrics)){
     metrics <- default_metrics
   }
@@ -144,9 +144,9 @@ pam.predicted_survial_eval <- function (event_time, predicted_probability, statu
                      timewt = "n/G2")$concordance, 4)
   }
   
-#  if ("R_sh" %in% metrics) {
-#    metrics_results$R_sh <- round(pam.rsh_metric(predicted_data = predicted_data, survival_time = event_time, status = status)$R_sh, 4)
-#  }
+  if ("R_sh" %in% metrics) {
+    metrics_results$"Re" <- round(pam.rsh_metric(predicted_data = predicted_probability, survival_time = event_time, status = status)$R_sh, 4)
+  }
   
   if ("R_sph" %in% metrics) {
    metrics_results$R_sph <- pam.rsph_metric(

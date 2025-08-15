@@ -9,7 +9,7 @@
 #' @param covariates A character vector specifying the names of the covariates used in the model.
 #' @param tau (Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.
 #' @param predicted_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
-#'
+#' @param predict If true, return a numeric vector of predicted survival probabilities.
 #' @return A list containing the following components:
 #' \item{R.squared}{The R-squared measure, quantifying the proportion of variability explained by the model.}
 #' \item{L.squared}{The L-squared measure, quantifying the proportion of prediction error explained by the corrected prediction.}
@@ -42,10 +42,10 @@
 pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, predicted_data = NULL, predict = F) 
 {
   if(is.null(predicted_data)){
-    x.matrix.unsorted <- fit.cox$x
-    y.unsorted <- fit.cox$y[, 1]
-    censor.unsorted <- fit.cox$y[, 2]
-    y.order.new <- NULL
+      x.matrix.unsorted <- fit.cox$x
+      y.unsorted <- fit.cox$y[, 1]
+      censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
+      y.order.new <- NULL
   }else{
     time_var = "time"
     status_var = "status"

@@ -30,7 +30,7 @@
 #' @param time.cif Numeric vector of time points associated with columns in pred.cif.
 #' @param event.type Numeric value specifying which event in fstatus is the primary event
 #' (default = 1).
-#' @param tau Optional truncation time for evaluation. Times beyond tau are truncated, and
+#' @param tau truncation time for evaluation. Times beyond tau are truncated, and
 #' competing events are treated as censored at tau (default = NULL).
 #' @param t_star Optional time point for metrics requiring fixed-time evaluation (e.g., Brier score).
 #' @param start_time Optional start time for evaluation window in time-dependent metrics.
