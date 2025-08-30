@@ -1,9 +1,9 @@
-<!-- README.md for TimeMetric (PAmeasure) ---------------------------------------------- -->
+<!-- README.md for TimeMetric (formerly PAmeasure) ---------------------------------------------- -->
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 <!-- Optional: add coverage, pkgdown, DOI badges here -->
 
-The `TimeMetric` (PAmeasure) R package offers a comprehensive framework for evaluating prediction performance in survival models, including scenarios with right-censoring, competing risks, as well as under different designs such as nested case control and case-cohort designs. It provides a comprehensive suites of metrics such as pseudo $R$-squared, concordance indices, Brier Score, and time-dependent AUC, unified under a single platform. This paper presents an overview of the mathematical definitions of these metrics,  implementation details, and application examples of these measures. Demonstrations using simulated and real-world datasets validate the utility and robustness of `TimeMetric`,  making it a valuable tool for researchers and practitioners in survival analysis.
+The `TimeMetric` (formerly PAmeasure) R package offers a comprehensive framework for evaluating prediction performance in survival models, including scenarios with right-censoring, competing risks, as well as under different designs such as nested case control and case-cohort designs. It provides a comprehensive suites of metrics such as pseudo $R$-squared, concordance indices, Brier Score, and time-dependent AUC, unified under a single platform. This paper presents an overview of the mathematical definitions of these metrics,  implementation details, and application examples of these measures. Demonstrations using simulated and real-world datasets validate the utility and robustness of `TimeMetric`,  making it a valuable tool for researchers and practitioners in survival analysis.
 
 
 The package focuses on four key categories of performance evaluation:
