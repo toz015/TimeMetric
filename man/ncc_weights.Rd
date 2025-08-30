@@ -4,14 +4,12 @@
 \alias{ncc_weights}
 \title{Nested case–control (NCC) sampling weights}
 \usage{
-ncc_weights(time, status, subcohort = NULL, strata = NULL, m = NULL)
+ncc_weights(time, status, strata = NULL, m = NULL)
 }
 \arguments{
 \item{time}{Numeric vector of follow-up times.}
 
 \item{status}{Numeric {0,1}, 1 = event, 0 = censored.}
-
-\item{subcohort}{Ignored (kept for a uniform signature).}
 
 \item{strata}{Optional factor/character for matching sets (matched NCC).}
 
