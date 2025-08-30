@@ -14,7 +14,7 @@ The package focuses on four key categories of performance evaluation:
 - **Brier Score**: assess the accuracy of probabilistic survival predictions.
 
 
-The \CRANpkg{TimeMetrics} package is organized into six main components:
+The `TimeMetrics` package is organized into six main components:
 
 - `pam.coxph_restricted` and `pam.survreg_restricted`: functions for generating predicted survival times from Cox and parametric survival models.
 - `pam.predicted_survival_eval`: the primary function for computing survival performance metrics.
@@ -22,8 +22,7 @@ The \CRANpkg{TimeMetrics} package is organized into six main components:
 - `pam.predicted_survival_eval_cr`: extended version for evaluating predictions in the presence of competing risks.
 - `pam.predicted_survial_eval_casecohort`: evaluates survival model performance in a case–cohort setting using predicted
 survival probabilities and case–cohort sampling weights
-- `pam.predicted_survial_eval_ncc`:  evaluates survival model performance under a nested case–control (NCC) de-
-sign using predicted survival probabilities and NCC sampling weights.
+- `pam.predicted_survial_eval_ncc`:  evaluates survival model performance under a nested case–control (NCC) design using predicted survival probabilities and NCC sampling weights.
 
 ---
 
