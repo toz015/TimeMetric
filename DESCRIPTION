@@ -1,28 +1,24 @@
-Package: PAmeasures
+Package: TimeMetric
 Type: Package
-Title: Prediction and Accuracy Measures for Nonlinear Models and for
-        Right-Censored Time-to-Event Data
+Title: Unified performance metrics for survival models with right-censoring, competing risks, and designs such as nested case-control and case-cohort
 Version: 0.1.0
-Date: 2018-01-18
-Author: Xiaoyan Wang, Gang Li
-Maintainer: Xiaoyan Wang<xywang@ucla.edu>
-Description: We propose a pair of summary measures for the predictive power of a prediction
-    function based on a regression model. The regression model can be linear
-    or nonlinear, parametric, semi-parametric, or nonparametric, and correctly
-    specified or mis-specified. The first measure, R-squared, is an extension of
-    the classical R-squared statistic for a linear model, quantifying the prediction
-    function's ability to capture the variability of the response. The second
-    measure, L-squared, quantifies the prediction function's bias for predicting the
-    mean regression function. When used together, they give a complete summary of
-    the predictive power of a prediction function. Please refer to Gang Li and Xiaoyan Wang (2016) <arXiv:1611.03063> for more details.
+Date: 2025-08-30
+Author: Gang Li, Tong Zhu, Zian Zhuang
+Maintainer: Tong Zhu<toz015@ucla.edu>
+Description: The TimeMetric package provides a comprehensive framework for 
+    evaluating prediction performance in survival analysis. It consolidates a 
+    wide range of metrics, including pseudo R-squared measures, concordance 
+    indices, time-dependent AUC, and Brier Score, into a unified platform. 
+    TimeMetric supports right-censored data, competing risks, and complex 
+    sampling designs such as nested case-control and case-cohort studies. 
+    It extends and generalizes the functionality originally introduced in 
+    the PAmeasure package, offering a standardized and extensible interface 
+    for researchers and practitioners working with survival models.
 Depends: R (>= 3.1)
-Imports: survival, stats, tdROC
+Imports: survival, stats, tdROC, yardstick
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
 Suggests: testthat
 NeedsCompilation: no
-Packaged: 2018-01-20 20:05:16 UTC; wywang-adm
-Repository: CRAN
-Date/Publication: 2018-01-22 10:06:41 UTC
