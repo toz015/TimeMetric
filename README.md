@@ -30,4 +30,9 @@ survival probabilities and case–cohort sampling weights
 
 ```r
 # 1. install.packages("remotes")     # if not already installed
-remotes::install_github("toz015/PAmeasure", build_vignettes = TRUE)
+remotes::install_github("toz015/TimeMetric", build_vignettes = TRUE)
+
+
+## Contributors
+
+Developed by **Li’s Lab** (UCLA), with coding and intellectual contributions from:  Tong Zhu, Zian Zhuang, Wen Su, Xiaowu Dai, and Gang Li.

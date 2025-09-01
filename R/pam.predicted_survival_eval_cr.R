@@ -131,7 +131,7 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     time_idx <- max(which(time.cif <= tau))
     X <- pred_cif[time_idx, ]
     
-    brier_result <- tdROC.cr(
+    brier_result <- tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
       delta = status,
@@ -147,7 +147,7 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     if (is.null(t_star)){
       t_star = median(event_time)
     }
-    AUC_result <- tdROC.cr(
+    AUC_result <- tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
       delta = status,

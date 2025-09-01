@@ -3,7 +3,7 @@ Type: Package
 Title: Unified performance metrics for survival models with right-censoring, competing risks, and designs such as nested case-control and case-cohort
 Version: 0.1.0
 Date: 2025-08-30
-Author: Gang Li, Tong Zhu, Zian Zhuang
+Author: Tong Zhu, Zian Zhuang, Wen Su, Xiaowu Dai, and Gang Li
 Maintainer: Tong Zhu<toz015@ucla.edu>
 Description: The TimeMetric package provides a comprehensive framework for 
     evaluating prediction performance in survival analysis. It consolidates a 

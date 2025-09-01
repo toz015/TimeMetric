@@ -83,7 +83,7 @@ pam.predicted_survial_eval_two_phase <- function(analysis_data, pred_results, ev
     
     # --- Brier score
     if ("Brier Score" %in% metrics) {
-      brier <- brier_survival(
+      brier <- yardstick::brier_survival(
         data         = dat1,
         truth        = surv_obj,
         .pred,
@@ -94,7 +94,7 @@ pam.predicted_survial_eval_two_phase <- function(analysis_data, pred_results, ev
     
     # --- Time-dependent AUC
     if ("Time Dependent Auc" %in% metrics) {
-      auc <- roc_auc_survival(
+      auc <- yardstick::roc_auc_survival(
         data         = dat1,
         truth        = surv_obj,
         .pred,
