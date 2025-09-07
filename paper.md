@@ -3,6 +3,7 @@ title: 'TimeMetric: A Comprehensive R Package for Evaluating Predictive Performa
 tags:
   - R
   - Survival
+  - Model diagnostics
 authors:
   - name: Tong Zhu
     affiliation: 1
