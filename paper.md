@@ -85,34 +85,46 @@ for all individuals in a test dataset.
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{@{} p{6cm} c c c c c c c c c @{}}
 \toprule
- & \multicolumn{9}{c}{\textbf{Packages}} \\ 
+%--- new grouping row ---
+ & \multicolumn{9}{c}{\textbf{Packages}} \\ % blank first cell + span 9 cols
 \cmidrule(lr){2-10}  
 \textbf{Metric} & TimeMetric & PAmeasure & survival & survcomp & survAUC & BP & SurvMetrics & pec & timeROC \\
 \midrule
+
 \multicolumn{10}{l}{\emph{Right-Censored Data}} \\
-Pseudo $R^2$ & $\times$ & $\times$ &  &  &  &  &  &  &  \\
-C-index & $\times$ &  & $\times$ & $\times$ &  &  & $\times$ & $\times$ &  \\
-$R_{sh}$ & $\times$ &  &  &  & $\times$ &  &  &  &  \\
-$R_E$  & $\times$ &  &  &  &  & $\times$ &  &  &  \\
-Brier Score & $\times$ &  & $\times$ & $\times$ &  &  & $\times$ & $\times$ &  \\
-Time-Dependent AUC & $\times$ &  &  & $\times$ & $\times$ &  & $\times$ & $\times$ & $\times$ \\
+
+Pseudo $R^2$ & \times & \times &  &  &  &  &  &  &  \\
+C-index & \times &  & \times & \times & \times &  & \times & \times &  \\
+$R_{sh}$ & \times &  &  &  & \times &  &  &  &  \\
+$R_E$  & \times &  &  &  &  & \times &  &  &  \\
+Brier Score & \times &  & \times & \times &  &  & \times & \times &  \\
+Time-Dependent AUC & \times &  &  & \times & \times &  &  &  & \times \\
+
 \midrule
 \multicolumn{10}{l}{\emph{Right-Censored Competing Risks Data}} \\
-Pseudo $R^2$ & $\times$ &  &  &  &  &  &  &  &  \\
-C-index & $\times$ &  & $\times$ &  &  &  &  & $\times$ &  \\
-$R_E$ & $\times$ &  &  &  &  &  &  &  &  \\
-Brier Score & $\times$ &  &  &  &  &  &  & $\times$  &   \\
-Time-Dependent AUC & $\times$ &  &  &  &  &  &   & $\times$  & $\times$  \\
+
+Pseudo $R^2$ & \times &  &  &  &  &  &  &  &  \\
+C-index & \times &  & \times &  &  &  &  & \times &  \\
+% $R_{sh}$ &  &  &  &  &  &  &  &  &  \\
+% no R_sh, 
+$R_E$ & \times &  &  &  &  &  &  &  &  \\
+Brier Score & \times &  &  &  &  &  &  & \times  &   \\
+Time-Dependent AUC & \times &  &  &  &  &  &   &   & \times  \\
+
 \midrule
 \multicolumn{10}{l}{\emph{Right-Censored Case-Cohort Data}} \\
-C-index & $\times$ &  &  &  &  &  &  &  &  \\
-Brier Score & $\times$ &  &  &  &  &  &  &  &   \\
-Time-Dependent AUC & $\times$ &  &  &  &  &  &   &  &  \\
+%Pseudo $R^2$ & \times &  &  &  &  &  &  &  &  \\
+C-index & \times &  &  &  &  &  &  &  &  \\
+Brier Score & \times &  &  &  &  &  &  &  &   \\
+Time-Dependent AUC & \times &  &  &  &  &  &   &  &  \\
+
 \midrule
 \multicolumn{10}{l}{\emph{Right-Censored Nested Case-Control Data}} \\
-C-index & $\times$ &  &  &  &  &  &  &  &  \\
-Brier Score & $\times$ &  &  &  &  &  &  &  &   \\
-Time-Dependent AUC & $\times$ &  &  &  &  &  &   &  &  \\
+%Pseudo $R^2$ & \times &  &  &  &  &  &  &  &  \\
+C-index & \times &  &  &  &  &  &  &  &  \\
+Brier Score & \times &  &  &  &  &  &  &  &   \\
+Time-Dependent AUC & \times &  &  &  &  &  &   &  &  \\
+
 \bottomrule
 \end{tabular}
 }
