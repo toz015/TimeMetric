@@ -46,12 +46,14 @@ pam.r2_metrics <- function(predicted_data, survival_time, status,
   ratio.km[is.infinite(ratio.km)] <- 0
   
   # Calculate weights
-  weight.km <- ratio.km / sum(ratio.km)
+  # weight.km <- ratio.km / sum(ratio.km)
   if (!is.null(case_weight)) {
-    weight.new <- (case_weight / sum(case_weight)) * weight.km
+    ratio.km.new <- ratio.km * case_weight
+    #weight.new <- (case_weight / sum(case_weight)) * weight.km
   }else{
-    weight.new <- weight.km
+    ratio.km.new <- ratio.km
   }
+  weight.new <- ratio.km.new / sum(ratio.km.new)
   # Fit weighted least squares (WLS) regression
   wls.fitted <- tryCatch({
     lm(y ~ predicted_data, weights = weight.new)
