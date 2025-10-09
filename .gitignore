@@ -5,3 +5,4 @@ man/.DS_Store
 .Rproj.user/
 .Rbuildignore
 .Rproj.user
+test.r
