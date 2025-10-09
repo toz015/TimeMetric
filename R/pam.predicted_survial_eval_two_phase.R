@@ -33,7 +33,7 @@ km_surv <- function(t, km_cens) {
 #'
 
 #' @keywords internal
-pam.predicted_survial_eval_two_phase <- function(analysis_data, pred_results, eval_time, km_cens_fit, case_weights, metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc")) {
+pam.predicted_survial_eval_two_phase <- function(analysis_data, pred_results, eval_time, km_cens_fit, case_weights, metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc", "R_square", "L_square", "Pesudo_R")) {
   dat1_intermediate <- analysis_data %>%
     mutate(
       surv_obj = Surv(time, status),
@@ -103,12 +103,24 @@ pam.predicted_survial_eval_two_phase <- function(analysis_data, pred_results, ev
       results <- append(results, list("Time Dependent AUC" = round(auc, 4)))
     }
     
-    
+    if (any(c("R_square", "L_square", "Pesudo_R") %in% metrics)) {
+      r_l_list <- pam.r2_metrics(pred.results$pred, 
+                                 analysis_data$time, 
+                                 analysis_data$status,
+                                 tau = eval_time,
+                                 case_weight = case_weights)
+
+      if ("R_square" %in% metrics) results <- append(results, list("R_square" = round(as.numeric(r_l_list$R_square), 2)))
+      if ("L_square" %in% metrics) results <- append(results, list("L_square" = round(as.numeric(r_l_list$L_square), 2)))
+      if ("Pesudo_R" %in% metrics) results <- append(results, list("Pesudo_R" = round(as.numeric(r_l_list$Pseudo_R_squared), 2)))
+    }
+
     result_df <- data.frame(
       Metric = names(results),
       Value = unlist(results, use.names = FALSE),
       stringsAsFactors = FALSE
     )
+    
     print(result_df)
     
 }

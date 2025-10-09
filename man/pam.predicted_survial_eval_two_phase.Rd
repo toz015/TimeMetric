@@ -12,7 +12,8 @@ pam.predicted_survial_eval_two_phase(
   eval_time,
   km_cens_fit,
   case_weights,
-  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc")
+  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc",
+    "R_square", "L_square", "Pesudo_R")
 )
 
 pam.predicted_survial_eval_casecohort(
@@ -21,7 +22,8 @@ pam.predicted_survial_eval_casecohort(
   eval_time,
   km_cens_fit,
   case_weights,
-  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc")
+  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc",
+    "R_square", "L_square", "Pesudo_R")
 )
 
 pam.predicted_survial_eval_ncc(
@@ -30,7 +32,8 @@ pam.predicted_survial_eval_ncc(
   eval_time,
   km_cens_fit,
   case_weights,
-  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc")
+  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc",
+    "R_square", "L_square", "Pesudo_R")
 )
 }
 \arguments{

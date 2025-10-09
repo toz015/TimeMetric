@@ -7,6 +7,7 @@
 #' @param survival_time A numeric vector of observed survival times.
 #' @param status A numeric vector indicating the event occurrence (1 for event, 0 for censoring).
 #' @param tau An optional numeric value for restricted time horizon. Default is NULL (no restriction).
+#' @param case_weight An optional numeric value for case specific weight. Default is NULL.
 #'
 #' @return A list with R^2 , L^2, and pseudoR^2.
 #'
@@ -19,7 +20,8 @@
 #' pam.r2_metrics(predicted_data, survival_time, status)
 #' @keywords internal
 #' @noRd
-pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
+pam.r2_metrics <- function(predicted_data, survival_time, status, 
+                           tau = NULL, case_weight = NULL) {
   # Apply restriction if tau is provided
   if (!is.null(tau)) {
     restricted <- restricted_data_gen(survival_time, status, tau)
@@ -45,10 +47,14 @@ pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
   
   # Calculate weights
   weight.km <- ratio.km / sum(ratio.km)
-  
+  if (!is.null(case_weight)) {
+    weight.new <- (case_weight / sum(case_weight)) * weight.km
+  }else{
+    weight.new <- weight.km
+  }
   # Fit weighted least squares (WLS) regression
   wls.fitted <- tryCatch({
-    lm(y ~ predicted_data, weights = weight.km)
+    lm(y ~ predicted_data, weights = weight.new)
   }, error = function(e) {
     warning("WLS regression failed: ", e$message)
     return(NULL)
@@ -62,14 +68,14 @@ pam.r2_metrics <- function(predicted_data, survival_time, status, tau = NULL) {
   calibrate.fitted <- predict(wls.fitted)
   
   # Calculate R² components
-  weighted_mean_y <- sum(weight.km * y)
-  num.rho2 <- sum(weight.km * (calibrate.fitted - weighted_mean_y)^2)
-  denom.rho2 <- sum(weight.km * (y - weighted_mean_y)^2)
+  weighted_mean_y <- sum(weight.new * y)
+  num.rho2 <- sum(weight.new * (calibrate.fitted - weighted_mean_y)^2)
+  denom.rho2 <- sum(weight.new * (y - weighted_mean_y)^2)
   R2 <- round(num.rho2 / denom.rho2, digits = 2)
   
   # Calculate L² components
-  num.L2 <- sum(weight.km * (y - calibrate.fitted)^2)
-  denom.L2 <- sum(weight.km * (y - predicted_data)^2)
+  num.L2 <- sum(weight.new * (y - calibrate.fitted)^2)
+  denom.L2 <- sum(weight.new * (y - predicted_data)^2)
   L2 <- round(num.L2 / denom.L2, digits = 2)
   
   # Calculate Psuedo R²
