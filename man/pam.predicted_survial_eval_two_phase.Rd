@@ -2,52 +2,56 @@
 % Please edit documentation in R/pam.predicted_survial_eval_two_phase.R
 \name{pam.predicted_survial_eval_two_phase}
 \alias{pam.predicted_survial_eval_two_phase}
-\alias{pam.predicted_survial_eval_casecohort}
-\alias{pam.predicted_survial_eval_ncc}
+\alias{pam.eval_casecohort}
+\alias{pam.eval_ncc}
 \title{Evaluate Survival Model Metrics for Two-Phase Sampling Designs}
 \usage{
 pam.predicted_survial_eval_two_phase(
-  analysis_data,
   pred_results,
-  eval_time,
+  t_star = NULL,
+  tau = NULL,
   km_cens_fit,
   case_weights,
-  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc",
-    "R_square", "L_square", "Pesudo_R")
+  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
+    "Time Dependent Auc")
 )
 
-pam.predicted_survial_eval_casecohort(
-  analysis_data,
+pam.eval_casecohort(
   pred_results,
-  eval_time,
+  t_star = NULL,
+  tau = NULL,
   km_cens_fit,
   case_weights,
-  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc",
-    "R_square", "L_square", "Pesudo_R")
+  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
+    "Time Dependent Auc")
 )
 
-pam.predicted_survial_eval_ncc(
-  analysis_data,
+pam.eval_ncc(
   pred_results,
-  eval_time,
+  t_star = NULL,
+  tau = NULL,
   km_cens_fit,
   case_weights,
-  metrics = c("Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc",
-    "R_square", "L_square", "Pesudo_R")
+  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
+    "Time Dependent Auc")
 )
 }
 \arguments{
-\item{analysis_data}{A data frame containing the analysis dataset used in the fitted Cox model.
-Must include `time` and `status` columns.}
-
 \item{pred_results}{A numeric vector of predicted survival probabilities with (can be calculate by `pam.coxph_restricted()`) :
 - `Prob`: predicted survival probabilities over time.
 - `pred`: predicted risk scores.
 - `time`: time points for `Prob` rows.}
 
-\item{eval_time}{Time horizon at which to evaluate performance.}
+\item{t_star}{(Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
+If NULL, it defaults to the median survival time.}
+
+\item{tau}{(Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
+If NULL, it defaults to the maximum observed survival time.}
 
 \item{case_weights}{Numeric vector of case weights (from `weighted_param()`).}
+
+\item{analysis_data}{A data frame containing the analysis dataset used in the fitted Cox model.
+Must include `time` and `status` columns.}
 
 \item{km_cens}{Kaplan–Meier estimate of censoring distribution (`survival::survfit` object).}
 }

@@ -8,8 +8,8 @@ pam.surverg_restricted(
   fit.survreg,
   covariates,
   tau = NULL,
-  predicted_data = NULL,
-  predict = F
+  new_data = NULL,
+  predict = T
 )
 }
 \arguments{
@@ -19,9 +19,9 @@ pam.surverg_restricted(
 
 \item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
 
-\item{predict}{(Optional) A logical value indicating whether to return individual predictions. Default is FALSE.}
+\item{new_data}{(Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.}
 
-\item{newdata}{(Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.}
+\item{predict}{(Optional) A logical value indicating whether to return individual predictions. Default is FALSE.}
 }
 \value{
 A list containing three components:

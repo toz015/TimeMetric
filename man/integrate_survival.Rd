@@ -2,60 +2,30 @@
 % Please edit documentation in R/pam.predicted_survial_eval.R
 \name{integrate_survival}
 \alias{integrate_survival}
-\title{Compute Survival Model Evaluation Metrics}
+\title{Integrate Predicted Survival Probabilities Over Time}
 \usage{
 integrate_survival(predicted_probability, event_time, status, tau = NULL)
 }
 \arguments{
-\item{predicted_probability}{A numeric vector of predicted survival probabilities.}
+\item{predicted_probability}{A numeric matrix or data frame of predicted survival
+probabilities at observed times, with one row per subject (matching the order of \code{event_time})
+and one or more columns for different prediction models or time points.}
 
-\item{event_time}{A numeric vector of observed survival times.}
+\item{event_time}{A numeric vector of observed event or censoring times.}
 
-\item{status}{A numeric vector indicating event occurrence (1 for event, 0 for censoring).}
+\item{status}{A binary vector indicating event occurrence 
+(1 = event, 0 = censored) for each subject.}
 
-\item{tau}{(Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
-If NULL, it defaults to the maximum observed survival time.}
-
-\item{metrics}{A character vector specifying the evaluation metrics to compute. Options include:
-\itemize{
-  \item "Pseudo_R_square" - Pseudo R-squared measure
-  \item "R_square" - Explained variation R²
-  \item "L_square" - L-squared measure
-  \item "Harrell’s C" - Harrell’s concordance index
-  \item "Uno's C" - Uno’s concordance index
-  \item "R_sh" - Schemper-Henderson explained variation (R_sh)
-  \item "Brier Score" - Brier score for calibration
-  \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)
-}
-Default is "all", which computes all available metrics.}
-
-\item{t_star}{(Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
-If NULL, it defaults to the median event time.}
+\item{tau}{Optional numeric value specifying the maximum truncation time. 
+If \code{NULL} (default), the maximum observed event time is used.}
 }
 \value{
-A data frame with two columns:
-  \item{Metric}{The name of the computed evaluation metric.}
-  \item{Value}{The corresponding computed value.}
+A numeric vector of cumulative integrated predictions, with one element per
+column in \code{predicted_probability}.
 }
 \description{
-This function calculates various predictive performance metrics for survival models based on 
-predicted survival probabilities and observed survival data. It supports a range of evaluation 
-measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
+Computes an integrated survival (or risk) measure by summing predicted probabilities 
+across observed follow-up times, weighted by the time increments between events.
+This function is intended for internal use within the package.
 }
-\examples{
-library(PAmeasure)
-predicted_data <- c(0.8, 0.6, 0.4, 0.2)
-survival_time <- c(5, 8, 3, 10)
-status <- c(1, 0, 1, 1)
-pam.rsh_metric(predicted_data, survival_time, status)
-}
-\references{
-Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression.
-Biometrics 56, 249--255.
-
-Lusa, L., R. Miceli and L. Mariani (2007). Estimation of predictive accuracy in survival analysis
-using R and S-PLUS. Computer Methods and Programs in Biomedicine 87, 132--137.
-
-Potapov, S., Adler, W., Schmid, M., Bertrand, F. (2024). survAUC: Estimating Time-Dependent AUC for Censored Survival Data. 
-R package version 1.3-0. DOI: \doi{10.32614/CRAN.package.survAUC}. Available at \url{https://CRAN.R-project.org/package=survAUC}.
-}
+\keyword{internal}

@@ -7,7 +7,7 @@
 #' @param pred_cif A matrix of predicted cumulative incidence functions (CIFs) for different subjects.
 #' @param event_time A numeric vector of observed event or censoring times for subjects.
 #' @param time.cif A numeric vector of time points corresponding to the predicted CIFs.
-#' @param status A numeric vector indicating the event type for each subject:
+#' @param status A numeric vector indicating the event type for each subject: by default
 #'   \itemize{
 #'     \item `0` for censored cases.
 #'     \item `1` for the primary event of interest.
@@ -56,7 +56,8 @@
 #' 
 #' @export
 pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, status,
-                                           metrics = "all",  t_star = NULL, tau = NULL, event_type = 1) 
+                                           metrics = NULL,  t_star = NULL, 
+                                           tau = NULL, event_type = 1) 
   
 {
   
@@ -64,15 +65,16 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     stop("Please provide 'event_time',  and 'pred_cif' arguments.")
   }
   
-  
+  if(is.null(tau)) tau <- max(event_time)
+  if(is.null(t_star)) t_star <- median(event_time)
   
   metrics_results <- list()
   
   valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
                      "C_index", "Brier Score", "Time Dependent Auc")
-  default_metrics <- c("Pseudo_R_square", "Harrell’s C", "Uno’s C", 
+  default_metrics <- c("Pseudo_R_square", "C_index",
                        "Brier Score", "Time Dependent Auc")
-  if (metrics == "all") {
+  if ("all" %in% metrics) {
     metrics <- valid_metrics
   } else {
     invalid <- setdiff(metrics, valid_metrics)
@@ -118,23 +120,24 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     status = status,
     predicted = pred_risk,
     tau = tau,
-    Cause_int = 1
+    Cause_int = event_type
   )
   if ("C_index" %in% metrics) {
     metrics_results$"C_index" <- round(C_index, 4)
   }
   
+  status.recode <- ifelse(status == event_type, -1, status)
+  status.recode <- ifelse(status.recode > 0, 2, status.recode)
+  status.recode <- ifelse(status.recode == -1, 1, status.recode)
+  
   if ("Brier Score" %in% metrics) {
-    if (is.null(t_star)){
-      t_star = median(event_time)
-    }
     time_idx <- max(which(time.cif <= tau))
     X <- pred_cif[time_idx, ]
     
     brier_result <- tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
-      delta = status,
+      delta = status.recode,
       tau = tau, 
       nboot = 0)
     
@@ -144,13 +147,10 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   
   
   if ("Time Dependent Auc" %in% metrics) {
-    if (is.null(t_star)){
-      t_star = median(event_time)
-    }
     AUC_result <- tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
-      delta = status,
+      delta = status.recode,
       tau = tau,       
       method = "both", 
       output = "AUC"   
@@ -330,4 +330,94 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
   return(Num/Den)
 }
 
-
+#' Summarize multiple competing-risks models into a wide comparison table
+#'
+#' @description
+#' Calls \code{pam.predicted_survial_eval_cr()} for each model in a named list and
+#' returns a wide table where rows are metrics and columns are model names.
+#'
+#' @param models A **named list**; each element is a list with components:
+#'   \itemize{
+#'     \item \code{pred_cif}   — numeric matrix of predicted CIF values (rows: time grid; cols: subjects)
+#'     \item \code{time.cif}   — numeric vector of the time grid corresponding to \code{pred_cif} rows
+#'     \item \code{event_time} — numeric vector of observed times
+#'     \item \code{status}     — integer vector of event codes (0=censoring; \code{event_type}=target; others=competing)
+#'   }
+#' @param metrics Character vector of metrics to compute (passed through to
+#'   \code{pam.predicted_survial_eval_cr()}); use \code{"all"} for all supported.
+#' @param t_star Optional numeric evaluation time (passed through).
+#' @param tau Optional numeric truncation time (passed through).
+#' @param event_type Integer code for the cause of interest (passed through).
+#'
+#' @return A data.frame with:
+#' \itemize{
+#'   \item each row = metric
+#'   \item each column = model name
+#'   \item cell values = metric values
+#' }
+#' @export
+pam.summary_cr <- function(models,
+                           metrics = NULL,
+                           t_star = NULL,
+                           tau = NULL,
+                           event_type = 1) {
+  if (!is.list(models) || length(models) == 0)
+    stop("'models' must be a non-empty named list.")
+  if (is.null(names(models)) || any(names(models) == ""))
+    names(models) <- paste0("Model_", seq_along(models))
+  
+  required <- c("cif_pred", "times", "status")
+  
+  eval_one <- function(mod, name) {
+    if (!all(required %in% names(mod))) {
+      stop(sprintf("Model '%s' must contain: %s",
+                   name, paste(required, collapse = ", ")))
+    }
+    
+    res <- pam.predicted_survial_eval_cr(
+      pred_cif   = mod$cif_pred[, -1],
+      event_time = mod$times,
+      time.cif   = mod$cif_pred[, 1],
+      status     = mod$status,
+      metrics    = metrics,
+      t_star     = t_star,
+      tau        = tau,
+      event_type = event_type
+    )
+    
+    if (!all(c("Metric", "Value") %in% names(res)))
+      stop(sprintf("Unexpected result from pam.predicted_survial_eval_cr() for '%s'", name))
+    
+    res$Model <- name
+    res[, c("Model", "Metric", "Value")]
+  }
+  
+  # evaluate each model
+  res_list <- mapply(eval_one, models, names(models), SIMPLIFY = FALSE)
+  res_long <- do.call(rbind, res_list)
+  rownames(res_long) <- NULL
+  
+  # pivot to wide: rows = Metric, cols = Model, cells = Value
+  res_wide <- reshape(
+    res_long,
+    idvar = "Metric",
+    timevar = "Model",
+    direction = "wide"
+  )
+  
+  # clean column names "Value.Model" -> "Model"
+  names(res_wide) <- sub("^Value\\.", "", names(res_wide))
+  rownames(res_wide) <- NULL
+  res_wide <- res_wide[, c("Metric", setdiff(names(res_wide), "Metric"))]
+  
+  # optional: enforce a pleasant metric order if present
+  preferred_order <- c("Pseudo_R_square", "R_square", "L_square",
+                       "C_index", "Brier Score", "Time Dependent Auc")
+  present <- intersect(preferred_order, res_wide$Metric)
+  others  <- setdiff(res_wide$Metric, preferred_order)
+  res_wide$Metric <- factor(res_wide$Metric, levels = c(present, sort(others)))
+  res_wide <- res_wide[order(res_wide$Metric), ]
+  res_wide$Metric <- as.character(res_wide$Metric)
+  
+  res_wide
+}
