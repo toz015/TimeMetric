@@ -8,8 +8,8 @@
 #' @param fit.cox An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
 #' @param covariates A character vector specifying the names of the covariates used in the model.
 #' @param tau (Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.
-#' @param predicted_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
-#' @param predict If true, return a numeric vector of predicted survival probabilities.
+#' @param new_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
+#' @param predict If true, return a list contains predicted survival probabilities.
 #' @return A list containing the following components:
 #' \item{R.squared}{The R-squared measure, quantifying the proportion of variability explained by the model.}
 #' \item{L.squared}{The L-squared measure, quantifying the proportion of prediction error explained by the corrected prediction.}
@@ -39,9 +39,9 @@
 #' pam.cox_metrics(fit2, covariates = c("bili", "albumin"), time_var = "time", status_var = "status")
 #'
 #' @export
-pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, predicted_data = NULL, predict = F) 
+pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, new_data = NULL, predict = T) 
 {
-  if(is.null(predicted_data)){
+  if(is.null(new_data)){
       x.matrix.unsorted <- fit.cox$x
       y.unsorted <- fit.cox$y[, 1]
       censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
@@ -49,14 +49,14 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, predicted_data
   }else{
     time_var = "time"
     status_var = "status"
-    if (any(!c(time_var, status_var) %in% colnames(predicted_data)))  {
-        stop("predicted_data require time and status columns")
+    if (any(!c(time_var, status_var) %in% colnames(new_data)))  {
+        stop("new_data require time and status columns")
       }
     y.unsorted <- fit.cox$y[, 1]
-    censor.unsorted <- fit.cox$y[, 2]
-    x.matrix.unsorted <- predicted_data[, covariates, drop = FALSE]
-    y.unsorted.new <- predicted_data[[time_var]]
-    censor.unsorted.new <- predicted_data[[status_var]]
+    censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
+    x.matrix.unsorted <- new_data[, covariates, drop = FALSE]
+    y.unsorted.new <- new_data[[time_var]]
+    censor.unsorted.new <- new_data[[status_var]]
     y.order.new <- order(y.unsorted.new)
   }
   my.beta <- fit.cox$coeff
@@ -86,10 +86,11 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, predicted_data
   yi.matrix <- matrix(rep(y, each = y.length), nrow = y.length)
   yj.matrix <- t(yi.matrix)
   R <- ((yj.matrix >= yi.matrix) * 1)
-  if(is.null(predicted_data)){
-    temp_rs <- x.matrix %*% my.beta
+  if(is.null(new_data)){
+    #temp_rs <- x.matrix %*% my.beta
+    temp_rs <- predict(fit.cox, type = "lp")[y.order]
   }else{
-    temp_rs <- predict(fit.cox, predicted_data[, covariates, drop = FALSE], type = "lp")[y.order]
+    temp_rs <- predict(fit.cox, new_data[, covariates, drop = FALSE], type = "lp")[y.order]
   }
   my.Lambda <- R %*% ((delta)/t(t(exp(temp_rs)) %*% R))
   rm(R)
@@ -108,8 +109,7 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, predicted_data
     delta <- ifelse(y <= tau, delta, 0)
     y <- pmin(y, tau)
     y.input <- ifelse(tau > y, y, tau)
-  }
-  else {
+  } else {
     y.input <- NULL
   }
   
@@ -118,18 +118,18 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, predicted_data
   if(is.null(y.input)){ 
     t1 <- y
   }else{
-    t1 <- y.input[y.order]
+    t1 <- y.input #[y.order]
   }
   
   t2 <- c(0, t1[1:length(t1) - 1])
   delta.t <- t1 - t2
   t.predicted <- colSums(delta.t * S.hat.x)
-  
-  if(predict){return(list(pred = t.predicted, 
-                                     obs = t1,
-                                     status = delta,
-                                     surv_prob = t(S.hat.x),
-                                     times = y                 
+  t.predicted2 <- integrate_survival(t(S.hat.x), t1, delta, tau) # restricted mean survival time
+  if(predict){return(list(pred = t.predicted2, #t.predicted, 
+                          times = t1,
+                          status = delta,
+                          surv_prob = t(S.hat.x),
+                          linear.pred = temp_rs           
                                      ))}
 
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 

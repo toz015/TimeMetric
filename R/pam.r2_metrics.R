@@ -73,15 +73,15 @@ pam.r2_metrics <- function(predicted_data, survival_time, status,
   weighted_mean_y <- sum(weight.new * y)
   num.rho2 <- sum(weight.new * (calibrate.fitted - weighted_mean_y)^2)
   denom.rho2 <- sum(weight.new * (y - weighted_mean_y)^2)
-  R2 <- round(num.rho2 / denom.rho2, digits = 2)
+  R2 <- round(num.rho2 / denom.rho2, digits = 4)
   
   # Calculate L² components
   num.L2 <- sum(weight.new * (y - calibrate.fitted)^2)
   denom.L2 <- sum(weight.new * (y - predicted_data)^2)
-  L2 <- round(num.L2 / denom.L2, digits = 2)
+  L2 <- round(num.L2 / denom.L2, digits = 4)
   
   # Calculate Psuedo R²
-  SR <- round(R2 * L2, digits = 2)
+  SR <- round(R2 * L2, digits = 4)
   
   # Return results
   return(list(R_squared = R2, L_squared = L2, Pseudo_R_squared = SR))

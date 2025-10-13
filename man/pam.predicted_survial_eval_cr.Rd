@@ -9,7 +9,7 @@ pam.predicted_survial_eval_cr(
   event_time,
   time.cif,
   status,
-  metrics = "all",
+  metrics = NULL,
   t_star = NULL,
   tau = NULL,
   event_type = 1
@@ -20,7 +20,7 @@ pam.predicted_survial_eval_cr(
   event_time,
   time.cif,
   status,
-  metrics = "all",
+  metrics = NULL,
   t_star = NULL,
   tau = NULL,
   event_type = 1
@@ -33,7 +33,7 @@ pam.predicted_survial_eval_cr(
 
 \item{time.cif}{A numeric vector of time points corresponding to the predicted CIFs.}
 
-\item{status}{A numeric vector indicating the event type for each subject:
+\item{status}{A numeric vector indicating the event type for each subject: by default
 \itemize{
   \item `0` for censored cases.
   \item `1` for the primary event of interest.

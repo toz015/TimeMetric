@@ -8,8 +8,8 @@ pam.coxph_restricted(
   fit.cox,
   covariates,
   tau = NULL,
-  predicted_data = NULL,
-  predict = F
+  new_data = NULL,
+  predict = T
 )
 }
 \arguments{
@@ -19,9 +19,9 @@ pam.coxph_restricted(
 
 \item{tau}{(Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.}
 
-\item{predicted_data}{(Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.}
+\item{new_data}{(Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.}
 
-\item{predict}{If true, return a numeric vector of predicted survival probabilities.}
+\item{predict}{If true, return a list contains predicted survival probabilities.}
 }
 \value{
 A list containing the following components:

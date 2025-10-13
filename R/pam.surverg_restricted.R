@@ -7,7 +7,7 @@
 
 #' @param covariates A vector of covariate names to be used for prediction when newdata is provided.
 #' @param tau (Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.
-#' @param newdata (Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.
+#' @param new_data (Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.
 #' @param predict (Optional) A logical value indicating whether to return individual predictions. Default is FALSE. 
 #' @return A list containing three components:
 #' - R.squared: The R-squared measure, quantifying the explained variability in the response.
@@ -35,7 +35,7 @@
 #'
 #' @export
 
-pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  predicted_data = NULL, predict = F) 
+pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  new_data = NULL, predict = T) 
 {
   
   # Check inputs
@@ -46,32 +46,32 @@ pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  predict
     stop("fit.survreg must include x = TRUE and y = TRUE.")
   }
   
-  if(is.null(predicted_data)){
+  if(is.null(new_data)){
     x.matrix.unsorted <- fit.survreg$x
     y.unsorted <- fit.survreg$y[, 1]
     censor.unsorted <- fit.survreg$y[, 2]
     y.order.new <- NULL
     
   } else {
-    if (!all(covariates %in% colnames(predicted_data))) {
-      stop("All covariates must be present in predicted_data.")
+    if (!all(covariates %in% colnames(new_data))) {
+      stop("All covariates must be present in new_data.")
     }
     time_var = "time"
     status_var = "status"
-    if (any(!c(time_var, status_var) %in% colnames(predicted_data))) {
-      stop("predicted_data require time and status columns")
+    if (any(!c(time_var, status_var) %in% colnames(new_data))) {
+      stop("new_data require time and status columns")
     }
     y.unsorted <- fit.survreg$y[, 1]
     censor.unsorted <- fit.survreg$y[, 2]
-    x.matrix.unsorted <- predicted_data[, covariates, drop = FALSE]
-    y.unsorted.new <- predicted_data[[time_var]]
-    censor.unsorted.new <- predicted_data[[status_var]]
+    x.matrix.unsorted <- new_data[, covariates, drop = FALSE]
+    y.unsorted.new <- new_data[[time_var]]
+    censor.unsorted.new <- new_data[[status_var]]
     y.order.new <- order(y.unsorted.new)
     
   }
   
   if (is.null(tau)) {
-    tau <- max(predicted_data[[time_var]]) + 1  
+    tau <- max(new_data[[time_var]]) + 1  
   }
   nsize <- length(y.unsorted)
   y.order <- order(y.unsorted)
@@ -107,19 +107,20 @@ pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  predict
   weight.km <- ratio.km/(sum(ratio.km))
   
   if (fit.survreg$dist %in% c("exponential", "weibull")) {
-    if(is.null(predicted_data)){
+    if(is.null(new_data)){
       temp.pred <- predict(fit.survreg, type = "response")[y.order]
     }else{
-      temp.pred <- predict(fit.survreg, predicted_data = as.data.frame(x.matrix), type = "response")
+      temp.pred <- predict(fit.survreg, newdata = as.data.frame(x.matrix), type = "response")
     }
     
     gtau <- (tau/temp.pred)^(1/fit.survreg$scale)
-    t.predicted <- temp.pred * (1-expint::gammainc((1 + fit.survreg$scale), gtau))
+    t.predicted <- temp.pred * gamma(1 + fit.survreg$scale) *
+      (1-expint::gammainc((1 + fit.survreg$scale), gtau))
   } else if (fit.survreg$dist == "lognormal") {
-    if(is.null(predicted_data)){
+    if(is.null(new_data)){
       temp.pred <- predict(fit.survreg, type = "response")[y.order]
     }else{
-      temp.pred <- predict(fit.survreg, predicted_data = as.data.frame(x.matrix), type = "response")
+      temp.pred <- predict(fit.survreg, newdata = as.data.frame(x.matrix), type = "response")
     }
     gtau <- (log(tau)-log(temp.pred))/fit.survreg$scale
     t.predicted <- temp.pred * exp((fit.survreg$scale)^2/2) * pnorm(gtau)
@@ -135,11 +136,15 @@ pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  predict
     time_points <- y
     time_points <- time_points[time_points <= tau] 
     
-    pre_sp <- predictSurvProb2survreg(fit.survreg, predicted_data, time_points)
-    return(list(pred = t.predicted, 
-                obs = y,
+    pre_sp <- predictSurvProb2survreg(fit.survreg, as.data.frame(x.matrix), time_points)
+    t.predicted2 <- integrate_survival(pre_sp, y, delta, tau)
+    return(list(pred = t.predicted2, #t.predicted,
+                times = y,
                 status = delta,
-                surv_prob = pre_sp))
+                surv_prob = pre_sp,
+                linear.pred = predict(fit.survreg, 
+                                      newdata = as.data.frame(x.matrix), 
+                                      type = "lp")))
   }
   
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 

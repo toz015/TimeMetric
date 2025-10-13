@@ -6,3 +6,5 @@ man/.DS_Store
 .Rbuildignore
 .Rproj.user
 test.r
+paper*.pdf
+paper*.Rmd

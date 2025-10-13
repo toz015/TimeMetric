@@ -55,7 +55,8 @@
 #' 
 #' @export
 pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, status,
-                                           metrics = "all",  t_star = NULL, tau = NULL, event_type = 1) 
+                                           metrics = "all",  t_star = NULL, tau = NULL, 
+                                           event_type = 1) 
   
 {
   
@@ -99,7 +100,7 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     status = status,
     predicted = pred_risk,
     tau = tau,
-    Cause_int = 1
+    Cause_int = event_type
   )
   if ("C_index" %in% metrics) {
     metrics_results$"C_index" <- round(C_index, 4)
@@ -138,7 +139,7 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     metrics_results$"Time Dependent Auc Integral" <- round(AUC_result$main_res$AUC.integral, 4)
     metrics_results$"Time Dependent Auc Empirical" <- round(AUC_result$main_res$AUC.empirical, 4)
   }
-  
+
   result_df <- data.frame(
     Metric = names(metrics_results),
     Value = unlist(metrics_results),
