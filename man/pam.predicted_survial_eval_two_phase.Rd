@@ -2,31 +2,9 @@
 % Please edit documentation in R/pam.predicted_survial_eval_two_phase.R
 \name{pam.predicted_survial_eval_two_phase}
 \alias{pam.predicted_survial_eval_two_phase}
-\alias{pam.eval_casecohort}
-\alias{pam.eval_ncc}
 \title{Evaluate Survival Model Metrics for Two-Phase Sampling Designs}
 \usage{
 pam.predicted_survial_eval_two_phase(
-  pred_results,
-  t_star = NULL,
-  tau = NULL,
-  km_cens_fit,
-  case_weights,
-  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
-    "Time Dependent Auc")
-)
-
-pam.eval_casecohort(
-  pred_results,
-  t_star = NULL,
-  tau = NULL,
-  km_cens_fit,
-  case_weights,
-  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
-    "Time Dependent Auc")
-)
-
-pam.eval_ncc(
   pred_results,
   t_star = NULL,
   tau = NULL,

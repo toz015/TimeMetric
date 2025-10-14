@@ -4,22 +4,16 @@
 \alias{pam.surverg_restricted}
 \title{Prediction Accuracy Measures for Parametric Survival Regression Models}
 \usage{
-pam.surverg_restricted(
-  fit.survreg,
-  covariates,
-  tau = NULL,
-  new_data = NULL,
-  predict = T
-)
+pam.surverg_restricted(model, covs, tau = NULL, new_data = NULL, predict = T)
 }
 \arguments{
-\item{fit.survreg}{An object of class survreg representing a fitted parametric survival regression model. The survreg call must include x = TRUE and y = TRUE to ensure the design matrix and response vector are stored in the model object.}
+\item{model}{An object of class survreg representing a fitted parametric survival regression model. The survreg call must include x = TRUE and y = TRUE to ensure the design matrix and response vector are stored in the model object.}
 
-\item{covariates}{A vector of covariate names to be used for prediction when newdata is provided.}
+\item{covs}{A vector of covariate names to be used for prediction when newdata is provided.}
 
 \item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
 
-\item{new_data}{(Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.}
+\item{new_data}{(Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in model.}
 
 \item{predict}{(Optional) A logical value indicating whether to return individual predictions. Default is FALSE.}
 }

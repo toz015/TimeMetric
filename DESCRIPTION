@@ -15,7 +15,7 @@ Description: The TimeMetric package provides a comprehensive framework for
     the PAmeasure package, offering a standardized and extensible interface 
     for researchers and practitioners working with survival models.
 Depends: R (>= 3.1)
-Imports: survival, stats, tdROC, yardstick, ggplot2, patchwork
+Imports: survival, stats, tdROC, yardstick, ggplot2, patchwork, dplyr
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

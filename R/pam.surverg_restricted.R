@@ -3,11 +3,11 @@
 #' @description This function computes Calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^2$ for evaluating the predictive accuracy of parametric survival regression models. 
 #' R-squared quantifies the proportion of variability in the response that is explained by a corrected prediction function derived from the original model. L-squared measures the proportion of the prediction error from the original model that is explained by the corrected prediction function, effectively capturing the improvement in prediction accuracy. Together, these metrics provide a comprehensive assessment of the predictive performance of a survival regression model.
 #'
-#' @param fit.survreg An object of class survreg representing a fitted parametric survival regression model. The survreg call must include x = TRUE and y = TRUE to ensure the design matrix and response vector are stored in the model object.
+#' @param model An object of class survreg representing a fitted parametric survival regression model. The survreg call must include x = TRUE and y = TRUE to ensure the design matrix and response vector are stored in the model object.
 
-#' @param covariates A vector of covariate names to be used for prediction when newdata is provided.
+#' @param covs A vector of covariate names to be used for prediction when newdata is provided.
 #' @param tau (Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.
-#' @param new_data (Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in fit.survreg.
+#' @param new_data (Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in model.
 #' @param predict (Optional) A logical value indicating whether to return individual predictions. Default is FALSE. 
 #' @return A list containing three components:
 #' - R.squared: The R-squared measure, quantifying the explained variability in the response.
@@ -35,25 +35,25 @@
 #'
 #' @export
 
-pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  new_data = NULL, predict = T) 
+pam.surverg_restricted <- function(model, covs, tau = NULL,  new_data = NULL, predict = T) 
 {
   
   # Check inputs
-  if (!inherits(fit.survreg, "survreg")) {
-    stop("fit.survreg must be an object of class 'survreg'.")
+  if (!inherits(model, "survreg")) {
+    stop("model must be an object of class 'survreg'.")
   }
-  if (is.null(fit.survreg$x) || is.null(fit.survreg$y)) {
-    stop("fit.survreg must include x = TRUE and y = TRUE.")
+  if (is.null(model$x) || is.null(model$y)) {
+    stop("model must include x = TRUE and y = TRUE.")
   }
   
   if(is.null(new_data)){
-    x.matrix.unsorted <- fit.survreg$x
-    y.unsorted <- fit.survreg$y[, 1]
-    censor.unsorted <- fit.survreg$y[, 2]
+    x.matrix.unsorted <- model$x
+    y.unsorted <- model$y[, 1]
+    censor.unsorted <- model$y[, 2]
     y.order.new <- NULL
     
   } else {
-    if (!all(covariates %in% colnames(new_data))) {
+    if (!all(covs %in% colnames(new_data))) {
       stop("All covariates must be present in new_data.")
     }
     time_var = "time"
@@ -61,9 +61,9 @@ pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  new_dat
     if (any(!c(time_var, status_var) %in% colnames(new_data))) {
       stop("new_data require time and status columns")
     }
-    y.unsorted <- fit.survreg$y[, 1]
-    censor.unsorted <- fit.survreg$y[, 2]
-    x.matrix.unsorted <- new_data[, covariates, drop = FALSE]
+    y.unsorted <- model$y[, 1]
+    censor.unsorted <- model$y[, 2]
+    x.matrix.unsorted <- new_data[, covs, drop = FALSE]
     y.unsorted.new <- new_data[[time_var]]
     censor.unsorted.new <- new_data[[status_var]]
     y.order.new <- order(y.unsorted.new)
@@ -106,24 +106,24 @@ pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  new_dat
   ratio.km[is.nan(ratio.km)] <- 0
   weight.km <- ratio.km/(sum(ratio.km))
   
-  if (fit.survreg$dist %in% c("exponential", "weibull")) {
+  if (model$dist %in% c("exponential", "weibull")) {
     if(is.null(new_data)){
-      temp.pred <- predict(fit.survreg, type = "response")[y.order]
+      temp.pred <- predict(model, type = "response")[y.order]
     }else{
-      temp.pred <- predict(fit.survreg, newdata = as.data.frame(x.matrix), type = "response")
+      temp.pred <- predict(model, newdata = as.data.frame(x.matrix), type = "response")
     }
     
-    gtau <- (tau/temp.pred)^(1/fit.survreg$scale)
-    t.predicted <- temp.pred * gamma(1 + fit.survreg$scale) *
-      (1-expint::gammainc((1 + fit.survreg$scale), gtau))
-  } else if (fit.survreg$dist == "lognormal") {
+    gtau <- (tau/temp.pred)^(1/model$scale)
+    t.predicted <- temp.pred * gamma(1 + model$scale) *
+      (1-expint::gammainc((1 + model$scale), gtau))
+  } else if (model$dist == "lognormal") {
     if(is.null(new_data)){
-      temp.pred <- predict(fit.survreg, type = "response")[y.order]
+      temp.pred <- predict(model, type = "response")[y.order]
     }else{
-      temp.pred <- predict(fit.survreg, newdata = as.data.frame(x.matrix), type = "response")
+      temp.pred <- predict(model, newdata = as.data.frame(x.matrix), type = "response")
     }
-    gtau <- (log(tau)-log(temp.pred))/fit.survreg$scale
-    t.predicted <- temp.pred * exp((fit.survreg$scale)^2/2) * pnorm(gtau)
+    gtau <- (log(tau)-log(temp.pred))/model$scale
+    t.predicted <- temp.pred * exp((model$scale)^2/2) * pnorm(gtau)
   }
   
   if (!is.null(tau)) {
@@ -136,13 +136,13 @@ pam.surverg_restricted <- function(fit.survreg, covariates, tau = NULL,  new_dat
     time_points <- y
     time_points <- time_points[time_points <= tau] 
     
-    pre_sp <- predictSurvProb2survreg(fit.survreg, as.data.frame(x.matrix), time_points)
+    pre_sp <- predictSurvProb2survreg(model, as.data.frame(x.matrix), time_points)
     t.predicted2 <- integrate_survival(pre_sp, y, delta, tau)
     return(list(pred = t.predicted2, #t.predicted,
                 times = y,
                 status = delta,
                 surv_prob = pre_sp,
-                linear.pred = predict(fit.survreg, 
+                linear.pred = predict(model, 
                                       newdata = as.data.frame(x.matrix), 
                                       type = "lp")))
   }

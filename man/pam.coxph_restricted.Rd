@@ -4,18 +4,12 @@
 \alias{pam.coxph_restricted}
 \title{Prediction Accuracy Measures for Cox Proportional Hazards Model}
 \usage{
-pam.coxph_restricted(
-  fit.cox,
-  covariates,
-  tau = NULL,
-  new_data = NULL,
-  predict = T
-)
+pam.coxph_restricted(model, covs, tau = NULL, new_data = NULL, predict = T)
 }
 \arguments{
-\item{fit.cox}{An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.}
+\item{model}{An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.}
 
-\item{covariates}{A character vector specifying the names of the covariates used in the model.}
+\item{covs}{A character vector specifying the names of the covs used in the model.}
 
 \item{tau}{(Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.}
 
@@ -46,13 +40,13 @@ data(pbc)
 fit1 <- coxph(Surv(time, status == 2) ~ bili, data = pbc, x = TRUE, y = TRUE)
 
 # Calculate prediction accuracy measures
-pam.cox_metrics(fit1, covariates = "bili", time_var = "time", status_var = "status")
+pam.cox_metrics(fit1, covs = "bili", time_var = "time", status_var = "status")
 
 # Fit a multivariate Cox PH model with bilirubin and albumin
 fit2 <- coxph(Surv(time, status == 2) ~ bili + albumin, data = pbc, x = TRUE, y = TRUE)
 
 # Calculate prediction accuracy measures
-pam.cox_metrics(fit2, covariates = c("bili", "albumin"), time_var = "time", status_var = "status")
+pam.cox_metrics(fit2, covs = c("bili", "albumin"), time_var = "time", status_var = "status")
 
 }
 \references{

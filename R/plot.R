@@ -32,7 +32,7 @@
 #' @param invert_linear Logical; if \code{TRUE} (default), plots the negative
 #'   of \code{linear.pred} so that higher values correspond to higher risk.
 #'   Set to \code{FALSE} if you want higher values correspond to lower risk.
-#'
+#' @param sample_size Number. set it if you want to sample the number of points in your plot
 #' @details
 #' The function is primarily designed for quick visual diagnostics in survival
 #' model development. The line (\code{pred} vs \code{linear.pred}) shows the
@@ -54,7 +54,8 @@ plot_pred <- function(data,
                       levels = NULL,
                       shape_style = NULL,
                       legend_name = "status",
-                      invert_linear = TRUE) {
+                      invert_linear = TRUE,
+                      sample_size = NULL) {
   if(is.null(shape_style) & length(label_name) == 2) shape_style = c(1, 19)
   if(is.null(shape_style) & length(label_name) == 3) shape_style = c(2, 19, 1)
   if(is.null(levels) & length(label_name) == 2) levels = c(0, 1)
@@ -68,14 +69,18 @@ plot_pred <- function(data,
   
   # optionally invert the linear predictor
   x_var <- if (invert_linear) -data$linear.pred else data$linear.pred
-  
+  df <- data.frame(
+    x_var = x_var,
+    pred  = data$pred,
+    times = data$times,
+    status = data$status
+  )
+  if(!is.null(sample_size)){
+    sample_index <- sample(1:dim(df)[1], size = sample_size)
+    df <- df[sample_index, ]
+  } 
   ggplot2::ggplot(
-    data = data.frame(
-      x_var = x_var,
-      pred  = data$pred,
-      times = data$times,
-      status = data$status
-    )
+    data = df
   ) +
     ggplot2::geom_line(ggplot2::aes(x = x_var, y = pred)) +
     ggplot2::geom_point(ggplot2::aes(
@@ -115,6 +120,8 @@ plot_pred <- function(data,
 #' @param levels Numeric vector for \code{status} level ordering.
 #' @param shape_style Numeric vector of plotting symbols (pch values) for censoring/event status.
 #' @param legend_name Character string for the legend title (default = "status").
+#' @param sample_size Number. set it if you want to sample the number of points in your plot
+#' @param seed (option) random seed for sampling points. 
 #'
 #' @return A patchwork \code{ggplot} object combining all panels.
 #' @importFrom patchwork plot_annotation wrap_plots plot_layout
@@ -145,7 +152,9 @@ summary_pred_plot <- function(data_list,
                               label_name = c("censored", "event"),
                               levels = NULL,
                               shape_style = NULL,
-                              legend_name = "status") {
+                              sample_size = NULL,
+                              legend_name = "status", seed=1234) {
+  set.seed(seed)
   if(is.null(shape_style) & length(label_name) == 2) shape_style = c(1, 19)
   if(is.null(shape_style) & length(label_name) == 3) shape_style = c(2, 1, 19)
   if(is.null(levels)) levels = c(0:(length(label_name)-1))
@@ -176,7 +185,8 @@ summary_pred_plot <- function(data_list,
       label_name = label_name,
       levels = levels,
       shape_style = shape_style,
-      legend_name = legend_name
+      legend_name = legend_name,
+      sample_size = sample_size
     )
   }, data_list, titles, invert_linear)
   

@@ -13,7 +13,8 @@ plot_pred(
   levels = NULL,
   shape_style = NULL,
   legend_name = "status",
-  invert_linear = TRUE
+  invert_linear = TRUE,
+  sample_size = NULL
 )
 }
 \arguments{
@@ -48,6 +49,8 @@ to \code{c(1, 19)} for two levels (censored vs event) or
 \item{invert_linear}{Logical; if \code{TRUE} (default), plots the negative
 of \code{linear.pred} so that higher values correspond to higher risk.
 Set to \code{FALSE} if you want higher values correspond to lower risk.}
+
+\item{sample_size}{Number. set it if you want to sample the number of points in your plot}
 }
 \value{
 A \code{ggplot} object that can be further customized.
