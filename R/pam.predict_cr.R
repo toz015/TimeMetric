@@ -10,13 +10,13 @@
 #' @param model2 The fitted model for competing causes (either a `coxph` or `survreg` object).
 #' @param fg_model Optional Fine-Gray model object (`crr` from `cmprsk` package).
 #' @param cr_model Optional competing risks random forest model object.
-#' @param final_data A data frame containing observed event times (`time`), event indicators (`status`), and covariates.
+#' @param newdata A data frame containing observed event times (`time`), event indicators (`status`), and covs.
 #' @param event.type The event type of interest for which CIF is to be predicted (required for random forest model object).
-#' @param covariates A character vector specifying the names of the covariates used in the model.
+#' @param covs A character vector specifying the names of the covs used in the model.
 #' @return A list with two components:
 #' \describe{
-#'   \item{times}{umeric vector of observed times from \code{final_data$time}.}
-#'   \item{status}{Integer vector of event indicators from \code{final_data$status}.}
+#'   \item{times}{umeric vector of observed times from \code{newdata$time}.}
+#'   \item{status}{Integer vector of event indicators from \code{newdata$status}.}
 #'   \item{cif_pred}{A matrix where the first column is time, and subsequent columns are predicted CIFs for each subject.}
 #'   \item{pred}{Numeric vector of the integral of CIF from \code{0} to \code{tau}.}
 #'   \item{linear.pred}{Numeric vector of subject-specific linear predictors.}
@@ -25,56 +25,55 @@
 #' @export
 
 
-pam.predict_subject_cif <- function(model1 = NULL, model2 = NULL,
-                                    fg_model = NULL, cr_model = NULL,
-                                    tau = NULL, final_data, 
-                                    event.type = 1, covariates) {
+pam.predict_cr <- function(model1 = NULL, model2 = NULL,
+                           fg_model = NULL, cr_model = NULL,
+                           tau = NULL, newdata, event.type = 1, covs) {
   
   #quantile_list <- seq(0, 1, length.out = num.grid)
-  #LB_tau <- min(final_data$time[final_data$status == event.type])
-  #UB_tau <- max(final_data$time[final_data$status == event.type])
+  #LB_tau <- min(newdata$time[newdata$status == event.type])
+  #UB_tau <- max(newdata$time[newdata$status == event.type])
   #tau_list <- qunif(quantile_list, min = LB_tau, max = min(UB_tau, tau))
   
-  if(is.null(tau)) tau <- max(final_data$time)
+  if(is.null(tau)) tau <- max(newdata$time)
   ###  Handle Fine-Gray model (crr model fg_model)
   if (!is.null(fg_model)) {
-    m_pred <- predict(fg_model, as.matrix(final_data[, covariates, drop = FALSE]))
+    m_pred <- predict(fg_model, as.matrix(newdata[, covs, drop = FALSE]))
     if (is.null(dim(m_pred[, -1]))) return(NULL)
     pred <- apply(m_pred[, -1], 2, m_cif, time.cif = m_pred[, 1], tau = tau)
-    rs <- as.numeric(as.matrix(final_data[, covariates, drop = FALSE]) %*% 
+    rs <- as.numeric(as.matrix(newdata[, covs, drop = FALSE]) %*% 
                        fg_model$coef)
-    return(list(times = final_data$time, status = final_data$status,
+    return(list(times = newdata$time, status = newdata$status,
                 cif_pred = m_pred, pred = pred, linear.pred = rs))
   }
   
   if (!is.null(cr_model)) {
-    cr_pred <- predict(cr_model, newdata = final_data)
+    cr_pred <- predict(cr_model, newdata = newdata)
     cif_event <- cr_pred$cif[,,event.type]
     m_pred <- cbind(cr_pred$time.interest, t(cif_event))
     pred <- apply(m_pred[, -1], 2, m_cif, time.cif = m_pred[, 1], tau = tau)
-    return(list(times = final_data$time, status = final_data$status,
+    return(list(times = newdata$time, status = newdata$status,
                 cif_pred = m_pred, pred = pred,
                 linear.pred = cr_pred$predicted[, event.type]))
   }
   
   if (inherits(model1, "coxph")) {
-    model.info1 <- get_CIF(model1, list(model2), final_data)
+    model.info1 <- get_CIF(model1, list(model2), newdata)
     m_pred <- cbind(model.info1$y, model.info1$CIF)
     pred <- apply(m_pred[, -1], 2, m_cif, time.cif = m_pred[, 1], tau = tau)
-    return(list(times = final_data$time, status = final_data$status,
+    return(list(times = newdata$time, status = newdata$status,
                 cif_pred = m_pred, pred = pred,
-                linear.pred = predict(model1, final_data, type = "lp")))
+                linear.pred = predict(model1, newdata, type = "lp")))
   }
   
   if (inherits(model1, "survreg")) {
-    model.info1 <- get_CIF_aft(final_data$time, final_data$status, model1, list(model2),
-                               newX = as.matrix(final_data[, covariates, drop = FALSE]))
+    model.info1 <- get_CIF_aft(newdata$time, newdata$status, model1, list(model2),
+                               newX = as.matrix(newdata[, covs, drop = FALSE]))
     m_pred <- cbind(model.info1$y, model.info1$CIF)
     
     pred <- apply(m_pred[, -1], 2, m_cif, time.cif = m_pred[, 1], tau = tau)
-    return(list(times = final_data$time, status = final_data$status,
+    return(list(times = newdata$time, status = newdata$status,
                 cif_pred = m_pred, pred = pred,
-                linear.pred = predict(model1, final_data, type = "lp")))
+                linear.pred = predict(model1, newdata, type = "lp")))
   }
   
   stop("Unknown model type")

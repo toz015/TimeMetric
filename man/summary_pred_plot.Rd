@@ -16,7 +16,9 @@ summary_pred_plot(
   label_name = c("censored", "event"),
   levels = NULL,
   shape_style = NULL,
-  legend_name = "status"
+  sample_size = NULL,
+  legend_name = "status",
+  seed = 1234
 )
 }
 \arguments{
@@ -42,7 +44,11 @@ if \code{NULL}, defaults to "Panel 1", "Panel 2", etc.}
 
 \item{shape_style}{Numeric vector of plotting symbols (pch values) for censoring/event status.}
 
+\item{sample_size}{Number. set it if you want to sample the number of points in your plot}
+
 \item{legend_name}{Character string for the legend title (default = "status").}
+
+\item{seed}{(option) random seed for sampling points.}
 
 \item{tag_prefix, tag_suffix}{Strings for wrapping tags, e.g., "(" and ")" for "(a)", "(b)" (default).}
 

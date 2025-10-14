@@ -34,8 +34,10 @@ km_surv <- function(t, km_cens) {
 #'   - `Value`: numeric value
 #'
 #'
-
 #' @keywords internal
+#' @importFrom dplyr mutate case_when
+#' @importFrom tibble tibble
+#' @importFrom purrr map2
 pam.predicted_survial_eval_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = NULL, 
                                                  km_cens_fit, case_weights, 
@@ -134,15 +136,106 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
       stringsAsFactors = FALSE
     )
     
-    print(result_df)
+    result_df
     
 }
 
 
-#' @rdname pam.predicted_survial_eval_two_phase
+#' Summarize multiple two-phase (case-cohort) models into a wide table
+#'
+#' @description
+#' For a list of models (each providing `time`, `status`, `surv_prob`, `pred`),
+#' calls `pam.predicted_survial_eval_two_phase()` for each and returns a wide
+#' comparison table with metrics as rows and model names as columns.
+#'
+#' @param models Named list. Each element must be a list with:
+#'   - `times` (numeric), `status` (0/1), `surv_prob` (matrix), `pred` (numeric)
+#' @param case_weights Numeric vector of Prentice (or other) sampling weights for all subjects.
+#' @param km_cens_fit A Kaplan–Meier fit for censoring used to compute IPCW.
+#' @param metrics Character vector of metrics to compute (default shown below).
+#' @param t_star Optional evaluation time (global). If NULL, each model uses its median time.
+#' @param tau Optional truncation time (global). If NULL, each model uses its max time.
+#' @param digits Integer number of decimal places to round values (default 2).
+#'
+#' @return A data.frame: rows = metrics, columns = model names.
 #' @export
-pam.eval_casecohort <- pam.predicted_survial_eval_two_phase
-
-#' @rdname pam.predicted_survial_eval_two_phase
-#' @export
-pam.eval_ncc <- pam.predicted_survial_eval_two_phase
+pam.sample_design <- function(models,
+                              case_weights,
+                              km_cens_fit,
+                              metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C",
+                                          "Brier Score", "Time Dependent Auc"),
+                              t_star = NULL, tau = NULL,
+                              digits = 2) {
+  
+  if (!is.list(models) || length(models) == 0)
+    stop("'models' must be a non-empty named list.")
+  if (is.null(names(models)) || any(names(models) == ""))
+    names(models) <- paste0("Model_", seq_along(models))
+  
+  required <- c("times", "status", "surv_prob", "pred")
+  
+  eval_one <- function(mod, name) {
+    if (!all(required %in% names(mod))) {
+      stop(sprintf("Model '%s' must contain: %s",
+                   name, paste(required, collapse = ", ")))
+    }
+    
+    # Build the single-model input structure expected by your evaluator
+    pred_results <- list(
+      time      = mod$times,
+      status    = mod$status,
+      surv_prob = mod$surv_prob,
+      pred      = mod$pred
+    )
+    
+    res <- pam.predicted_survial_eval_two_phase(
+      pred_results = pred_results,
+      t_star       = t_star,    # global (NULL allowed)
+      tau          = tau,       # global (NULL allowed)
+      km_cens_fit  = km_cens_fit,
+      case_weights = case_weights,
+      metrics      = metrics
+    )
+    
+    if (!all(c("Metric", "Value") %in% names(res)))
+      stop(sprintf("Unexpected result from pam.predicted_survial_eval_two_phase() for '%s'", name))
+    
+    # Normalize minor label variant
+    res$Metric <- gsub("^Time Dependent AUC$", "Time Dependent Auc", res$Metric)
+    
+    res$Model <- name
+    res[, c("Model", "Metric", "Value")]
+  }
+  
+  # Evaluate all models
+  pieces <- mapply(eval_one, models, names(models), SIMPLIFY = FALSE)
+  long   <- do.call(rbind, pieces)
+  rownames(long) <- NULL
+  
+  # Pivot to wide (rows = Metric, cols = Model)
+  wide <- reshape(
+    long,
+    idvar = "Metric",
+    timevar = "Model",
+    direction = "wide"
+  )
+  names(wide)    <- sub("^Value\\.", "", names(wide))
+  rownames(wide) <- NULL
+  wide           <- wide[, c("Metric", setdiff(names(wide), "Metric")), drop = FALSE]
+  
+  # Preferred ordering (keep present ones)
+  preferred <- c("Pesudo_R", "R_square", "L_square",
+                 "Harrell’s C", "Uno’s C",
+                 "Brier Score", "Time Dependent Auc")
+  present <- intersect(preferred, wide$Metric)
+  others  <- setdiff(wide$Metric, preferred)
+  wide$Metric <- factor(wide$Metric, levels = c(present, sort(others)))
+  wide <- wide[order(wide$Metric), ]
+  wide$Metric <- as.character(wide$Metric)
+  
+  # Round numeric columns
+  num_cols <- setdiff(names(wide), "Metric")
+  wide[num_cols] <- lapply(wide[num_cols], function(x) if (is.numeric(x)) round(x, digits) else x)
+  
+  wide
+}
