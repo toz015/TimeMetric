@@ -7,7 +7,7 @@
 pam.sample_design(
   models,
   case_weights,
-  km_cens_fit,
+  km_cens,
   metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
     "Time Dependent Auc"),
   t_star = NULL,
@@ -21,8 +21,6 @@ pam.sample_design(
 
 \item{case_weights}{Numeric vector of Prentice (or other) sampling weights for all subjects.}
 
-\item{km_cens_fit}{A Kaplan–Meier fit for censoring used to compute IPCW.}
-
 \item{metrics}{Character vector of metrics to compute (default shown below).}
 
 \item{t_star}{Optional evaluation time (global). If NULL, each model uses its median time.}
@@ -30,6 +28,8 @@ pam.sample_design(
 \item{tau}{Optional truncation time (global). If NULL, each model uses its max time.}
 
 \item{digits}{Integer number of decimal places to round values (default 2).}
+
+\item{km_cens_fit}{A Kaplan–Meier fit for censoring used to compute IPCW.}
 }
 \value{
 A data.frame: rows = metrics, columns = model names.

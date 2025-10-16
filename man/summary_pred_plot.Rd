@@ -8,17 +8,18 @@ summary_pred_plot(
   data_list,
   titles = NULL,
   plot_fun = plot_pred,
-  ncol = NULL,
+  ncol = 2,
   tag_levels = "a",
   invert_linear = TRUE,
   xlab = "Risk Score",
   ylab = "Days",
-  label_name = c("censored", "event"),
+  label_name = c("Censored", "Event"),
   levels = NULL,
   shape_style = NULL,
   sample_size = NULL,
-  legend_name = "status",
-  seed = 1234
+  restrict_time = NULL,
+  legend_name = "Status",
+  seed = 12345
 )
 }
 \arguments{
