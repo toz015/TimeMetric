@@ -9,7 +9,8 @@ pam.summary_cr(
   metrics = NULL,
   t_star = NULL,
   tau = NULL,
-  event_type = 1
+  event_type = 1,
+  digits = 2
 )
 }
 \arguments{

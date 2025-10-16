@@ -14,7 +14,8 @@ plot_pred(
   shape_style = NULL,
   legend_name = "status",
   invert_linear = TRUE,
-  sample_size = NULL
+  sample_index = NULL,
+  restrict_time = NULL
 )
 }
 \arguments{

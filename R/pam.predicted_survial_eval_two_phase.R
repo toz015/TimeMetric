@@ -161,7 +161,7 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
 #' @export
 pam.sample_design <- function(models,
                               case_weights,
-                              km_cens_fit,
+                              km_cens,
                               metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C",
                                           "Brier Score", "Time Dependent Auc"),
                               t_star = NULL, tau = NULL,
@@ -192,7 +192,7 @@ pam.sample_design <- function(models,
       pred_results = pred_results,
       t_star       = t_star,    # global (NULL allowed)
       tau          = tau,       # global (NULL allowed)
-      km_cens_fit  = km_cens_fit,
+      km_cens_fit  = km_cens,
       case_weights = case_weights,
       metrics      = metrics
     )

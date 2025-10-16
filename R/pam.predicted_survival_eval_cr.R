@@ -360,7 +360,8 @@ pam.summary_cr <- function(models,
                            metrics = NULL,
                            t_star = NULL,
                            tau = NULL,
-                           event_type = 1) {
+                           event_type = 1,
+                           digits = 2) {
   if (!is.list(models) || length(models) == 0)
     stop("'models' must be a non-empty named list.")
   if (is.null(names(models)) || any(names(models) == ""))
@@ -418,6 +419,10 @@ pam.summary_cr <- function(models,
   res_wide$Metric <- factor(res_wide$Metric, levels = c(present, sort(others)))
   res_wide <- res_wide[order(res_wide$Metric), ]
   res_wide$Metric <- as.character(res_wide$Metric)
+  
+  # round numeric columns
+  numeric_cols <- setdiff(names(res_wide), "Metric")
+  res_wide[numeric_cols] <- lapply(res_wide[numeric_cols], function(x) round(as.numeric(x), digits))
   
   res_wide
 }

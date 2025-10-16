@@ -54,8 +54,9 @@ plot_pred <- function(data,
                       levels = NULL,
                       shape_style = NULL,
                       legend_name = "status",
-                      invert_linear = TRUE,
-                      sample_size = NULL) {
+                      invert_linear = TRUE, 
+                      sample_index = NULL,
+                      restrict_time = NULL) {
   if(is.null(shape_style) & length(label_name) == 2) shape_style = c(1, 19)
   if(is.null(shape_style) & length(label_name) == 3) shape_style = c(2, 19, 1)
   if(is.null(levels) & length(label_name) == 2) levels = c(0, 1)
@@ -70,15 +71,14 @@ plot_pred <- function(data,
   # optionally invert the linear predictor
   x_var <- if (invert_linear) -data$linear.pred else data$linear.pred
   df <- data.frame(
-    x_var = x_var,
-    pred  = data$pred,
-    times = data$times,
-    status = data$status
+    x_var = x_var[sample_index],
+    pred  = data$pred[sample_index],
+    times = data$times[sample_index],
+    status = data$status[sample_index]
   )
-  if(!is.null(sample_size)){
-    sample_index <- sample(1:dim(df)[1], size = sample_size)
-    df <- df[sample_index, ]
-  } 
+  if(!is.null(restrict_time)){
+    df$times <- ifelse(df$times <= restrict_time, df$times, restrict_time)
+  }
   ggplot2::ggplot(
     data = df
   ) +
@@ -93,7 +93,12 @@ plot_pred <- function(data,
     ggplot2::xlab(xlab) +
     ggplot2::ylab(ylab) +
     ggplot2::ggtitle(title) +
-    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) -> p
+  if(!is.null(restrict_time)){
+    p + ggplot2::geom_hline(aes(yintercept = restrict_time),
+                            linetype = "dashed", color = "darkblue") -> p
+  } 
+  return(p)
 }
 
 
@@ -144,19 +149,20 @@ plot_pred <- function(data,
 summary_pred_plot <- function(data_list,
                               titles = NULL,
                               plot_fun = plot_pred,
-                              ncol = NULL,
+                              ncol = 2,
                               tag_levels = "a",
                               invert_linear = TRUE,
                               xlab = "Risk Score",
                               ylab = "Days",
-                              label_name = c("censored", "event"),
+                              label_name = c("Censored", "Event"),
                               levels = NULL,
                               shape_style = NULL,
                               sample_size = NULL,
-                              legend_name = "status", seed=1234) {
+                              restrict_time = NULL,
+                              legend_name = "Status", seed=12345) {
   set.seed(seed)
   if(is.null(shape_style) & length(label_name) == 2) shape_style = c(1, 19)
-  if(is.null(shape_style) & length(label_name) == 3) shape_style = c(2, 1, 19)
+  if(is.null(shape_style) & length(label_name) == 3) shape_style = c(2, 19, 1)
   if(is.null(levels)) levels = c(0:(length(label_name)-1))
   if(is.null(ncol)) ncol = length(label_name)
   # Basic checks
@@ -174,6 +180,11 @@ summary_pred_plot <- function(data_list,
   if (length(invert_linear) != k)
     stop("invert_linear must be length 1 or length(data_list).")
   
+  if(!is.null(sample_size)){
+    sample_index <- sample(1:length(data_list[[1]][["times"]]), size = sample_size)
+  }else{
+    sample_index <- 1:length(data_list[[1]][["times"]])
+  } 
   # Create each plot
   plots <- Map(function(d, ttl, inv) {
     plot_fun(
@@ -186,7 +197,8 @@ summary_pred_plot <- function(data_list,
       levels = levels,
       shape_style = shape_style,
       legend_name = legend_name,
-      sample_size = sample_size
+      sample_index = sample_index,
+      restrict_time = restrict_time
     )
   }, data_list, titles, invert_linear)
   
