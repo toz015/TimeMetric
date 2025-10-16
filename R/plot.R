@@ -96,7 +96,7 @@ plot_pred <- function(data,
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) -> p
   if(!is.null(restrict_time)){
     p + ggplot2::geom_hline(aes(yintercept = restrict_time),
-                            linetype = "dashed", color = "darkblue") -> p
+                            linetype = "dashed", color = "black") -> p
   } 
   return(p)
 }
