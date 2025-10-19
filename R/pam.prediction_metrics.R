@@ -50,8 +50,8 @@
 #' )
 #' print(result_all)
 #'
-#' @export
-
+#' @keywords internal
+#' @noRd
 pam.prediction_metrics <- function(predicted_data, survival_time, metrics, 
                                              status = NULL, tau = NULL, t_star = NULL, start_time = NULL) {
   

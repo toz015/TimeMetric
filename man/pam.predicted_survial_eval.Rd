@@ -5,20 +5,42 @@
 \title{Compute Survival Model Evaluation Metrics}
 \usage{
 pam.predicted_survial_eval(
+  model,
   event_time,
   predicted_probability,
   status,
+  covariates,
+  new_data = NULL,
   metrics = NULL,
   t_star = NULL,
   tau = NULL
 )
 }
 \arguments{
+\item{model}{A fitted survival model object used by certain metrics:
+\itemize{
+  \item For \code{"R_sh"} (Schemper–Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
+        (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
+  \item For \code{"R_E"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
+}}
+
 \item{event_time}{A numeric vector of observed survival times.}
 
-\item{predicted_probability}{A numeric vector of predicted survival probabilities.}
+\item{predicted_probability}{A numeric vector of predicted survival probabilities. with
+\itemize{
+  \item rows = subjects.
+  \item columns = observed survival times
+}}
 
 \item{status}{A numeric vector indicating event occurrence (1 for event, 0 for censoring).}
+
+\item{covariates}{A character vector specifying the names of the covariates used in the model.}
+
+\item{new_data}{Optional data frame used by metrics that require refitting or
+prediction from \code{model} (e.g., Schemper–Henderson \code{"R_sh"} and
+rank-based \code{"R_E"}). If supplied, it should contain the variables
+needed by those procedures and columns \code{time} and \code{status}
+coded as above.}
 
 \item{metrics}{A character vector specifying the evaluation metrics to compute. Options include:
 \itemize{
@@ -49,13 +71,6 @@ A data frame with two columns:
 This function calculates various predictive performance metrics for survival models based on 
 predicted survival probabilities and observed survival data. It supports a range of evaluation 
 measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
-}
-\examples{
-library(PAmeasure)
-predicted_data <- c(0.8, 0.6, 0.4, 0.2)
-survival_time <- c(5, 8, 3, 10)
-status <- c(1, 0, 1, 1)
-pam.rsh_metric(predicted_data, survival_time, status)
 }
 \references{
 Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression.

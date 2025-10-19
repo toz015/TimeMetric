@@ -9,9 +9,10 @@ pam.summary(models, metrics = NULL, t_star = NULL, tau = NULL, digits = 2)
 \arguments{
 \item{models}{A **named list** where each element is a list with:
 \itemize{
-  \item \code{event_time} (numeric vector)
-  \item \code{predicted_probability} (numeric vector/matrix/data.frame)
-  \item \code{status} (0/1 vector)
+  \item \code{times} — numeric vector of observed times.
+  \item \code{surv_prob} — \eqn{n \times K} matrix (or data frame) of
+        subject-specific survival probabilities on a common time grid.
+  \item \code{status} — 0/1 event indicator (1 = event, 0 = censored).
 }}
 
 \item{metrics}{Optional character vector of metrics to compute (passed through).}

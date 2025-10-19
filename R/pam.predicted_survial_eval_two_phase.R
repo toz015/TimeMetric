@@ -23,6 +23,7 @@ km_surv <- function(t, km_cens) {
 #'   - `Prob`: predicted survival probabilities over time.
 #'   - `pred`: predicted risk scores.
 #'   - `time`: time points for `Prob` rows.
+#'   - `status`: indicating event occurrence (1 for event, 0 for censoring, 2 for competing events).
 #' @param t_star (Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
 #'   If NULL, it defaults to the median survival time.
 #' @param tau (Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 

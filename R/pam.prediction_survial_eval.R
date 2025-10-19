@@ -90,7 +90,8 @@
 #'        status = ifelse(status==2, 1, 0))
 #' #Schemper and Henderson's estimator of the absolute deviation between survival functions
 #' schemper(train.fit.full, pbc, pbc)$Dx       
-#' @export
+#' @keywords internal
+#' @noRd
 pam.prediction_survial_eval <- function (object, train_data, predicted_data, covariates,
                                metrics = "all",  t_star = NULL, tau = NULL) 
 {

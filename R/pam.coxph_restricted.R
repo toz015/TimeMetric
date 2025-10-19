@@ -5,8 +5,8 @@
 #' R-squared quantifies the proportion of variability in the observed survival times explained by the model's predictions,
 #' while L-squared measures the proportion of prediction error explained by a corrected prediction function. Together, these metrics provide a comprehensive evaluation of the predictive power of the Cox model.
 #'
-#' @param model An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
-#' @param covs A character vector specifying the names of the covs used in the model.
+#' @param fit.cox An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
+#' @param covariates A character vector specifying the names of the covariates used in the model.
 #' @param tau (Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.
 #' @param new_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
 #' @param predict If true, return a list contains predicted survival probabilities.
@@ -20,31 +20,39 @@
 #' arXiv preprint arXiv:1611.03063. Available at \url{https://arxiv.org/abs/1611.03063}.
 #'
 #' @examples
-#' library(survival)
-#' library(PAmeasure)
-#'
-#' # Use Mayo Clinic Primary Biliary Cirrhosis Data
-#' data(pbc)
-#'
-#' # Fit a univariate Cox PH model with bilirubin
-#' fit1 <- coxph(Surv(time, status == 2) ~ bili, data = pbc, x = TRUE, y = TRUE)
-#'
-#' # Calculate prediction accuracy measures
-#' pam.cox_metrics(fit1, covs = "bili", time_var = "time", status_var = "status")
-#'
-#' # Fit a multivariate Cox PH model with bilirubin and albumin
-#' fit2 <- coxph(Surv(time, status == 2) ~ bili + albumin, data = pbc, x = TRUE, y = TRUE)
-#'
-#' # Calculate prediction accuracy measures
-#' pam.cox_metrics(fit2, covs = c("bili", "albumin"), time_var = "time", status_var = "status")
-#'
+#'library(survival)
+#'library(TimeMetric)
+#'library(tidyverse)
+#'set.seed(2025)
+#'data(pbc, package = "survival")
+#'df <- pbc %>% 
+#'  filter(is.na(trt)==F) %>% 
+#'  mutate(log_albumin = log(albumin),
+#'         log_bili = log(bili),
+#'         log_protime = log(protime),
+#'         status = ifelse(status==2, 1, 0)) %>% 
+#'  select(time, status, age, log_albumin, log_bili, log_protime, edema)
+#'train_data_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
+#'train_data <- df[train_data_idx, ]
+#'test_data <- df[-train_data_idx, ]
+#'m.cox<- coxph(Surv(time, status) ~ .,
+#'              data = train_data, x = TRUE, y = TRUE)
+#'m.wei <- survreg(Surv(time, status) ~ ., #scale = 0.1,
+#'                 data = train_data, dist="weibull", x=TRUE, y=TRUE)
+#'m.wei.fix <- survreg(Surv(time, status) ~ .,  scale = 5,
+#'                     data = train_data, dist="weibull", x=TRUE, y=TRUE)
+#'## predict prob
+#'covariates <- names(df)[-c(1:2)]
+#'cox_pred <- pam.coxph_restricted(fit.cox = m.cox,
+#'                                 covariates = covariates,
+#'                                 new_data = test_data) 
 #' @export
-pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predict = T) 
+pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, new_data = NULL, predict = T) 
 {
   if(is.null(new_data)){
-      x.matrix.unsorted <- model$x
-      y.unsorted <- model$y[, 1]
-      censor.unsorted <- model$y[, dim(model$y)[2]]
+      x.matrix.unsorted <- fit.cox$x
+      y.unsorted <- fit.cox$y[, 1]
+      censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
       y.order.new <- NULL
   }else{
     time_var = "time"
@@ -52,14 +60,14 @@ pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predi
     if (any(!c(time_var, status_var) %in% colnames(new_data)))  {
         stop("new_data require time and status columns")
       }
-    y.unsorted <- model$y[, 1]
-    censor.unsorted <- model$y[, dim(model$y)[2]]
-    x.matrix.unsorted <- new_data[, covs, drop = FALSE]
+    y.unsorted <- fit.cox$y[, 1]
+    censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
+    x.matrix.unsorted <- new_data[, covariates, drop = FALSE]
     y.unsorted.new <- new_data[[time_var]]
     censor.unsorted.new <- new_data[[status_var]]
     y.order.new <- order(y.unsorted.new)
   }
-  my.beta <- model$coeff
+  my.beta <- fit.cox$coeff
   y.order <- order(y.unsorted)
   nsize <- length(y.unsorted)
   y <- y.unsorted[y.order]
@@ -88,9 +96,9 @@ pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predi
   R <- ((yj.matrix >= yi.matrix) * 1)
   if(is.null(new_data)){
     #temp_rs <- x.matrix %*% my.beta
-    temp_rs <- predict(model, type = "lp")[y.order]
+    temp_rs <- predict(fit.cox, type = "lp")[y.order]
   }else{
-    temp_rs <- predict(model, new_data[, covs, drop = FALSE], type = "lp")[y.order]
+    temp_rs <- predict(fit.cox, new_data[, covariates, drop = FALSE], type = "lp")[y.order]
   }
   my.Lambda <- R %*% ((delta)/t(t(exp(temp_rs)) %*% R))
   rm(R)
@@ -129,7 +137,10 @@ pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predi
                           times = t1,
                           status = delta,
                           surv_prob = t(S.hat.x),
-                          linear.pred = temp_rs           
+                          linear.pred = temp_rs,
+                          model = fit.cox,
+                          new_data = new_data,
+                          covariates = covariates
                                      ))}
 
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
