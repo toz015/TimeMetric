@@ -42,9 +42,8 @@
 #' @examples
 #' left empty
 #'
-#' @export
-#'
-
+#' @keywords internal
+#' @noRd
 pam.prediction_metrics_cr <- function(ftime, fstatus, metrics, pred.cif, time.cif, event.type = 1, tau = NULL, t_star = NULL, start_time = NULL) {
   
   

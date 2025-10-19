@@ -98,20 +98,4 @@ print(result)
 
 
 
-\dontrun{
-
-result <- pam.predicted_survial_eval_cr(
-    pred_cif = pred_matrix,
-    event_time = event_times,
-    time.cif = pred_time_points,
-    status = event_status,
-    metrics = c("C_index", "Brier Score"),
-    tau = 5
-)
-print(result)
-}
-
-
-
-
 }

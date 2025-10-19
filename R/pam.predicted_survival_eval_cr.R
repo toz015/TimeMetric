@@ -36,22 +36,6 @@
 #'     \item `"Value"`: Computed value of the corresponding metric.
 #'   }
 #'
-#'
-#' @examples
-#' \dontrun{
-#' 
-#' result <- pam.predicted_survial_eval_cr(
-#'     pred_cif = pred_matrix,
-#'     event_time = event_times,
-#'     time.cif = pred_time_points,
-#'     status = event_status,
-#'     metrics = c("C_index", "Brier Score"),
-#'     tau = 5
-#' )
-#' print(result)
-#' }
-#'
-#' 
 #' 
 #' 
 #' @export
@@ -134,12 +118,12 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     time_idx <- max(which(time.cif <= tau))
     X <- pred_cif[time_idx, ]
     
-    brier_result <- tdROC::tdROC.cr(
+    brier_result <- suppressMessages(tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
       delta = status.recode,
       tau = tau, 
-      nboot = 0)
+      nboot = 0))
     
     metrics_results$"Brier Score" <- round(
       as.numeric(brier_result$calibration_res[1]), 4)
@@ -147,14 +131,14 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   
   
   if ("Time Dependent Auc" %in% metrics) {
-    AUC_result <- tdROC::tdROC.cr(
+    AUC_result <- suppressMessages(tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
       delta = status.recode,
       tau = tau,       
       method = "both", 
       output = "AUC"   
-    )
+    ))
     metrics_results$"Time Dependent Auc" <- round(AUC_result$main_res$AUC.A.integral, 4)
     #metrics_results$"Time Dependent Auc Empirical" <- round(AUC_result$main_res$AUC.B.integral, 4)
   }

@@ -3,10 +3,27 @@
 #' This function calculates various predictive performance metrics for survival models based on 
 #' predicted survival probabilities and observed survival data. It supports a range of evaluation 
 #' measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
+#' @param model A fitted survival model object used by certain metrics:
+#'   \itemize{
+#'     \item For \code{"R_sh"} (Schemper–Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
+#'           (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
+#'     \item For \code{"R_E"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
+#'   }
 #'
 #' @param event_time A numeric vector of observed survival times.
-#' @param predicted_probability A numeric vector of predicted survival probabilities.
+#' @param predicted_probability A numeric vector of predicted survival probabilities. with
+#'   \itemize{
+#'     \item rows = subjects.
+#'     \item columns = observed survival times
+#'   }
 #' @param status A numeric vector indicating event occurrence (1 for event, 0 for censoring).
+#' @param covariates A character vector specifying the names of the covariates used in the model.
+#' @param new_data Optional data frame used by metrics that require refitting or
+#'   prediction from \code{model} (e.g., Schemper–Henderson \code{"R_sh"} and
+#'   rank-based \code{"R_E"}). If supplied, it should contain the variables
+#'   needed by those procedures and columns \code{time} and \code{status}
+#'   coded as above.
+#'   
 #' @param metrics A character vector specifying the evaluation metrics to compute. Options include:
 #'   \itemize{
 #'     \item "Pseudo_R_square" - Pseudo R-squared measure
@@ -20,6 +37,8 @@
 #'     \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)
 #'   }
 #'   Default is "all", which computes all available metrics.
+#'   
+#'   
 #' @param t_star (Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
 #'   If NULL, it defaults to the median survival time.
 #' @param tau (Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
@@ -39,20 +58,14 @@
 #' Potapov, S., Adler, W., Schmid, M., Bertrand, F. (2024). survAUC: Estimating Time-Dependent AUC for Censored Survival Data. 
 #' R package version 1.3-0. DOI: \doi{10.32614/CRAN.package.survAUC}. Available at \url{https://CRAN.R-project.org/package=survAUC}.
 #'
-#' @examples
-#' library(PAmeasure)
-#' predicted_data <- c(0.8, 0.6, 0.4, 0.2)
-#' survival_time <- c(5, 8, 3, 10)
-#' status <- c(1, 0, 1, 1)
-#' pam.rsh_metric(predicted_data, survival_time, status)
 #' @export
 
-pam.predicted_survial_eval <- function (event_time, predicted_probability, status,
+pam.predicted_survial_eval <- function (model, event_time, predicted_probability, status, covariates, new_data = NULL,
                                         metrics = NULL,  t_star = NULL, tau = NULL) 
 {
   
-  if (missing(event_time) || missing(predicted_probability)) {
-    stop("Please provide 'predicted_data',  and 'covariates' arguments.")
+  if (missing(covariates) || missing(new_data)) {
+    stop("Please provide 'new_data',  and 'covariates' arguments.")
   }
   
   
@@ -113,27 +126,66 @@ pam.predicted_survial_eval <- function (event_time, predicted_probability, statu
                      timewt = "n/G2")$concordance, 4)
   }
   
-  if ("R_sh" %in% metrics) { 
-    message("Note: 'R_sh' metric is only valid for Cox model.")
-    metrics_results$"R_sh" <- round(pam.rsh_metric(predicted_data = predicted_probability, survival_time = event_time, status = status)$R_sh, 4)
+  if ("R_sh" %in% metrics) {
+    if (!inherits(model, "coxph")) {
+      message("R_sh is only defined for Cox PH models (coxph). Returning NA.")
+      metrics_results$R_sh <- NA
+    } else {
+      message("Note: 'R_sh' metric is only valid for Cox model.")
+      
+      check_factors <- function(data) {
+        factors <- sapply(data, is.factor)
+        if (any(factors)) {
+          factor_cols <- names(data)[factors]
+          message(
+            "The following columns are factors: ",
+            paste(factor_cols, collapse = ", "),
+            ". This function to calculate R_sh does not support factor variables. Returning NA."
+          )
+          return(TRUE)
+        }
+        return(FALSE)
+      }
+      if (check_factors(new_data)) {
+        metrics_results$"R_sh" <- NA
+      } else {
+        train_data <- data.frame(
+          time   = model$y[, 1],
+          status = model$y[, 2],
+          as.data.frame(model$x, check.names = FALSE)
+        )
+        
+        formula_text <- paste(
+          "Surv(", "time", ", ", "status", ") ~ ", 
+          paste(covariates, collapse = " + "), 
+          sep = ""
+        )
+        
+        formula <- as.formula(formula_text)
+        rms_coxph <- rms::cph(formula, data = train_data, x = TRUE, y = TRUE)
+        metrics_results$"R_sh" <- pam.schemper(
+          train.fit = rms_coxph,
+          traindata = train_data,
+          newdata   = new_data
+        )$Dx
+      }
+    }
   }
-  
   if ("R_E" %in% metrics) {
-   metrics_results$"R_E" <- pam.rsph_metric(
-     time = event_time, status = status, risk_score = risk_scores)$r2
+   metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
   }
   
   if ("Brier Score" %in% metrics) {
     t_eval <- event_time[t_idx]
     X <- risk_scores
-    brier_result <- tdROC::tdROC(
+    brier_result <- suppressMessages(tdROC::tdROC(
       X = X,  
       Y = event_time,      
       delta = status,
       tau = t_eval,       
       method = "both", 
       output = "both"   
-    )
+    ))
     metrics_results$"Brier Score" <- round(
       as.numeric(brier_result$calibration_res[1]), 4)
   }
@@ -141,16 +193,15 @@ pam.predicted_survial_eval <- function (event_time, predicted_probability, statu
   if ("Time Dependent Auc" %in% metrics) {
     t_eval <- event_time[t_idx]
     X <- risk_scores
-    AUC_result <- tdROC::tdROC(
+    AUC_result <- suppressMessages(tdROC::tdROC(
       X = X,  
       Y = event_time,      
       delta = status,
       tau = t_eval,       
       method = "both", 
       output = "both"   
-    )
+    ))
     metrics_results$"Time Dependent Auc" <- round(AUC_result$main_res$AUC.empirical, 4)
-    #<- round(AUC_result$main_res$AUC.integral, 4)
   }
   result_df <- data.frame(
     Metric = names(metrics_results),
@@ -169,11 +220,12 @@ pam.predicted_survial_eval <- function (event_time, predicted_probability, statu
 #' corresponds to a model.
 #'
 #' @param models A **named list** where each element is a list with:
-#'   \itemize{
-#'     \item \code{event_time} (numeric vector)
-#'     \item \code{predicted_probability} (numeric vector/matrix/data.frame)
-#'     \item \code{status} (0/1 vector)
-#'   }
+#' \itemize{
+#'   \item \code{times} — numeric vector of observed times.
+#'   \item \code{surv_prob} — \eqn{n \times K} matrix (or data frame) of
+#'         subject-specific survival probabilities on a common time grid.
+#'   \item \code{status} — 0/1 event indicator (1 = event, 0 = censored).
+#' }
 #' @param metrics Optional character vector of metrics to compute (passed through).
 #' @param t_star Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.
 #' @param tau Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.
@@ -208,10 +260,13 @@ pam.summary <- function(models,
     }
     
     res <- pam.predicted_survial_eval(
+      model = mod$model,
       event_time = mod$times,
       predicted_probability = mod$surv_prob,
       status = mod$status,
       metrics = metrics,
+      new_data = mod$new_data,
+      covariates = mod$covariates,
       t_star = t_star,
       tau = tau
     )

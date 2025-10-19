@@ -28,22 +28,32 @@ This function computes Calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^
 R-squared quantifies the proportion of variability in the response that is explained by a corrected prediction function derived from the original model. L-squared measures the proportion of the prediction error from the original model that is explained by the corrected prediction function, effectively capturing the improvement in prediction accuracy. Together, these metrics provide a comprehensive assessment of the predictive performance of a survival regression model.
 }
 \examples{
+rm(list = ls())
 library(survival)
-library(PAmeasures)
-
-# Use Mayo Clinic Primary Biliary Cirrhosis Data
-data(pbc)
-
-# Fit an exponential model with bilirubin
-fit1 <- survreg(Surv(time, status == 2) ~ bili, data = pbc, dist = "exponential", x = TRUE, y = TRUE)
-pam.survreg(fit1)
-
-# Fit a lognormal model with standardised blood clotting time
-fit2 <- survreg(Surv(time, status == 2) ~ protime, data = pbc, dist = "lognormal", x = TRUE, y = TRUE)
-pam.survreg(fit2)
-
-# Fit a Weibull model with bilirubin and standardised blood clotting time
-fit3 <- survreg(Surv(time, status == 2) ~ bili + protime, data = pbc, dist = "weibull", x = TRUE, y = TRUE)
-pam.survreg(fit3)
+library(TimeMetric)
+library(tidyverse)
+set.seed(2025)
+data(pbc, package = "survival")
+df <- pbc \%>\% 
+ filter(is.na(trt)==F) \%>\% 
+ mutate(log_albumin = log(albumin),
+        log_bili = log(bili),
+        log_protime = log(protime),
+        status = ifelse(status==2, 1, 0)) \%>\% 
+ select(time, status, age, log_albumin, log_bili, log_protime, edema)
+train_data_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
+train_data <- df[train_data_idx, ]
+test_data <- df[-train_data_idx, ]
+m.cox<- coxph(Surv(time, status) ~ .,
+                       data = train_data, x = TRUE, y = TRUE)
+m.wei <- survreg(Surv(time, status) ~ ., #scale = 0.1,
+                  data = train_data, dist="weibull", x=TRUE, y=TRUE)
+m.wei.fix <- survreg(Surv(time, status) ~ .,  scale = 5,
+                  data = train_data, dist="weibull", x=TRUE, y=TRUE)
+## predict prob
+covariates <- names(df)[-c(1:2)]
+wei_pred <- pam.surverg_restricted(fit.survreg = m.wei,
+                                  covariates = covariates, 
+                                  new_data = test_data) 
 
 }

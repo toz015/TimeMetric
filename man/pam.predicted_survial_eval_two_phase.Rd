@@ -18,7 +18,8 @@ pam.predicted_survial_eval_two_phase(
 \item{pred_results}{A numeric vector of predicted survival probabilities with (can be calculate by `pam.coxph_restricted()`) :
 - `Prob`: predicted survival probabilities over time.
 - `pred`: predicted risk scores.
-- `time`: time points for `Prob` rows.}
+- `time`: time points for `Prob` rows.
+- `status`: indicating event occurrence (1 for event, 0 for censoring, 2 for competing events).}
 
 \item{t_star}{(Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
 If NULL, it defaults to the median survival time.}
