@@ -51,9 +51,9 @@ m.wei <- survreg(Surv(time, status) ~ ., #scale = 0.1,
 m.wei.fix <- survreg(Surv(time, status) ~ .,  scale = 5,
                   data = train_data, dist="weibull", x=TRUE, y=TRUE)
 ## predict prob
-covariates <- names(df)[-c(1:2)]
-wei_pred <- pam.surverg_restricted(fit.survreg = m.wei,
-                                  covariates = covariates, 
+covs <- names(df)[-c(1:2)]
+wei_pred <- pam.surverg_restricted(model = m.wei,
+                                  covs = covs, 
                                   new_data = test_data) 
 
 }

@@ -129,4 +129,4 @@ pam.schemper <- function (train.fit, traindata, newdata) {
     V <- (D - Dx)/D
     return(list(Model = train.fit$call, D = D, Dx = Dx, V = V, 
                 Mhat = Mtx, Mhat.0 = Mt, timep = tempi.eventi))
-  }
+}
