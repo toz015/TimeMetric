@@ -61,7 +61,7 @@ pam.surverg_restricted <- function(model, covs, tau = NULL,  new_data = NULL, pr
     y.unsorted <- model$y[, 1]
     censor.unsorted <- model$y[, 2]
     y.order.new <- NULL
-    
+    if(is.null(tau)) tau <- max(model$y[, 1])
   } else {
     if (!all(covs %in% colnames(new_data))) {
       stop("All covariates must be present in new_data.")
@@ -77,12 +77,11 @@ pam.surverg_restricted <- function(model, covs, tau = NULL,  new_data = NULL, pr
     y.unsorted.new <- new_data[[time_var]]
     censor.unsorted.new <- new_data[[status_var]]
     y.order.new <- order(y.unsorted.new)
-    
+    if(is.null(tau)) tau <- max(new_data[[time_var]])
   }
   
-  if (is.null(tau)) {
-    tau <- max(new_data[[time_var]]) + 1  
-  }
+    
+  
   nsize <- length(y.unsorted)
   y.order <- order(y.unsorted)
   y <- y.unsorted[y.order]
@@ -148,7 +147,7 @@ pam.surverg_restricted <- function(model, covs, tau = NULL,  new_data = NULL, pr
     
     pre_sp <- predictSurvProb2survreg(model, as.data.frame(x.matrix), time_points)
     t.predicted2 <- integrate_survival(pre_sp, y, delta, tau)
-    return(list(pred = t.predicted2, #t.predicted,
+    return(list(pred = t.predicted, #t.predicted2,
                 times = y,
                 status = delta,
                 surv_prob = pre_sp,
