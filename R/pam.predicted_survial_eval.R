@@ -11,7 +11,8 @@
 #'   }
 #'
 #' @param event_time A numeric vector of observed survival times.
-#' @param predicted_probability A numeric vector of predicted survival probabilities. with
+#' @param pred_mean_survival A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.
+#' @param predicted_probability A numeric vector of predicted survival probabilities (Note: Only models with discrete estimated survival probabilities can use this input.). with
 #'   \itemize{
 #'     \item rows = subjects.
 #'     \item columns = observed survival times
@@ -60,7 +61,9 @@
 #'
 #' @export
 
-pam.predicted_survial_eval <- function (model, event_time, predicted_probability, status, covariates, new_data = NULL,
+pam.predicted_survial_eval <- function (model, event_time, predicted_probability, 
+                                        pred_mean_survival = NULL,
+                                        status, covariates, new_data = NULL,
                                         metrics = NULL,  t_star = NULL, tau = NULL) 
 {
   
@@ -89,9 +92,13 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
   }
   
   
+  if(is.null(pred_mean_survival)){
+    predicted_data <- integrate_survival(
+      predicted_probability, event_time, status, tau)
+  }else{
+    predicted_data <- pred_mean_survival
+  }
   
-  predicted_data <- integrate_survival(
-    predicted_probability, event_time, status, tau)
   #print(predicted_data)
   if (is.null(t_star)) t_star <- quantile(event_time, 0.5)
   t_idx <- which.min(abs(event_time - t_star))
@@ -263,6 +270,7 @@ pam.summary <- function(models,
       model = mod$model,
       event_time = mod$times,
       predicted_probability = mod$surv_prob,
+      pred_mean_survival = mod$pred,
       status = mod$status,
       metrics = metrics,
       new_data = mod$new_data,
