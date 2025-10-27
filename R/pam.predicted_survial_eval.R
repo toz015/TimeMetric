@@ -167,7 +167,7 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
           train.fit = rms_coxph,
           traindata = train_data,
           newdata   = new_data
-        )$Dx
+        )$V
       }
     }
   }
@@ -266,7 +266,7 @@ pam.summary <- function(models,
       status = mod$status,
       metrics = metrics,
       new_data = mod$new_data,
-      covariates = mod$covariates,
+      covariates = mod$covs,
       t_star = t_star,
       tau = tau
     )

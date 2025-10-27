@@ -5,8 +5,8 @@
 #' R-squared quantifies the proportion of variability in the observed survival times explained by the model's predictions,
 #' while L-squared measures the proportion of prediction error explained by a corrected prediction function. Together, these metrics provide a comprehensive evaluation of the predictive power of the Cox model.
 #'
-#' @param fit.cox An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
-#' @param covariates A character vector specifying the names of the covariates used in the model.
+#' @param model An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
+#' @param covs A character vector specifying the names of the covariates used in the model.
 #' @param tau (Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.
 #' @param new_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
 #' @param predict If true, return a list contains predicted survival probabilities.
@@ -42,17 +42,17 @@
 #'m.wei.fix <- survreg(Surv(time, status) ~ .,  scale = 5,
 #'                     data = train_data, dist="weibull", x=TRUE, y=TRUE)
 #'## predict prob
-#'covariates <- names(df)[-c(1:2)]
-#'cox_pred <- pam.coxph_restricted(fit.cox = m.cox,
-#'                                 covariates = covariates,
+#'covs <- names(df)[-c(1:2)]
+#'cox_pred <- pam.coxph_restricted(model = m.cox,
+#'                                 covs = covs,
 #'                                 new_data = test_data) 
 #' @export
-pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, new_data = NULL, predict = T) 
+pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predict = T) 
 {
   if(is.null(new_data)){
-      x.matrix.unsorted <- fit.cox$x
-      y.unsorted <- fit.cox$y[, 1]
-      censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
+      x.matrix.unsorted <- model$x
+      y.unsorted <- model$y[, 1]
+      censor.unsorted <- model$y[, dim(model$y)[2]]
       y.order.new <- NULL
   }else{
     time_var = "time"
@@ -60,14 +60,14 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, new_data = NUL
     if (any(!c(time_var, status_var) %in% colnames(new_data)))  {
         stop("new_data require time and status columns")
       }
-    y.unsorted <- fit.cox$y[, 1]
-    censor.unsorted <- fit.cox$y[, dim(fit.cox$y)[2]]
-    x.matrix.unsorted <- new_data[, covariates, drop = FALSE]
+    y.unsorted <- model$y[, 1]
+    censor.unsorted <- model$y[, dim(model$y)[2]]
+    x.matrix.unsorted <- new_data[, covs, drop = FALSE]
     y.unsorted.new <- new_data[[time_var]]
     censor.unsorted.new <- new_data[[status_var]]
     y.order.new <- order(y.unsorted.new)
   }
-  my.beta <- fit.cox$coeff
+  my.beta <- model$coeff
   y.order <- order(y.unsorted)
   nsize <- length(y.unsorted)
   y <- y.unsorted[y.order]
@@ -96,9 +96,9 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, new_data = NUL
   R <- ((yj.matrix >= yi.matrix) * 1)
   if(is.null(new_data)){
     #temp_rs <- x.matrix %*% my.beta
-    temp_rs <- predict(fit.cox, type = "lp")[y.order]
+    temp_rs <- predict(model, type = "lp")[y.order]
   }else{
-    temp_rs <- predict(fit.cox, new_data[, covariates, drop = FALSE], type = "lp")[y.order]
+    temp_rs <- predict(model, new_data[, covs, drop = FALSE], type = "lp")[y.order]
   }
   my.Lambda <- R %*% ((delta)/t(t(exp(temp_rs)) %*% R))
   rm(R)
@@ -138,9 +138,9 @@ pam.coxph_restricted <- function(fit.cox, covariates, tau = NULL, new_data = NUL
                           status = delta,
                           surv_prob = t(S.hat.x),
                           linear.pred = temp_rs,
-                          model = fit.cox,
+                          model = model,
                           new_data = new_data,
-                          covariates = covariates
+                          covs = covs
                                      ))}
 
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
