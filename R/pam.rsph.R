@@ -89,6 +89,7 @@ pam.rsph.coxph <- function(fit, test_data = NULL, Gmat){
   
   f.type <- attr(Y, "type")  
   if (f.type== "right") Y <- cbind(rep(0,nrow(Y)),Y)
+  
   sort.it <- order(Y[,2],-Y[,3]) 
   bx <- lp[sort.it] - mean(lp)
   Y <- Y[sort.it,]
@@ -97,13 +98,12 @@ pam.rsph.coxph <- function(fit, test_data = NULL, Gmat){
   ti <- sort(unique(Y[Y[,3]==1,2]))     #ordered unique times of events
   n.times <- length(ti)         #number of unique times of events 
   
-  
   r2<-NULL
   if(missing(Gmat)){
-    km.inv <- my.survfit(Y[,1],Y[,2],Y[,3])   #now includes time-dependent data
-    G <- km.inv$surv.i2[km.inv$n.event != 0]                
-    dSt <- 1/G            #is this needed (we already have only at event times)
-    Gmat <- matrix(G,byrow=T,ncol=length(G),nrow=n.ind) #times in columns, ind. in rows
+    km.inv <- my.survfit(Y[,1],Y[,2],Y[,3])    #now includes time-dependent data
+    G <- km.inv$surv.i2[km.inv$n.event != 0]               
+    dSt <- 1/G           #is this needed (we already have only at event times)
+    Gmat <- matrix(G,byrow=T,ncol=length(G),nrow=n.ind)  #times in columns, ind. in rows
   }
   else if(is.null(dim(Gmat))){
     if(length(Gmat)!=n.times)stop("Wrong length of weights")
@@ -296,8 +296,7 @@ pam.rsph.survreg <- function(fit, test_data = NULL, Gmat){
   Y <- fit$y
   Y <- cbind(rep(0,nrow(Y)),Y)
   if(any(Y[,2]<0))warning("Negative follow-up times")
-  #nazaj antilogaritmiramo cas:
-  #if(fit$dist%in%c("weibull","exponential","loglogistic","lognormal"))Y[,2] <- exp(Y[,2])
+  
   
   sort.it <- order(Y[,2],-Y[,3]) 
   Y <- Y[sort.it,]
