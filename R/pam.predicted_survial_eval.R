@@ -167,14 +167,14 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
           paste(covariates, collapse = " + "), 
           sep = ""
         )
-        
+    
         formula <- as.formula(formula_text)
         rms_coxph <- rms::cph(formula, data = train_data, x = TRUE, y = TRUE)
         metrics_results$"R_sh" <- pam.schemper(
           train.fit = rms_coxph,
           traindata = train_data,
           newdata   = new_data
-        )$V
+        )$Dx
       }
     }
   }

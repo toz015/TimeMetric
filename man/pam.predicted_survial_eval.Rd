@@ -8,6 +8,7 @@ pam.predicted_survial_eval(
   model,
   event_time,
   predicted_probability,
+  pred_mean_survival = NULL,
   status,
   covariates,
   new_data = NULL,
@@ -26,11 +27,13 @@ pam.predicted_survial_eval(
 
 \item{event_time}{A numeric vector of observed survival times.}
 
-\item{predicted_probability}{A numeric vector of predicted survival probabilities. with
+\item{predicted_probability}{A numeric vector of predicted survival probabilities (Note: Only models with discrete estimated survival probabilities can use this input.). with
 \itemize{
   \item rows = subjects.
   \item columns = observed survival times
 }}
+
+\item{pred_mean_survival}{A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.}
 
 \item{status}{A numeric vector indicating event occurrence (1 for event, 0 for censoring).}
 
