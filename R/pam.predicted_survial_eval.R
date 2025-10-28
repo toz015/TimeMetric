@@ -174,12 +174,14 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
           train.fit = rms_coxph,
           traindata = train_data,
           newdata   = new_data
-        )$Dx
+        )$V
       }
     }
   }
   if ("R_E" %in% metrics) {
-   metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
+   #metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
+    metrics_results$"R_E" <- pam.summary.rsph(pam.rsph(model, test_data = new_data),
+                                              times = tau)$Rti
   }
   
   if ("Brier Score" %in% metrics) {

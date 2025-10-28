@@ -283,9 +283,7 @@ pam.rsph.aareg <- function(fit, test_data = NULL, Gmat){
 pam.rsph.survreg <- function(fit, test_data = NULL, Gmat){
   require(survival)
   if (!is.null(test_data)){
-    Y <- with(test_data, Surv(get("time"), get("status")))
-    dimnames(Y) <- list(row.names(test_data), c("time", "status"))
-    
+    Y <- Surv(test_data$time, test_data$status)
     lp <- predict(fit, newdata = test_data, type = "lp")
     
   } else{
@@ -293,7 +291,7 @@ pam.rsph.survreg <- function(fit, test_data = NULL, Gmat){
     lp <- fit$linear.predictors
   }
   
-  Y <- fit$y
+  #Y <- fit$y
   Y <- cbind(rep(0,nrow(Y)),Y)
   if(any(Y[,2]<0))warning("Negative follow-up times")
   
