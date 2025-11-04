@@ -8,3 +8,4 @@ man/.DS_Store
 test.r
 paper*.pdf
 paper*.Rmd
+paper*.csv

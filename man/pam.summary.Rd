@@ -4,7 +4,7 @@
 \alias{pam.summary}
 \title{Summarize multiple survival models into a wide comparison table}
 \usage{
-pam.summary(models, metrics = NULL, t_star = NULL, tau = NULL, digits = 2)
+pam.summary(models, metrics = NULL, t_star = NULL, tau = 1e+11, digits = 2)
 }
 \arguments{
 \item{models}{A **named list** where each element is a list with:
@@ -19,7 +19,7 @@ pam.summary(models, metrics = NULL, t_star = NULL, tau = NULL, digits = 2)
 
 \item{t_star}{Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.}
 
-\item{tau}{Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.}
+\item{tau}{Optional numeric scalar, passed to \code{pam.predicted_survial_eval()} (default = 10e10).}
 
 \item{digits}{Number of decimal places to round the metric values (default = 2).}
 }

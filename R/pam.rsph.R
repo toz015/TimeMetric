@@ -455,6 +455,7 @@ pam.summary.rsph <- function(object, times, band=5,...){
   lt.t2 <- c(data$stop[-1],data$stop[nrow(data)]+1)
   lt1 <- which(data$stop!=lt.t1)				#first case at a time point
   lt2 <- which(data$stop!=lt.t2)				#last case at a time point
+  if(!(nrow(data) %in% lt2)) lt2 <- c(lt2, nrow(data))
   
   ct.t1 <- c(-1,data$start[-nrow(data)])			#aux. vector for searching the start times
   ct.t2 <- c(data$start[-1],data$start[nrow(data)]+1)

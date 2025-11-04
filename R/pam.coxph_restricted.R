@@ -75,7 +75,7 @@ pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predi
   p <- dim(as.matrix(x.matrix.unsorted))[2]
   if(is.null(y.order.new)==F) y.order <- y.order.new
   if (p == 1) {
-    x.matrix <- as.matrix(x.matrix.unsorted[y.order])
+    x.matrix <- as.matrix(x.matrix.unsorted[y.order, ])
   } else {
     x.matrix <- as.matrix( x.matrix.unsorted[y.order, ])
   }

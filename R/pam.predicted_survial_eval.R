@@ -237,7 +237,7 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
 #' }
 #' @param metrics Optional character vector of metrics to compute (passed through).
 #' @param t_star Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.
-#' @param tau Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.
+#' @param tau Optional numeric scalar, passed to \code{pam.predicted_survial_eval()} (default = 10e10).
 #' @param digits Number of decimal places to round the metric values (default = 2).
 #'
 #' @return A data frame with:
@@ -251,7 +251,7 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
 pam.summary <- function(models,
                         metrics = NULL,
                         t_star = NULL,
-                        tau = NULL,
+                        tau = 10e10,
                         digits = 2) {
   if (!is.list(models) || length(models) == 0) {
     stop("'models' must be a non-empty named list.")
