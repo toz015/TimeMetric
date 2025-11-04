@@ -20,11 +20,14 @@
 #'     \item `"Pseudo_R_square"`
 #'     \item `"R_square"`
 #'     \item `"L_square"`
+#'     \item `"Pseudo_R2_point"`
+#'     \item `"R2_point"`
+#'     \item `"L2_point"`
 #'     \item `"C_index"`
 #'     \item `"Brier Score"`
 #'     \item `"Time Dependent Auc"`
 #'   }
-#' @param t_star Optional numeric value specifying a reference time for evaluating 
+#' @param t_star Optional numeric value specifying a reference time for evaluating point-version Pseudo_R_square, 
 #'   the Brier Score and Time-Dependent AUC. Defaults to the median of `event_time`.
 #' @param tau Optional numeric value specifying a restricted time horizon for model evaluation. 
 #'   Defaults to the maximum observed event time plus one.
@@ -51,12 +54,14 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   
   if(is.null(tau)) tau <- max(event_time)
   if(is.null(t_star)) t_star <- median(event_time)
+  time_idx <- max(which(time.cif <= t_star))
   
   metrics_results <- list()
   
   valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
+                     "Pseudo_R2_point", "R2_point", "L2_point",
                      "C_index", "Brier Score", "Time Dependent Auc")
-  default_metrics <- c("Pseudo_R_square", "C_index",
+  default_metrics <- c("Pseudo_R_square", "Pseudo_R2_point", "C_index",
                        "Brier Score", "Time Dependent Auc")
   if ("all" %in% metrics) {
     metrics <- valid_metrics
@@ -97,6 +102,26 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
     metrics_results$L_square <- r_l_list$L.squared
   }
   
+  if("Pseudo_R2_point" %in% metrics ||
+     "R2_point" %in% metrics || 
+     "L2_point" %in% metrics) {
+    
+    r_p_list <- pam.censor.cr.point(ftime = event_time, 
+                                    fstatus = status,
+                                    tau = t_star, pred.cif = pred_cif[time_idx, ],
+                                    event.type = event_type)
+  }
+  
+  if ("Pseudo_R2_point" %in% metrics) {
+    metrics_results$Pseudo_R2_point <- r_p_list$Pseudo.R
+  } 
+  if ("R2_point" %in% metrics) {
+    metrics_results$R2_point <- r_p_list$R.squared
+  }
+  if ("L2_point" %in% metrics) {
+    metrics_results$L2_point <- r_p_list$L.squared
+  }
+  
   pred_risk <- apply(pred_cif, 2, m_cif, time.cif=time.cif, tau=tau)
   
   C_index <- C_cr(
@@ -115,14 +140,13 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   status.recode <- ifelse(status.recode == -1, 1, status.recode)
   
   if ("Brier Score" %in% metrics) {
-    time_idx <- max(which(time.cif <= tau))
     X <- pred_cif[time_idx, ]
     
     brier_result <- suppressMessages(tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
       delta = status.recode,
-      tau = tau, 
+      tau = t_star, 
       nboot = 0))
     
     metrics_results$"Brier Score" <- round(
@@ -135,7 +159,7 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
       X = X,  
       Y = event_time,      
       delta = status.recode,
-      tau = tau,       
+      tau = t_star,       
       method = "both", 
       output = "AUC"   
     ))
@@ -203,6 +227,78 @@ pam.censor.cr <- function(ftime, fstatus, tau,
                                    digits = 4), nsmall = 4))
   return(out)
 }
+
+
+####################################################################
+### calculate competing risk PA measure for a given time point
+####################################################################
+#' @noRd
+pam.censor.cr.point <- function(ftime, fstatus, tau, 
+                                pred.cif,
+                                event.type = 1){
+  
+  # create new variable T(1,tau)
+  ftime.new <- ifelse(ftime > tau, tau, ftime)
+  ftime.new <- ifelse(ftime.new <= tau & !(fstatus %in% c(event.type, 0)), 
+                      tau, ftime.new)
+  fstatus.new <- ifelse(ftime.new == tau | fstatus > 0, 1, fstatus)
+  
+  
+  # obtain PA measure
+  i.obs <- ifelse(ftime < tau & fstatus == event.type, 1, 0)
+  out <- pam.censor.point(i.obs = i.obs, i.predict = pred.cif,
+                          y =  ftime.new, delta = fstatus.new)
+  out <- c(out, 
+           Pseudo.R = format(round(as.numeric(out$R.squared) * 
+                                     as.numeric(out$L.squared), 
+                                   digits = 4), nsmall = 4))
+  return(out)
+}
+
+
+####################################################################
+### calculate PA measure for a given time point
+####################################################################
+#' @noRd
+pam.censor.point <- function(i.obs, i.predict, y, delta){
+  
+  y.sorted<-sort(y)
+  delta.sorted<-delta[order(y)]
+  
+  #KM estimate for censoring distribution
+  fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
+  #sum.km.censoring<-summary(fit.km.censoring,  censored=TRUE)
+  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
+  km.censoring<-sum.km.censoring$surv
+  
+  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  ratio.km<- delta.sorted/km.censoring.minus
+  
+  ratio.km[is.nan(ratio.km)]<-0
+  
+  weight.km<-ratio.km/(sum(ratio.km))
+  
+  ### now change y (observe event time) to indicator version
+  
+  y.sorted<-i.obs[order(y)]
+  y.predict.sorted<-i.predict[order(y)]
+  
+  wls.fitted<-tryCatch(lm(y.sorted~y.predict.sorted,weights=weight.km),error=function(e){return(c(NA,NA))})
+  calibrate.fitted<-tryCatch(predict(wls.fitted),error=function(e){return(c(NA,NA))})
+  
+  num.rho2<-sum(weight.km*(calibrate.fitted-sum(weight.km*y.sorted))^2)
+  denom.rho2<-sum(weight.km*(y.sorted-sum(weight.km*y.sorted))^2)
+  
+  R2 <-format(round(num.rho2/denom.rho2,digits = 4) ,nsmall=4)
+  
+  
+  num.L2<- sum(weight.km*(y.sorted-calibrate.fitted)^2)
+  denom.L2<- sum(weight.km*(y.sorted-y.predict.sorted)^2)
+  L2 <-format(round(num.L2/denom.L2,digits = 4),nsmall=4)
+  
+  return(list(R.squared=R2,L.squared=L2))
+}
+
 
 #' @noRd
 pam.censor<-function(y,y.predict,delta){
@@ -397,6 +493,7 @@ pam.summary_cr <- function(models,
   
   # optional: enforce a pleasant metric order if present
   preferred_order <- c("Pseudo_R_square", "R_square", "L_square",
+                       "Pseudo_R2_point", "R2_point", "L2_point",
                        "C_index", "Brier Score", "Time Dependent Auc")
   present <- intersect(preferred_order, res_wide$Metric)
   others  <- setdiff(res_wide$Metric, preferred_order)
