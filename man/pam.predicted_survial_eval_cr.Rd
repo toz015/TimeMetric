@@ -36,12 +36,15 @@ Valid options include:
   \item `"Pseudo_R_square"`
   \item `"R_square"`
   \item `"L_square"`
+  \item `"Pseudo_R2_point"`
+  \item `"R2_point"`
+  \item `"L2_point"`
   \item `"C_index"`
   \item `"Brier Score"`
   \item `"Time Dependent Auc"`
 }}
 
-\item{t_star}{Optional numeric value specifying a reference time for evaluating 
+\item{t_star}{Optional numeric value specifying a reference time for evaluating point-version Pseudo_R_square, 
 the Brier Score and Time-Dependent AUC. Defaults to the median of `event_time`.}
 
 \item{tau}{Optional numeric value specifying a restricted time horizon for model evaluation. 
