@@ -105,7 +105,6 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   if("Pseudo_R2_point" %in% metrics ||
      "R2_point" %in% metrics || 
      "L2_point" %in% metrics) {
-    
     r_p_list <- pam.censor.cr.point(ftime = event_time, 
                                     fstatus = status,
                                     tau = t_star, pred.cif = pred_cif[time_idx, ],
@@ -124,14 +123,15 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   
   pred_risk <- apply(pred_cif, 2, m_cif, time.cif=time.cif, tau=tau)
   
-  C_index <- C_cr(
-    time = event_time,
-    status = status,
-    predicted = pred_risk,
-    tau = tau,
-    Cause_int = event_type
-  )
+  
   if ("C_index" %in% metrics) {
+    C_index <- C_cr(
+      time = event_time,
+      status = status,
+      predicted = pred_risk,
+      tau = tau,
+      Cause_int = event_type
+    )
     metrics_results$"C_index" <- round(C_index, 4)
   }
   

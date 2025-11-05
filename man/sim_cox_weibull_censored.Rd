@@ -66,16 +66,16 @@ is skipped appropriately:
 \examples{
 # 1) Default: estimate sd=sd(logY), solve for mu to hit pi_c
 set.seed(1)
-d1 <- sim_cox_weibull_censored2(n = 500, pi_c = 0.30, v = 1.2, beta = c(0.4, -0.2))
+d1 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = c(0.4, -0.2))
 attr(d1, "mu"); attr(d1, "sd_log"); attr(d1, "pi_c_observed")
 
 # 2) Provide sd only: solve for mu using this sd
-d2 <- sim_cox_weibull_censored2(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, sd = 0.8)
+d2 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, sd = 0.8)
 
 # 3) Provide mu only: use mu, estimate sd = sd(logY)
-d3 <- sim_cox_weibull_censored2(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, mu = 1.5)
+d3 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, mu = 1.5)
 
 # 4) Provide both mu and sd: skip calibration entirely
-d4 <- sim_cox_weibull_censored2(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, mu = 1.5, sd = 0.7)
+d4 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, mu = 1.5, sd = 0.7)
 
 }
