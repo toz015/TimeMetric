@@ -220,7 +220,7 @@ pam.censor.cr <- function(ftime, fstatus, tau,
   
 
   out <- pam.censor(ftime.new, pred, fstatus.new)
-  
+
   out <- c(out, 
            Pseudo.R = format(round(as.numeric(out$R.squared) * 
                                      as.numeric(out$L.squared), 
@@ -425,9 +425,10 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
 #'   }
 #' @param metrics Character vector of metrics to compute (passed through to
 #'   \code{pam.predicted_survial_eval_cr()}); use \code{"all"} for all supported.
-#' @param t_star Optional numeric evaluation time (passed through).
-#' @param tau Optional numeric truncation time (passed through).
+#' @param t_star (Optional) evaluation time for Brier score, AUC, and point version R2. Default is median of observation time.
+#' @param tau (Optional) The maximum prediction time horizon for R2 and C index. Default is maximum of observation time.
 #' @param event_type Integer code for the cause of interest (passed through).
+#' @param digits Number of decimal places to round the metric values (default = 2).
 #'
 #' @return A data.frame with:
 #' \itemize{

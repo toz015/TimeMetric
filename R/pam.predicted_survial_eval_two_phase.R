@@ -40,7 +40,7 @@ km_surv <- function(t, km_cens) {
 #' @importFrom tibble tibble
 #' @importFrom purrr map2
 pam.predicted_survial_eval_two_phase <- function(pred_results, 
-                                                 t_star = NULL, tau = NULL, 
+                                                 t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 
                                                  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc")) {
   
@@ -149,13 +149,24 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
 #' calls `pam.predicted_survial_eval_two_phase()` for each and returns a wide
 #' comparison table with metrics as rows and model names as columns.
 #'
-#' @param models Named list. Each element must be a list with:
-#'   - `times` (numeric), `status` (0/1), `surv_prob` (matrix), `pred` (numeric)
+#' @param models A **named list** in which each element corresponds to a fitted model.  
+#'   Each model entry must itself be a list containing:
+#'   \itemize{
+#'     \item \code{times} — numeric vector of observed follow-up times.
+#'     \item \code{surv_prob} — an \eqn{n \times K} matrix (or data frame) of
+#'           subject-specific predicted survival probabilities on a common time grid.
+#'     \item \code{status} — event indicator (1 = event, 0 = censored).
+#'     \item \code{pred} — (optional) predicted mean survival time (restricted or unrestricted).
+#'     \item \code{new_data} — (optional) dataset used for prediction.
+#'     \item \code{covs} — character vector of covariate names used for prediction.
+#'     \item \code{model} — (optional) the underlying fitted survival model object.
+#'   }
+#'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.
 #' @param case_weights Numeric vector of Prentice (or other) sampling weights for all subjects.
-#' @param km_cens_fit A Kaplan–Meier fit for censoring used to compute IPCW.
+#' @param km_cens A Kaplan–Meier fit for censoring (based on training data) used to compute IPCW.
 #' @param metrics Character vector of metrics to compute (default shown below).
-#' @param t_star Optional evaluation time (global). If NULL, each model uses its median time.
-#' @param tau Optional truncation time (global). If NULL, each model uses its max time.
+#' @param t_star Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.
+#' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordence measure (default = 10e10).
 #' @param digits Integer number of decimal places to round values (default 2).
 #'
 #' @return A data.frame: rows = metrics, columns = model names.

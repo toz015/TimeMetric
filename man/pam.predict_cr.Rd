@@ -24,9 +24,11 @@ pam.predict_cr(
 
 \item{cr_model}{Optional competing risks random forest model object.}
 
+\item{tau}{The maximum time horizon for prediction.}
+
 \item{newdata}{A data frame containing observed event times (`time`), event indicators (`status`).}
 
-\item{event.type}{The event type of interest for which CIF is to be predicted (required for random forest model object).}
+\item{event.type}{The event type of interest for which CIF is to be predicted.}
 
 \item{covs}{A character vector specifying the names of the covariates used in the model.}
 }

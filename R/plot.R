@@ -123,7 +123,7 @@ plot_pred <- function(data,
 #' @param xlab,ylab Axis labels applied to all panels (defaults are "Risk Score" and "Days").
 #' @param label_name Character vector of labels for status legend (e.g., \code{c("censored", "event")}).
 #' @param levels Numeric vector for \code{status} level ordering.
-#' @param shape_style Numeric vector of plotting symbols (pch values) for censoring/event status.
+#' @param shape_style Numeric vector of plotting symbols for censoring/event status.
 #' @param legend_name Character string for the legend title (default = "status").
 #' @param sample_size Number. set it if you want to sample the number of points in your plot
 #' @param seed (option) random seed for sampling points. 

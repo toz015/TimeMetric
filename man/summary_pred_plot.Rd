@@ -43,7 +43,7 @@ if \code{NULL}, defaults to "Panel 1", "Panel 2", etc.}
 
 \item{levels}{Numeric vector for \code{status} level ordering.}
 
-\item{shape_style}{Numeric vector of plotting symbols (pch values) for censoring/event status.}
+\item{shape_style}{Numeric vector of plotting symbols for censoring/event status.}
 
 \item{sample_size}{Number. set it if you want to sample the number of points in your plot}
 

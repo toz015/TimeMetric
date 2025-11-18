@@ -25,11 +25,13 @@ pam.summary_cr(
 \item{metrics}{Character vector of metrics to compute (passed through to
 \code{pam.predicted_survial_eval_cr()}); use \code{"all"} for all supported.}
 
-\item{t_star}{Optional numeric evaluation time (passed through).}
+\item{t_star}{(Optional) evaluation time for Brier score, AUC, and point version R2. Default is median of observation time.}
 
-\item{tau}{Optional numeric truncation time (passed through).}
+\item{tau}{(Optional) The maximum prediction time horizon for R2 and C index. Default is maximum of observation time.}
 
 \item{event_type}{Integer code for the cause of interest (passed through).}
+
+\item{digits}{Number of decimal places to round the metric values (default = 2).}
 }
 \value{
 A data.frame with:

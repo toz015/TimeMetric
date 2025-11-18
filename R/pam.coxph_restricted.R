@@ -7,14 +7,24 @@
 #'
 #' @param model An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
 #' @param covs A character vector specifying the names of the covariates used in the model.
-#' @param tau (Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.
+#' @param tau (Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.
 #' @param new_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
-#' @param predict If true, return a list contains predicted survival probabilities.
-#' @return A list containing the following components:
-#' \item{R.squared}{The R-squared measure, quantifying the proportion of variability explained by the model.}
-#' \item{L.squared}{The L-squared measure, quantifying the proportion of prediction error explained by the corrected prediction.}
-#' \item{Psuedo.R}{A pseudo-R measure, calculated as the product of R-squared and L-squared.}
-#'
+#' @param predict A logical value indicating whether to return individual predictions. Default is TRUE.
+#' @return
+#' A **named list** of model-specific prediction objects.  
+#' Each element of the returned list corresponds to one fitted model and contains:
+#' \itemize{
+#'   \item \code{model} — the fitted survival model object.
+#'   \item \code{times} — numeric vector of observed follow-up times for the evaluation dataset.
+#'   \item \code{status} — event indicators (1 = event, 0 = censored).
+#'   \item \code{surv_prob} — an \eqn{n \times K} matrix of predicted
+#'         subject-specific survival probabilities on a common time grid.
+#'   \item \code{pred} — predicted mean survival time  
+#'         (restricted or unrestricted, depending on the function).
+#'   \item \code{covs} — character vector of covariate names used for prediction.
+#'   \item \code{new_data} — dataset on which the predictions were computed.
+#' }
+#' 
 #' @references
 #' Li, G., & Wang, X. (2016). Prediction Accuracy Measures for a Nonlinear Model and for Right-Censored Time-to-Event Data.
 #' arXiv preprint arXiv:1611.03063. Available at \url{https://arxiv.org/abs/1611.03063}.
@@ -47,7 +57,7 @@
 #'                                 covs = covs,
 #'                                 new_data = test_data) 
 #' @export
-pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predict = T) 
+pam.coxph_restricted <- function(model, covs, tau = 10e10, new_data = NULL, predict = T) 
 {
   if(is.null(new_data)){
       x.matrix.unsorted <- model$x
@@ -113,8 +123,10 @@ pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predi
   rm(my.Lambda2)
   
   # Truncate data if tau is provided
+  delta.origin <- delta
+  y.origin <- y
   if (!is.null(tau)) {
-    delta <- ifelse(y <= tau, delta, 0)
+    delta <- ifelse(y <= tau, delta, 1)
     y <- pmin(y, tau)
     y.input <- ifelse(tau > y, y, tau)
   } else {
@@ -134,8 +146,8 @@ pam.coxph_restricted <- function(model, covs, tau = NULL, new_data = NULL, predi
   t.predicted <- colSums(delta.t * S.hat.x)
   t.predicted2 <- integrate_survival(t(S.hat.x), t1, delta, tau) # restricted mean survival time
   if(predict){return(list(pred = t.predicted2, #t.predicted, 
-                          times = t1,
-                          status = delta,
+                          times = y.origin,
+                          status = delta.origin,
                           surv_prob = t(S.hat.x),
                           linear.pred = temp_rs,
                           model = model,

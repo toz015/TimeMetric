@@ -1,71 +1,92 @@
-#' Simulate Cox survival data with targeted (or fixed) censoring
+#' Simulate Cox survival data with optional interaction terms and targeted censoring
 #'
 #' @description
 #' Generates survival data under a Cox proportional hazards model with a Weibull
 #' baseline cumulative hazard \eqn{H_0(t) = (0.5 t)^v}. Event times are sampled via
-#' inverse-transform:
-#' \deqn{Y = H_0^{-1}(-\log U \cdot \exp(-\beta^T X)), \quad U \sim \mathrm{Unif}(0,1),}
-#' where \eqn{H_0^{-1}(s) = 2 s^{1/v}} and covariates \eqn{X_j = 10 \cdot \mathrm{Bernoulli}(0.5)}.
-#'
-#' Right censoring times are generated as \eqn{C_i = \exp(\mu + r_i)} with
-#' \eqn{r_i \sim \mathcal{N}(0, \mathrm{sd}^2)}. By default, \code{sd} is taken to be
-#' \eqn{\mathrm{sd}(\log Y)} and \code{mu} is calibrated so that the expected censoring
-#' proportion equals \code{pi_c}. If \code{mu} and/or \code{sd} are supplied, calibration
-#' is skipped appropriately:
+#' inverse transform:
+#' \deqn{Y = H_0^{-1}(-\log U \cdot \exp(-\beta^\top Z)), \quad U \sim \mathrm{Unif}(0,1),}
+#' where \eqn{H_0^{-1}(s) = 2 s^{1/v}}. 
+#' 
+#' Covariates are simulated from a standard normal distribution.
+#' When \code{interact = FALSE}, the design matrix \eqn{Z} contains only main effects.
+#' When \code{interact = TRUE}, the function automatically detects whether \code{length(beta)} 
+#' equals 3 or 7:
 #' \itemize{
-#'   \item \strong{mu and sd provided:} use them as-is (no solving).
-#'   \item \strong{sd provided only:} solve for \code{mu} using this \code{sd}.
-#'   \item \strong{mu provided only:} estimate \eqn{\mathrm{sd}(\log Y)} and use the given \code{mu}.
-#'   \item \strong{neither provided:} estimate \eqn{\mathrm{sd}(\log Y)} and solve for \code{mu}.
+#'   \item If \code{length(beta) = 3}, two covariates (\eqn{x_1, x_2}) and their 
+#'         two-way interaction (\eqn{x_1 x_2}) are included.
+#'   \item If \code{length(beta) = 7}, three covariates (\eqn{x_1, x_2, x_3}), 
+#'         their three two-way interactions (\eqn{x_1 x_2, x_1 x_3, x_2 x_3}), 
+#'         and their three-way interaction (\eqn{x_1 x_2 x_3}) are included.
 #' }
 #'
-#' @param n Integer. Number of individuals.
+#' Right-censoring times are generated as \eqn{C_i = \exp(\mu + r_i)} with 
+#' \eqn{r_i \sim \mathcal{N}(0, \mathrm{sd}^2)}. By default, \code{sd} is set to 
+#' \eqn{\mathrm{sd}(\log Y)}, and \code{mu} is calibrated so that the expected censoring 
+#' proportion equals \code{pi_c}. If \code{mu} and/or \code{sd} are supplied, calibration 
+#' is skipped accordingly:
+#' \itemize{
+#'   \item \strong{mu and sd provided:} use them directly (no calibration).
+#'   \item \strong{sd only:} solve for \code{mu} using the given \code{sd}.
+#'   \item \strong{mu only:} use the given \code{mu} and estimate \eqn{\mathrm{sd}(\log Y)}.
+#'   \item \strong{neither:} estimate both \eqn{\mathrm{sd}(\log Y)} and \code{mu}.
+#' }
+#'
+#' @param n Integer. Sample size.
 #' @param pi_c Numeric in \eqn{[0, 0.99]}. Target censoring proportion. Ignored if both
-#'   \code{mu} and \code{sd} are provided (since no calibration is done).
+#'   \code{mu} and \code{sd} are provided.
 #' @param v Positive numeric. Weibull shape in \eqn{H_0(t) = (0.5 t)^v}.
-#' @param beta Numeric vector of regression coefficients; length defines \eqn{p}.
-#'   Each covariate is \eqn{X_j = 10 \cdot \mathrm{Bernoulli}(0.5)}.
-#' @param mu Optional numeric. Mean of \eqn{\log C}. If supplied with \code{sd}, no
-#'   calibration is performed.
-#' @param sd Optional positive numeric. Standard deviation used for \eqn{r_i} in
+#' @param beta Numeric vector of regression coefficients. 
+#'   If \code{interact = FALSE}, its length defines the number of main effects. 
+#'   If \code{interact = TRUE}, its length must be either 3 (two main + one interaction) 
+#'   or 7 (three main + four interactions).
+#' @param mu Optional numeric. Mean of \eqn{\log C}. If supplied with \code{sd}, 
+#'   no calibration is performed.
+#' @param sd Optional positive numeric. Standard deviation used in 
 #'   \eqn{\log C = \mu + r_i}. If \code{NULL}, defaults to \eqn{\mathrm{sd}(\log Y)}.
 #' @param seed Optional integer seed for reproducibility.
+#' @param interact Logical (default \code{FALSE}). 
+#'   If \code{TRUE}, include pre-defined interaction terms as described above.
 #'
 #' @return A \code{data.frame} with columns:
 #' \itemize{
 #'   \item \code{time}: observed time \eqn{T_i = \min(Y_i, C_i)}.
 #'   \item \code{status}: event indicator \eqn{1\{Y_i \le C_i\}}.
-#'   \item \code{x1, x2, ...}: generated covariates.
+#'   \item \code{x1, x2, ...}: simulated covariates.
+#'   \item \code{x1:x2, x1:x3, ...}: interaction terms (if \code{interact = TRUE}).
 #'   \item \code{y_true}: latent event time \eqn{Y_i}.
 #'   \item \code{cens_time}: censoring time \eqn{C_i}.
 #' }
+#'
 #' Attributes include:
 #' \itemize{
 #'   \item \code{mu}: censoring shift used.
-#'   \item \code{sd_log}: sd used for \eqn{r_i} in \eqn{\log C}.
+#'   \item \code{sd_log}: standard deviation used in \eqn{\log C}.
 #'   \item \code{sd_logY}: \eqn{\mathrm{sd}(\log Y)} from the generated events.
 #'   \item \code{pi_c_target}: requested censoring rate.
-#'   \item \code{pi_c_observed}: realized censoring rate in the sample.
+#'   \item \code{pi_c_observed}: realized censoring rate.
 #'   \item \code{v}, \code{beta}: model parameters.
+#'   \item \code{interact}: logical flag indicating whether interactions were included.
+#'   \item \code{nonlinear}: logical flag indicating whether polynomial and interactions term were included.
 #' }
 #'
 #' @examples
-#' # 1) Default: estimate sd=sd(logY), solve for mu to hit pi_c
+#' # (1) Main effects only
 #' set.seed(1)
-#' d1 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = c(0.4, -0.2))
-#' attr(d1, "mu"); attr(d1, "sd_log"); attr(d1, "pi_c_observed")
+#' d0 <- sim_cox_weibull_censored(500, 0.3, v = 1.2, beta = c(0.4, -0.2))
 #'
-#' # 2) Provide sd only: solve for mu using this sd
-#' d2 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, sd = 0.8)
+#' # (2) Two covariates + their interaction
+#' d1 <- sim_cox_weibull_censored(500, 0.3, v = 1.2, 
+#'                                beta = c(0.5, -0.3, 0.2), 
+#'                                interact = TRUE)
 #'
-#' # 3) Provide mu only: use mu, estimate sd = sd(logY)
-#' d3 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, mu = 1.5)
-#'
-#' # 4) Provide both mu and sd: skip calibration entirely
-#' d4 <- sim_cox_weibull_censored(n = 500, pi_c = 0.30, v = 1.2, beta = 0.5, mu = 1.5, sd = 0.7)
+#' # (3) Three covariates + all two-way and three-way interactions
+#' b <- c(0.4, -0.2, 0.1, 0.15, -0.05, 0.08, 0.02)
+#' d2 <- sim_cox_weibull_censored(500, 0.3, v = 1.0, beta = b, interact = TRUE)
 #'
 #' @export
-sim_cox_weibull_censored <- function(n, pi_c, v, beta, mu = NULL, sd = NULL, seed = NULL) {
+sim_cox_weibull_censored <- function(n, pi_c, v, beta, mu = NULL, 
+                                     sd = NULL, seed = NULL, 
+                                     interact = FALSE, nonlinear = FALSE) {
   stopifnot(length(n) == 1L, n > 0, is.finite(n))
   stopifnot(length(v) == 1L, v > 0, is.finite(v))
   stopifnot(length(pi_c) == 1L, is.finite(pi_c), pi_c >= 0, pi_c < 1)
@@ -75,17 +96,49 @@ sim_cox_weibull_censored <- function(n, pi_c, v, beta, mu = NULL, sd = NULL, see
   
   if (!is.null(seed)) set.seed(seed)
   
-  p <- length(beta)
-  
-  # Generate covariates: X_j = 10 * Bernoulli(0.5)
-  # X <- matrix(rbinom(n * p, size = 1, prob = 0.5), nrow = n, ncol = p)
-  # Use normal covariates:
-  X <- matrix(rnorm(n * p, mean = 0, sd = 1), nrow = n, ncol = p)
-  colnames(X) <- paste0("x", seq_len(p))
+  # ----- Generate covariates -----
+  if ((!interact) & (!nonlinear)) {
+    p <- length(beta)
+    X <- matrix(rnorm(n * p, mean = 0, sd = 1), nrow = n, ncol = p)
+    colnames(X) <- paste0("x", seq_len(p))
+    Z <- X
+  } else if(nonlinear){
+    if (length(beta) == 4) {
+      X <- matrix(rnorm(n * 2, mean = 0, sd = 1), nrow = n, ncol = 2)
+      colnames(X) <- paste0("x", 1:2)
+      Z <- cbind(
+        X,
+        "x1:x2" = X[,1] * X[,2],
+        "x1^2" = X[,1] * X[,1]
+      )
+    } else {
+      stop("When nonlinear = TRUE, length(beta) must be 4 (X1, X2, x1:x2, X2^2).")
+    }
+  } else {
+    if (length(beta) == 3) {
+      # 2 covariates + 1 two-way interaction
+      X <- matrix(rnorm(n * 2, mean = 0, sd = 1), nrow = n, ncol = 2)
+      colnames(X) <- c("x1", "x2")
+      Z <- cbind(X, "x1:x2" = X[,1] * X[,2])
+    } else if (length(beta) == 7) {
+      # 3 covariates + all two-way + three-way interactions
+      X <- matrix(rnorm(n * 3, mean = 0, sd = 1), nrow = n, ncol = 3)
+      colnames(X) <- c("x1", "x2", "x3")
+      Z <- cbind(
+        X,
+        "x1:x2" = X[,1] * X[,2],
+        "x1:x3" = X[,1] * X[,3],
+        "x2:x3" = X[,2] * X[,3],
+        "x1:x2:x3" = X[,1] * X[,2] * X[,3]
+      )
+    } else {
+      stop("When interact = TRUE, length(beta) must be 3 (2 vars + 1 interaction) or 7 (3 vars + 4 interactions).")
+    }
+  }
   
   # Event times: Y = H0^{-1}(-log U * exp(-eta)), H0^{-1}(s) = 2 * s^{1/v}
   U <- stats::runif(n)
-  eta <- as.numeric(X %*% beta)
+  eta <- as.numeric(Z %*% beta)
   s <- -log(U) * exp(-eta)
   Y <- 2 * (s)^(1 / v)
   

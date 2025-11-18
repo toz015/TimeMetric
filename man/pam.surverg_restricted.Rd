@@ -4,24 +4,33 @@
 \alias{pam.surverg_restricted}
 \title{Prediction Accuracy Measures for Parametric Survival Regression Models}
 \usage{
-pam.surverg_restricted(model, covs, tau = NULL, new_data = NULL, predict = T)
+pam.surverg_restricted(model, covs, tau = 1e+11, new_data = NULL, predict = T)
 }
 \arguments{
 \item{model}{An object of class survreg representing a fitted parametric survival regression model. The survreg call must include x = TRUE and y = TRUE to ensure the design matrix and response vector are stored in the model object.}
 
-\item{covs}{A vector of covariate names to be used for prediction when newdata is provided.}
+\item{covs}{A vector of covariate names to be used for prediction when new_data is provided.}
 
-\item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
+\item{tau}{(Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.}
 
 \item{new_data}{(Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in model.}
 
-\item{predict}{(Optional) A logical value indicating whether to return individual predictions. Default is FALSE.}
+\item{predict}{(Optional) A logical value indicating whether to return individual predictions. Default is TRUE.}
 }
 \value{
-A list containing three components:
-- R.squared: The R-squared measure, quantifying the explained variability in the response.
-- L.squared: The L-squared measure, quantifying the reduction in prediction error.
-- Psuedo.R: A pseudo R-squared measure, calculated as the product of R-squared and L-squared.
+A **named list** of model-specific prediction objects.  
+Each element of the returned list corresponds to one fitted model and contains:
+\itemize{
+  \item \code{model} — the fitted survival model object.
+  \item \code{times} — numeric vector of observed follow-up times for the evaluation dataset.
+  \item \code{status} — event indicators (1 = event, 0 = censored).
+  \item \code{surv_prob} — an \eqn{n \times K} matrix of predicted
+        subject-specific survival probabilities on a common time grid.
+  \item \code{pred} — predicted mean survival time  
+        (restricted or unrestricted, depending on the function).
+  \item \code{covs} — character vector of covariate names used for prediction.
+  \item \code{new_data} — dataset on which the predictions were computed.
+}
 }
 \description{
 This function computes Calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^2$ for evaluating the predictive accuracy of parametric survival regression models. 

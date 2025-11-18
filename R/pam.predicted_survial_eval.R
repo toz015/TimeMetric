@@ -61,25 +61,29 @@
 #'
 #' @export
 
-pam.predicted_survial_eval <- function (model, event_time, predicted_probability, 
+pam.predicted_survial_eval <- function (model, event_time, 
+                                        predicted_probability, 
                                         pred_mean_survival = NULL,
                                         status, covariates, new_data = NULL,
                                         metrics = NULL,  t_star = NULL, tau = NULL) 
 {
   
-  if (missing(covariates) || missing(new_data)) {
-    stop("Please provide 'new_data',  and 'covariates' arguments.")
-  }
+  #if (missing(covariates) || missing(new_data)) {
+  #  stop("Please provide 'new_data',  and 'covariates' arguments.")
+  #}
   
   
   
   metrics_results <- list()
   
   valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
+                     "Pseudo_R2_point", "R2_point", "L2_point",
                      "Harrell’s C", "Uno’s C",
                       "R_E","R_sh", "Brier Score", "Time Dependent Auc")
-  default_metrics <- c("Pseudo_R_square", "Harrell’s C", "Uno’s C",
+  default_metrics <- c("Pseudo_R_square", "Pseudo_R2_point",
+                       "Harrell’s C", "Uno’s C",
                        "R_E","R_sh", "Brier Score", "Time Dependent Auc")
+  
   if (is.null(metrics)){
     metrics <- default_metrics
   }
@@ -91,13 +95,23 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
       stop("Invalid metrics: ", paste(invalid, collapse = ", "))
   }
   
+  y.order <- order(event_time)
+  event_time <- event_time[y.order]
+  predicted_probability <- predicted_probability[y.order, ]
+  status <- status[y.order]
   
   if(is.null(pred_mean_survival)){
     predicted_data <- integrate_survival(
       predicted_probability, event_time, status, tau)
   }else{
-    predicted_data <- pred_mean_survival
+    predicted_data <- pred_mean_survival[y.order]
   }
+  
+  #lp.pred <- predict(model, newdata = new_data, type="lp")
+  #if(inherits(model, "coxph")){
+  #  lp.pred <- -predict(model, newdata = new_data, type="lp")
+  #}
+  
   
   #print(predicted_data)
   if (is.null(t_star)) t_star <- quantile(event_time, 0.5)
@@ -120,16 +134,41 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
     metrics_results$L_square <- round(r_l_list$L_square, 4)
   }
   
+  if("Pseudo_R2_point" %in% metrics ||
+     "R2_point" %in% metrics || 
+     "L2_point" %in% metrics) {
+    i.obs <- ifelse(event_time < t_star & status == 1, 1, 0)
+    i.predict <- predicted_probability[, t_idx]
+    restricted <- restricted_data_gen(event_time, status, t_star)
+    event_time.R2.point <- restricted$time
+    status.R2.point <- restricted$status
+    r_l_p <- pam.censor.point(i.obs = i.obs, i.predict = i.predict,
+                              y = event_time.R2.point, delta = status.R2.point)
+  }
+
+  if ("Pseudo_R2_point" %in% metrics) {
+    metrics_results$Pseudo_R2_point <- round(as.numeric(r_l_p$R.squared) * 
+                                               as.numeric(r_l_p$L.square), 4)
+  } 
+  if ("R2_point" %in% metrics) {
+    metrics_results$R2_point <- round(as.numeric(r_l_p$R.squared),4)
+  }
+  if ("L2_point" %in% metrics) {
+    metrics_results$L2_point <- round(as.numeric(r_l_p$L.square), 4)
+  }
+  
   if ("Harrell’s C" %in% metrics) {
     metrics_results$"Harrell’s C" <- round(
       concordancefit(y = Surv(event_time, status), 
-                     x = predicted_data, reverse = FALSE)$concordance, 4)
+                     x = predicted_data, 
+                     reverse = FALSE)$concordance, 4)
   }
   
   if ("Uno’s C" %in% metrics) {
     metrics_results$"Uno’s C" <- round(
       concordancefit(y = Surv(event_time, status), 
-                     x = predicted_data, reverse = FALSE, 
+                     x = predicted_data, ymax = tau,
+                     reverse = FALSE, 
                      timewt = "n/G2")$concordance, 4)
   }
   
@@ -179,9 +218,14 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
     }
   }
   if ("R_E" %in% metrics) {
-   #metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
-    metrics_results$"R_E" <- pam.summary.rsph(pam.rsph(model, test_data = new_data),
-                                              times = tau)$Rti
+    if (is.null(model)) {
+      message("Unrecognized model type for R_E method. Returning NA.")
+      metrics_results$"R_E" <- NA
+    }else{
+      #metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
+      metrics_results$"R_E" <- pam.summary.rsph(pam.rsph(model, test_data = new_data),
+                                                times = tau)$Rti
+    }
   }
   
   if ("Brier Score" %in% metrics) {
@@ -212,6 +256,7 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
     ))
     metrics_results$"Time Dependent Auc" <- round(AUC_result$main_res$AUC.empirical, 4)
   }
+
   result_df <- data.frame(
     Metric = names(metrics_results),
     Value = unlist(metrics_results, use.names = FALSE),
@@ -228,16 +273,22 @@ pam.predicted_survial_eval <- function (model, event_time, predicted_probability
 #' outputs a wide table: each row corresponds to one metric and each column
 #' corresponds to a model.
 #'
-#' @param models A **named list** where each element is a list with:
-#' \itemize{
-#'   \item \code{times} — numeric vector of observed times.
-#'   \item \code{surv_prob} — \eqn{n \times K} matrix (or data frame) of
-#'         subject-specific survival probabilities on a common time grid.
-#'   \item \code{status} — 0/1 event indicator (1 = event, 0 = censored).
-#' }
+#' @param models A **named list** in which each element corresponds to a fitted model.  
+#'   Each model entry must itself be a list containing:
+#'   \itemize{
+#'     \item \code{times} — numeric vector of observed follow-up times.
+#'     \item \code{surv_prob} — an \eqn{n \times K} matrix (or data frame) of
+#'           subject-specific predicted survival probabilities on a common time grid.
+#'     \item \code{status} — event indicator (1 = event, 0 = censored).
+#'     \item \code{pred} — (optional) predicted mean survival time (restricted or unrestricted).
+#'     \item \code{new_data} — (optional) dataset used for prediction.
+#'     \item \code{covs} — character vector of covariate names used for prediction.
+#'     \item \code{model} — (optional) the underlying fitted survival model object.
+#'   }
+#'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.
 #' @param metrics Optional character vector of metrics to compute (passed through).
-#' @param t_star Optional numeric scalar, passed to \code{pam.predicted_survial_eval()}.
-#' @param tau Optional numeric scalar, passed to \code{pam.predicted_survial_eval()} (default = 10e10).
+#' @param t_star Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.
+#' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordence measure (default = 10e10).
 #' @param digits Number of decimal places to round the metric values (default = 2).
 #'
 #' @return A data frame with:
@@ -312,6 +363,9 @@ pam.summary <- function(models,
     "Pseudo_R_square",
     "R_square",
     "L_square",
+    "Pseudo_R2_point", 
+    "R2_point", 
+    "L2_point",
     "Harrell’s C",
     "Uno’s C",
     "R_sh",
@@ -319,7 +373,7 @@ pam.summary <- function(models,
     "Brier Score",
     "Time Dependent Auc"
   )
-  
+
   res_wide$Metric <- factor(res_wide$Metric, levels = preferred_order)
   res_wide <- res_wide[order(res_wide$Metric), ]
   res_wide$Metric <- as.character(res_wide$Metric)
@@ -361,7 +415,11 @@ integrate_survival <- function(predicted_probability, event_time, status, tau = 
   if (any(predicted_probability < 0 | predicted_probability > 1, na.rm = TRUE)) {
     stop("All predicted probabilities must be between 0 and 1")
   }
-  
+  if (!is.null(tau)) {
+    restricted <- restricted_data_gen(event_time, status, tau)
+    event_time <- restricted$time
+    status <- restricted$status
+  }
   if (is.null(tau)) {
     tau <- max(event_time, na.rm = TRUE)
   }
