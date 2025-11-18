@@ -4,24 +4,33 @@
 \alias{pam.coxph_restricted}
 \title{Prediction Accuracy Measures for Cox Proportional Hazards Model}
 \usage{
-pam.coxph_restricted(model, covs, tau = NULL, new_data = NULL, predict = T)
+pam.coxph_restricted(model, covs, tau = 1e+11, new_data = NULL, predict = T)
 }
 \arguments{
 \item{model}{An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.}
 
 \item{covs}{A character vector specifying the names of the covariates used in the model.}
 
-\item{tau}{(Optional) A numeric value specifying a time horizon for truncating the observed survival times. If provided, the function calculates metrics up to time `tau`.}
+\item{tau}{(Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.}
 
 \item{new_data}{(Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.}
 
-\item{predict}{If true, return a list contains predicted survival probabilities.}
+\item{predict}{A logical value indicating whether to return individual predictions. Default is TRUE.}
 }
 \value{
-A list containing the following components:
-\item{R.squared}{The R-squared measure, quantifying the proportion of variability explained by the model.}
-\item{L.squared}{The L-squared measure, quantifying the proportion of prediction error explained by the corrected prediction.}
-\item{Psuedo.R}{A pseudo-R measure, calculated as the product of R-squared and L-squared.}
+A **named list** of model-specific prediction objects.  
+Each element of the returned list corresponds to one fitted model and contains:
+\itemize{
+  \item \code{model} — the fitted survival model object.
+  \item \code{times} — numeric vector of observed follow-up times for the evaluation dataset.
+  \item \code{status} — event indicators (1 = event, 0 = censored).
+  \item \code{surv_prob} — an \eqn{n \times K} matrix of predicted
+        subject-specific survival probabilities on a common time grid.
+  \item \code{pred} — predicted mean survival time  
+        (restricted or unrestricted, depending on the function).
+  \item \code{covs} — character vector of covariate names used for prediction.
+  \item \code{new_data} — dataset on which the predictions were computed.
+}
 }
 \description{
 This function calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^2$, for a Cox proportional hazards model. When predict = TRUE, 

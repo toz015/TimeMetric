@@ -1,0 +1,512 @@
+event_time = event_time,
+time.cif   = time.cif,
+status     = status,
+metrics    = "Pseudo_R2_point",
+t_star     = t_star,
+tau        = tau,
+event_type = event_type
+)
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+library(survival)
+library(TimeMetric)
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(stringr)
+### train data
+sim_model <- expand.grid(v = 1/c(0.5, 1, 1.5, 2),
+beta = c(0.5, 0.7, 1, 1.5))
+sim_model$model <- 1:dim(sim_model)[1]
+apply(sim_model, 1, function(x){
+sim_cox_weibull_censored(n = 10000, pi_c = 0.00,
+v = x[1], beta = x[2]*c(1, -1),
+seed = x[3]) -> df
+m.cox <- coxph(Surv(time, status) ~., data = df, x = T, y = T)
+return(list(m.cox = m.cox, model = x[3]))
+}) -> model_list
+### test data
+sim_table <- expand.grid(v = 1/c(0.5, 1, 1.5, 2),
+beta = c(0.5, 0.7, 1, 1.5),
+index = c(1:100))
+sim_table$index <- 1:dim(sim_table)[1]
+sim_table <- left_join(sim_table, sim_model, by = c("v", "beta"))
+apply(sim_table, 1, function(x){
+sim_cox_weibull_censored(n = 3000, pi_c = 0.00,
+v = x[1], beta = x[2]*c(1, -1),
+seed = x[3]) -> df
+return(list(df=df, index = x[3], model = x[4]))
+}) -> data_list
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+View(ref_output)
+ref_output <- read_csv("paper.sim3_table.csv")
+View(ref_output)
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+View(ref_output)
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+left_join(ref_output, by = "Metric") %>%
+mutate(bias = value - ref)
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore, quantile))
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+left_join(ref_output, by = "Metric") %>%
+mutate(bias = value - ref)
+View(sample_output)
+View(ref_output)
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+left_join(ref_output, by = c("Metric", "quantile")) %>%
+mutate(bias = value - ref)
+# 1) Choose the metrics to include (and their order)
+metrics_to_plot <- c("Pseudo_R_square", "Brier Score", "R_E",  #"R_sh",
+"Harrell’s C", "Uno’s C", "Time Dependent Auc")
+# 2) Pretty labels (mix of strings + plotmath expressions is fine)
+metric_pretty <- list(
+"Pseudo_R_square"   = expression("Pseudo R"^2),
+"Brier Score"       = "Brier score",
+#"R_sh"              = expression(R[sh]),
+"R_E"               = expression(R[E]),
+"Harrell’s C"       = "Harrell’s C",
+"Uno’s C"           = "Uno’s C",
+"Time Dependent Auc"= "AUC"
+)
+df <- sample_output %>%
+filter(Metric %in% metrics_to_plot) %>%
+mutate(
+Metric = factor(Metric, levels = metrics_to_plot),
+cens_pct = paste0(round(censore * 100), "%"),
+n = as.numeric(n)
+)
+View(df)
+y_limits <- df %>%
+dplyr::group_by(Metric) %>%
+dplyr::summarise(
+ymin = min(bias, na.rm = TRUE),
+ymax = max(bias, na.rm = TRUE),
+.groups = "drop"
+) %>%
+dplyr::mutate(Metric = as.character(Metric))
+metrics <- levels(df$Metric)
+cens_levels <- sort(unique(df$censore))
+row_tags <- letters[seq_along(cens_levels)]
+row_labels <- paste0("(", row_tags, ") censoring ",
+paste0(round(cens_levels * 100), "%"))
+# ---- Update the small-plot maker to use pretty labels ----
+make_metric_boxplot <- function(dat, metric_name, show_xlab = FALSE, show_ylab = TRUE) {
+m_chr <- as.character(metric_name)
+lim_row <- y_limits[y_limits$Metric == m_chr, ]
+ylims   <- c(lim_row$ymin, lim_row$ymax)
+# Pick pretty label (expression or string)
+y_lab <- if (show_ylab) metric_pretty[[m_chr]] else NULL
+ggplot(dat %>% dplyr::filter(Metric == metric_name),
+aes(x = factor(n), y = bias)) +
+geom_hline(yintercept = 0, linetype = "dashed") +
+geom_boxplot(outliers = FALSE, width = 0.6) +
+scale_y_continuous(limits = ylims, expand = expansion(mult = c(0.05, 0.05))) +
+labs(
+x = if (show_xlab) "Sample size n" else NULL,
+y = y_lab
+) +
+theme_bw(base_size = 12) +
+theme(
+panel.grid.minor = element_blank(),
+plot.margin = margin(6, 6, 6, 6),
+axis.title.y = if (show_ylab) element_text() else element_blank()
+)
+}
+# ---- Update the small-plot maker to use pretty labels ----
+make_metric_boxplot <- function(dat, metric_name, show_xlab = FALSE, show_ylab = TRUE) {
+m_chr <- as.character(metric_name)
+lim_row <- y_limits[y_limits$Metric == m_chr, ]
+ylims   <- c(lim_row$ymin, lim_row$ymax)
+# Pick pretty label (expression or string)
+y_lab <- if (show_ylab) metric_pretty[[m_chr]] else NULL
+ggplot(dat %>% dplyr::filter(Metric == metric_name),
+aes(x = factor(n), y = bias, group = quantile)) +
+geom_hline(yintercept = 0, linetype = "dashed") +
+geom_boxplot(outliers = FALSE, width = 0.6) +
+scale_y_continuous(limits = ylims, expand = expansion(mult = c(0.05, 0.05))) +
+labs(
+x = if (show_xlab) "Sample size n" else NULL,
+y = y_lab
+) +
+theme_bw(base_size = 12) +
+theme(
+panel.grid.minor = element_blank(),
+plot.margin = margin(6, 6, 6, 6),
+axis.title.y = if (show_ylab) element_text() else element_blank()
+)
+}
+# --- Assemble all rows ---
+row_grobs <- lapply(seq_along(cens_levels), function(i) {
+# For the last row, show x-axis labels; otherwise, hide them
+show_xlab <- (i == length(cens_levels))
+# Modify make_metric_boxplot call to accept show_xlab info
+build_row_mod <- function(cens_val, row_lab, show_xlab_row) {
+row_data <- df %>% dplyr::filter(censore == cens_val)
+lab_plot <- ggplot() +
+annotate("text",
+x = 0, y = 1, label = row_lab,
+hjust = -0.2, vjust = -1.5,
+fontface = "bold", size = 4.8) +
+xlim(0, 1) + ylim(0, 1) +
+coord_cartesian(clip = "off") +
+theme_void(base_size = 12) +
+theme(plot.margin = margin(t = 22, r = 16, b = 4, l = 14))
+mid_id <- ceiling(length(metrics) / 2)
+metric_plots <- lapply(seq_along(metrics), function(i) {
+make_metric_boxplot(
+dat = row_data,
+metric_name = metrics[i],
+show_xlab = show_xlab_row && (i == mid_id)
+)
+})
+patchwork::wrap_plots(
+c(list(lab_plot), metric_plots),
+ncol = length(metrics) + 1,
+widths = c(0.1, rep(1, length(metrics)))
+)
+}
+build_row_mod(cens_levels[i], row_labels[i], show_xlab)
+})
+# --- Combine ---
+big_figure <- Reduce(`/`, row_grobs) +
+plot_layout(heights = rep(1, length(row_grobs))) &
+theme(legend.position = "none")
+big_figure
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+left_join(ref_output, by = c("Metric", "quantile")) %>%
+mutate(bias = value - ref, quantile = as.factor(quantile))
+# --- Data prep ---
+# 1) Choose the metrics to include (and their order)
+metrics_to_plot <- c("Pseudo_R_square", "Brier Score", "R_E",  #"R_sh",
+"Harrell’s C", "Uno’s C", "Time Dependent Auc")
+# 2) Pretty labels (mix of strings + plotmath expressions is fine)
+metric_pretty <- list(
+"Pseudo_R_square"   = expression("Pseudo R"^2),
+"Brier Score"       = "Brier score",
+#"R_sh"              = expression(R[sh]),
+"R_E"               = expression(R[E]),
+"Harrell’s C"       = "Harrell’s C",
+"Uno’s C"           = "Uno’s C",
+"Time Dependent Auc"= "AUC"
+)
+df <- sample_output %>%
+filter(Metric %in% metrics_to_plot) %>%
+mutate(
+Metric = factor(Metric, levels = metrics_to_plot),
+cens_pct = paste0(round(censore * 100), "%"),
+n = as.numeric(n)
+)
+y_limits <- df %>%
+dplyr::group_by(Metric) %>%
+dplyr::summarise(
+ymin = min(bias, na.rm = TRUE),
+ymax = max(bias, na.rm = TRUE),
+.groups = "drop"
+) %>%
+dplyr::mutate(Metric = as.character(Metric))
+metrics <- levels(df$Metric)
+cens_levels <- sort(unique(df$censore))
+row_tags <- letters[seq_along(cens_levels)]
+row_labels <- paste0("(", row_tags, ") censoring ",
+paste0(round(cens_levels * 100), "%"))
+# ---- Update the small-plot maker to use pretty labels ----
+make_metric_boxplot <- function(dat, metric_name, show_xlab = FALSE, show_ylab = TRUE) {
+m_chr <- as.character(metric_name)
+lim_row <- y_limits[y_limits$Metric == m_chr, ]
+ylims   <- c(lim_row$ymin, lim_row$ymax)
+# Pick pretty label (expression or string)
+y_lab <- if (show_ylab) metric_pretty[[m_chr]] else NULL
+ggplot(dat %>% dplyr::filter(Metric == metric_name),
+aes(x = factor(n), y = bias, group = quantile, color = quantile)) +
+geom_hline(yintercept = 0, linetype = "dashed") +
+geom_boxplot(outliers = FALSE, width = 0.6) +
+scale_y_continuous(limits = ylims, expand = expansion(mult = c(0.05, 0.05))) +
+labs(
+x = if (show_xlab) "Sample size n" else NULL,
+y = y_lab
+) +
+theme_bw(base_size = 12) +
+theme(
+panel.grid.minor = element_blank(),
+plot.margin = margin(6, 6, 6, 6),
+axis.title.y = if (show_ylab) element_text() else element_blank()
+)
+}
+# --- Assemble all rows ---
+row_grobs <- lapply(seq_along(cens_levels), function(i) {
+# For the last row, show x-axis labels; otherwise, hide them
+show_xlab <- (i == length(cens_levels))
+# Modify make_metric_boxplot call to accept show_xlab info
+build_row_mod <- function(cens_val, row_lab, show_xlab_row) {
+row_data <- df %>% dplyr::filter(censore == cens_val)
+lab_plot <- ggplot() +
+annotate("text",
+x = 0, y = 1, label = row_lab,
+hjust = -0.2, vjust = -1.5,
+fontface = "bold", size = 4.8) +
+xlim(0, 1) + ylim(0, 1) +
+coord_cartesian(clip = "off") +
+theme_void(base_size = 12) +
+theme(plot.margin = margin(t = 22, r = 16, b = 4, l = 14))
+mid_id <- ceiling(length(metrics) / 2)
+metric_plots <- lapply(seq_along(metrics), function(i) {
+make_metric_boxplot(
+dat = row_data,
+metric_name = metrics[i],
+show_xlab = show_xlab_row && (i == mid_id)
+)
+})
+patchwork::wrap_plots(
+c(list(lab_plot), metric_plots),
+ncol = length(metrics) + 1,
+widths = c(0.1, rep(1, length(metrics)))
+)
+}
+build_row_mod(cens_levels[i], row_labels[i], show_xlab)
+})
+# --- Combine ---
+big_figure <- Reduce(`/`, row_grobs) +
+plot_layout(heights = rep(1, length(row_grobs))) &
+theme(legend.position = "none")
+big_figure
+# Save figure
+ggsave("paper.fig6.pdf", big_figure, width = 15, height = 7, dpi = 300)
+View(sample_output)
+View(df)
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+left_join(ref_output, by = c("Metric", "quantile")) %>%
+mutate(bias = value - ref, quantile = as.factor(quantile))
+# --- Data prep ---
+# 1) Choose the metrics to include (and their order)
+metrics_to_plot <- c("Pseudo_R_square", "Brier Score", "R_E",  #"R_sh",
+"Harrell’s C", "Uno’s C", "Time Dependent Auc")
+# 2) Pretty labels (mix of strings + plotmath expressions is fine)
+metric_pretty <- list(
+"Pseudo_R_square"   = expression("Pseudo R"^2),
+"Brier Score"       = "Brier score",
+#"R_sh"              = expression(R[sh]),
+"R_E"               = expression(R[E]),
+"Harrell’s C"       = "Harrell’s C",
+"Uno’s C"           = "Uno’s C",
+"Time Dependent Auc"= "AUC"
+)
+df <- sample_output %>%
+filter(Metric %in% metrics_to_plot) %>%
+mutate(
+Metric = factor(Metric, levels = metrics_to_plot),
+cens_pct = paste0(round(censore * 100), "%"),
+n = as.numeric(n)
+)
+y_limits <- df %>%
+dplyr::group_by(Metric) %>%
+dplyr::summarise(
+ymin = min(bias, na.rm = TRUE),
+ymax = max(bias, na.rm = TRUE),
+.groups = "drop"
+) %>%
+dplyr::mutate(Metric = as.character(Metric))
+metrics <- levels(df$Metric)
+cens_levels <- sort(unique(df$censore))
+row_tags <- letters[seq_along(cens_levels)]
+row_labels <- paste0("(", row_tags, ") censoring ",
+paste0(round(cens_levels * 100), "%"))
+# ---- Update the small-plot maker to use pretty labels ----
+make_metric_boxplot <- function(dat, metric_name, show_xlab = FALSE, show_ylab = TRUE) {
+m_chr <- as.character(metric_name)
+lim_row <- y_limits[y_limits$Metric == m_chr, ]
+ylims   <- c(lim_row$ymin, lim_row$ymax)
+# Pick pretty label (expression or string)
+y_lab <- if (show_ylab) metric_pretty[[m_chr]] else NULL
+ggplot(dat %>% dplyr::filter(Metric == metric_name),
+aes(x = factor(n), y = bias, color = quantile)) +
+geom_hline(yintercept = 0, linetype = "dashed") +
+geom_boxplot(outliers = FALSE, width = 0.6) +
+scale_y_continuous(limits = ylims,
+expand = expansion(mult = c(0.05, 0.05))) +
+labs(
+x = if (show_xlab) "Sample size n" else NULL,
+y = y_lab
+) +
+theme_bw(base_size = 12) +
+theme(
+panel.grid.minor = element_blank(),
+plot.margin = margin(6, 6, 6, 6),
+axis.title.y = if (show_ylab) element_text() else element_blank()
+)
+}
+# --- Assemble all rows ---
+row_grobs <- lapply(seq_along(cens_levels), function(i) {
+# For the last row, show x-axis labels; otherwise, hide them
+show_xlab <- (i == length(cens_levels))
+# Modify make_metric_boxplot call to accept show_xlab info
+build_row_mod <- function(cens_val, row_lab, show_xlab_row) {
+row_data <- df %>% dplyr::filter(censore == cens_val)
+lab_plot <- ggplot() +
+annotate("text",
+x = 0, y = 1, label = row_lab,
+hjust = -0.2, vjust = -1.5,
+fontface = "bold", size = 4.8) +
+xlim(0, 1) + ylim(0, 1) +
+coord_cartesian(clip = "off") +
+theme_void(base_size = 12) +
+theme(plot.margin = margin(t = 22, r = 16, b = 4, l = 14))
+mid_id <- ceiling(length(metrics) / 2)
+metric_plots <- lapply(seq_along(metrics), function(i) {
+make_metric_boxplot(
+dat = row_data,
+metric_name = metrics[i],
+show_xlab = show_xlab_row && (i == mid_id)
+)
+})
+patchwork::wrap_plots(
+c(list(lab_plot), metric_plots),
+ncol = length(metrics) + 1,
+widths = c(0.1, rep(1, length(metrics)))
+)
+}
+build_row_mod(cens_levels[i], row_labels[i], show_xlab)
+})
+# --- Combine ---
+big_figure <- Reduce(`/`, row_grobs) +
+plot_layout(heights = rep(1, length(row_grobs))) &
+theme(legend.position = "none")
+big_figure
+# Save figure
+ggsave("paper.fig6.pdf", big_figure, width = 15, height = 7, dpi = 300)
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+group_by(Metric, n, censore, quantile) %>%
+summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>%
+filter(n == 3000, censore == 0) %>%
+select(-c(n, censore))
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+left_join(ref_output, by = c("Metric", "quantile")) %>%
+mutate(bias = value - ref, quantile = factor(quantile, levels = c(90, 50)))
+# --- Data prep ---
+# 1) Choose the metrics to include (and their order)
+metrics_to_plot <- c("Pseudo_R_square", "Brier Score", "R_E",  #"R_sh",
+"Harrell’s C", "Uno’s C", "Time Dependent Auc")
+# 2) Pretty labels (mix of strings + plotmath expressions is fine)
+metric_pretty <- list(
+"Pseudo_R_square"   = expression("Pseudo R"^2),
+"Brier Score"       = "Brier score",
+#"R_sh"              = expression(R[sh]),
+"R_E"               = expression(R[E]),
+"Harrell’s C"       = "Harrell’s C",
+"Uno’s C"           = "Uno’s C",
+"Time Dependent Auc"= "AUC"
+)
+df <- sample_output %>%
+filter(Metric %in% metrics_to_plot) %>%
+mutate(
+Metric = factor(Metric, levels = metrics_to_plot),
+cens_pct = paste0(round(censore * 100), "%"),
+n = as.numeric(n)
+)
+y_limits <- df %>%
+dplyr::group_by(Metric) %>%
+dplyr::summarise(
+ymin = min(bias, na.rm = TRUE),
+ymax = max(bias, na.rm = TRUE),
+.groups = "drop"
+) %>%
+dplyr::mutate(Metric = as.character(Metric))
+metrics <- levels(df$Metric)
+cens_levels <- sort(unique(df$censore))
+row_tags <- letters[seq_along(cens_levels)]
+row_labels <- paste0("(", row_tags, ") censoring ",
+paste0(round(cens_levels * 100), "%"))
+# ---- Update the small-plot maker to use pretty labels ----
+make_metric_boxplot <- function(dat, metric_name, show_xlab = FALSE, show_ylab = TRUE) {
+m_chr <- as.character(metric_name)
+lim_row <- y_limits[y_limits$Metric == m_chr, ]
+ylims   <- c(lim_row$ymin, lim_row$ymax)
+# Pick pretty label (expression or string)
+y_lab <- if (show_ylab) metric_pretty[[m_chr]] else NULL
+ggplot(dat %>% dplyr::filter(Metric == metric_name),
+aes(x = factor(n), y = bias, color = quantile)) +
+geom_hline(yintercept = 0, linetype = "dashed") +
+geom_boxplot(outliers = FALSE, width = 0.6) +
+scale_y_continuous(limits = ylims,
+expand = expansion(mult = c(0.05, 0.05))) +
+labs(
+x = if (show_xlab) "Sample size n" else NULL,
+y = y_lab
+) +
+theme_bw(base_size = 12) +
+theme(
+panel.grid.minor = element_blank(),
+plot.margin = margin(6, 6, 6, 6),
+axis.title.y = if (show_ylab) element_text() else element_blank()
+)
+}
+# --- Assemble all rows ---
+row_grobs <- lapply(seq_along(cens_levels), function(i) {
+# For the last row, show x-axis labels; otherwise, hide them
+show_xlab <- (i == length(cens_levels))
+# Modify make_metric_boxplot call to accept show_xlab info
+build_row_mod <- function(cens_val, row_lab, show_xlab_row) {
+row_data <- df %>% dplyr::filter(censore == cens_val)
+lab_plot <- ggplot() +
+annotate("text",
+x = 0, y = 1, label = row_lab,
+hjust = -0.2, vjust = -1.5,
+fontface = "bold", size = 4.8) +
+xlim(0, 1) + ylim(0, 1) +
+coord_cartesian(clip = "off") +
+theme_void(base_size = 12) +
+theme(plot.margin = margin(t = 22, r = 16, b = 4, l = 14))
+mid_id <- ceiling(length(metrics) / 2)
+metric_plots <- lapply(seq_along(metrics), function(i) {
+make_metric_boxplot(
+dat = row_data,
+metric_name = metrics[i],
+show_xlab = show_xlab_row && (i == mid_id)
+)
+})
+patchwork::wrap_plots(
+c(list(lab_plot), metric_plots),
+ncol = length(metrics) + 1,
+widths = c(0.1, rep(1, length(metrics)))
+)
+}
+build_row_mod(cens_levels[i], row_labels[i], show_xlab)
+})
+# --- Combine ---
+big_figure <- Reduce(`/`, row_grobs) +
+plot_layout(heights = rep(1, length(row_grobs))) &
+theme(legend.position = "none")
+big_figure
+# Save figure
+ggsave("paper.fig6.pdf", big_figure, width = 15, height = 7, dpi = 300)

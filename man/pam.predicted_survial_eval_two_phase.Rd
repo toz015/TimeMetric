@@ -7,7 +7,7 @@
 pam.predicted_survial_eval_two_phase(
   pred_results,
   t_star = NULL,
-  tau = NULL,
+  tau = 1e+11,
   km_cens_fit,
   case_weights,
   metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",

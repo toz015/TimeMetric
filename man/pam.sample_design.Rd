@@ -16,20 +16,31 @@ pam.sample_design(
 )
 }
 \arguments{
-\item{models}{Named list. Each element must be a list with:
-- `times` (numeric), `status` (0/1), `surv_prob` (matrix), `pred` (numeric)}
+\item{models}{A **named list** in which each element corresponds to a fitted model.
+Each model entry must itself be a list containing:
+\itemize{
+  \item \code{times} — numeric vector of observed follow-up times.
+  \item \code{surv_prob} — an \eqn{n \times K} matrix (or data frame) of
+        subject-specific predicted survival probabilities on a common time grid.
+  \item \code{status} — event indicator (1 = event, 0 = censored).
+  \item \code{pred} — (optional) predicted mean survival time (restricted or unrestricted).
+  \item \code{new_data} — (optional) dataset used for prediction.
+  \item \code{covs} — character vector of covariate names used for prediction.
+  \item \code{model} — (optional) the underlying fitted survival model object.
+}
+Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.}
 
 \item{case_weights}{Numeric vector of Prentice (or other) sampling weights for all subjects.}
 
+\item{km_cens}{A Kaplan–Meier fit for censoring (based on training data) used to compute IPCW.}
+
 \item{metrics}{Character vector of metrics to compute (default shown below).}
 
-\item{t_star}{Optional evaluation time (global). If NULL, each model uses its median time.}
+\item{t_star}{Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.}
 
-\item{tau}{Optional truncation time (global). If NULL, each model uses its max time.}
+\item{tau}{Optional numeric scalar, specify the max time horizon for R2 measure and concordence measure (default = 10e10).}
 
 \item{digits}{Integer number of decimal places to round values (default 2).}
-
-\item{km_cens_fit}{A Kaplan–Meier fit for censoring used to compute IPCW.}
 }
 \value{
 A data.frame: rows = metrics, columns = model names.

@@ -11,7 +11,8 @@
 #' @param fg_model Optional Fine-Gray model object (`crr` from `cmprsk` package).
 #' @param cr_model Optional competing risks random forest model object.
 #' @param newdata A data frame containing observed event times (`time`), event indicators (`status`).
-#' @param event.type The event type of interest for which CIF is to be predicted (required for random forest model object).
+#' @param event.type The event type of interest for which CIF is to be predicted.
+#' @param tau The maximum time horizon for prediction.
 #' @param covs A character vector specifying the names of the covariates used in the model.
 #' @return A list with two components:
 #' \describe{
