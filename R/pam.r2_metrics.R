@@ -22,6 +22,7 @@
 #' @noRd
 pam.r2_metrics <- function(predicted_data, survival_time, status, 
                            tau = NULL, case_weight = NULL) {
+  
   # Apply restriction if tau is provided
   if (!is.null(tau)) {
     restricted <- restricted_data_gen(survival_time, status, tau)
@@ -54,6 +55,8 @@ pam.r2_metrics <- function(predicted_data, survival_time, status,
     ratio.km.new <- ratio.km
   }
   weight.new <- ratio.km.new / sum(ratio.km.new)
+  
+  
   # Fit weighted least squares (WLS) regression
   wls.fitted <- tryCatch({
     lm(y ~ predicted_data, weights = weight.new)
