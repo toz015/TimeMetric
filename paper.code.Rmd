@@ -1,0 +1,1013 @@
+---
+title: "timemetric paper code"
+output: html_document
+date: "2025-10-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+library(survival)
+library(TimeMetric)
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(stringr)
+library(pec)
+library(randomForestSRC)
+```
+
+
+# Simulation
+
+## population sim
+
+```{r}
+### train data
+
+sim_model <- expand.grid(v = 1/c(0.5, 1, 1.5, 2),
+                         beta = c(0.5, 0.7, 1, 1.5))
+sim_model$model <- 1:dim(sim_model)[1]
+apply(sim_model, 1, function(x){
+  sim_cox_weibull_censored(n = 10000, pi_c = 0.00,
+                           v = x[1], beta = x[2]*c(1, -1), 
+                           seed = x[3]) -> df
+  m.cox <- coxph(Surv(time, status) ~., data = df, x = T, y = T)
+  return(list(m.cox = m.cox, model = x[3]))
+}) -> model_list
+
+### test data
+sim_table <- expand.grid(v = 1/c(0.5, 1, 1.5, 2),
+                         beta = c(0.5, 0.7, 1, 1.5),
+                         index = c(1:100))
+sim_table$index <- 1:dim(sim_table)[1]
+sim_table <- left_join(sim_table, sim_model, by = c("v", "beta"))
+apply(sim_table, 1, function(x){
+  sim_cox_weibull_censored(n = 3000, pi_c = 0.00,
+                           v = x[1], beta = x[2]*c(1, -1), 
+                           seed = x[3]) -> df
+  return(list(df=df, index = x[3], model = x[4]))
+}) -> data_list
+```
+
+
+
+```{r, message=FALSE}
+output_file <- "paper.sim1_table.csv"
+
+lapply(data_list, function(x){
+  m.cox.index <- x[["model"]]
+  m.cox <- model_list[[m.cox.index]][["m.cox"]]
+  covs <- names(m.cox$coefficients)
+  pred1 <- pam.coxph_restricted(model = m.cox, covs = covs, 
+                                new_data = x[["df"]], tau = 10e10)
+  pam.summary(list(value=pred1), tau = 10e10) -> table_out
+  table_out$index <- x[["index"]]
+  # append to CSV
+  if (!file.exists(output_file)) {
+    # if file doesn't exist → write header
+    write.csv(table_out, file = output_file, row.names = FALSE)
+  } else {
+    # if file exists → append without header
+    write.table(
+      table_out,
+      file = output_file,
+      sep = ",",
+      row.names = FALSE,
+      col.names = FALSE,
+      append = TRUE
+    )
+  }
+  #print(x[["index"]])
+  return(table_out)
+}) -> output_list
+```
+
+
+```{r}
+# === Define metrics to include and their pretty labels ===
+metrics_to_plot <- c("Pseudo_R_square", "Brier Score", 
+                     "R_E", "Harrell’s C", "Time Dependent Auc") #"R_sh", 
+metric_labels <- list(
+  "Pseudo R²",
+  "Brier score",
+  #expression(R[sh]),
+  expression(R[E]),
+  "C-index",
+  "AUC"
+)
+
+# === Load data ===
+combine_output <- read_csv("paper.sim1_table.csv") %>%
+  left_join(sim_table, by = "index")
+
+# === Compute mean value per setting ===
+combine_mean <- combine_output %>%
+  filter(Metric %in% metrics_to_plot) %>%
+  group_by(Metric, v, beta) %>%
+  summarise(value = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>% 
+  na.omit()
+
+# === Y-axis limits per metric ===
+y_limits <- combine_mean %>%
+  group_by(Metric) %>%
+  summarise(
+    ymin = min(value, na.rm = TRUE),
+    ymax = max(value, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(Metric = as.character(Metric))
+
+# === Build plots ===
+plots_v <- list()
+plots_beta <- list()
+
+for (i in seq_along(metrics_to_plot)) {
+  m <- metrics_to_plot[i]
+  label_m <- metric_labels[[i]]
+
+  lim_row <- y_limits[y_limits$Metric == as.character(m), ]
+  ylims   <- c(lim_row$ymin, lim_row$ymax)
+
+  dat_m <- combine_mean %>% filter(Metric == m)
+
+  # --- Row 1: change v (beta = 1) ---
+  # --- Row 1: change v (beta = 1) -> BAR PLOT ---
+  p1 <- dat_m %>%
+    filter(beta == 1) %>%
+    mutate(inv_v = round(1 / v, 2),
+           x_fac = factor(inv_v)) %>%
+    ggplot(aes(x = x_fac, y = value)) +
+    geom_col(width = 0.7) +
+    geom_text(aes(label = round(value, 2)), vjust = -0.3, size = 3) +
+    theme_bw() +
+    labs(x = "1/v", y = label_m) +
+    coord_cartesian(ylim = ylims) +
+    scale_y_continuous(expand = expansion(mult = c(0.1, 0.17))) +
+    theme(
+      axis.title.x = element_text(size = 9),
+      axis.title.y = element_text(size = 9)
+    )
+
+  # --- Row 2: change beta (v = 1) ---
+  # --- Row 2: change beta (v = 1) -> BAR PLOT ---
+  p2 <- dat_m %>%
+    filter(v == 1) %>%
+    mutate(x_fac = factor(beta, levels = sort(unique(beta)))) %>%
+    ggplot(aes(x = x_fac, y = value)) +
+    geom_col(width = 0.7) +
+    geom_text(aes(label = round(value, 2)), vjust = -0.3, size = 3) +
+    theme_bw() +
+    labs(x = expression(beta), y = label_m) +
+    coord_cartesian(ylim = ylims) +
+    scale_y_continuous(expand = expansion(mult = c(0.1, 0.17))) +
+    # optional: show only specific beta ticks if desired
+    scale_x_discrete(drop = FALSE) +
+    theme(
+      axis.title.x = element_text(size = 9),
+      axis.title.y = element_text(size = 9)
+    )
+
+  plots_v[[m]] <- p1
+  plots_beta[[m]] <- p2
+}
+
+# === Combine rows ===
+top_row    <- wrap_plots(plotlist = plots_v, nrow = 2)
+bottom_row <- wrap_plots(plotlist = plots_beta, nrow = 2)
+
+# === Row headers ===
+row_header <- function(expr_label, hjust) {
+  ggplot() +
+    theme_void() +
+    annotate(
+      "text",
+      x = 0, y = 1,
+      label = expr_label,
+      parse = TRUE,
+      hjust = hjust, vjust = 1,
+      fontface = "bold",
+      size = 4.2
+    ) +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
+    theme(
+      plot.margin = margin(t = 2, r = 0, b = 4, l = 20) # <-- added left padding
+    )
+}
+hdr_top <- row_header("bold('(b) Vary the variance of event times through ') * 1/v", hjust = 0.203)
+hdr_bot <- row_header("bold('(a) Vary the effect size through ') * beta", hjust = 0.3)
+
+row_block_top <- hdr_top / top_row + plot_layout(heights = c(0.08, 1))
+row_block_bot <- hdr_bot / bottom_row + plot_layout(heights = c(0.08, 1))
+
+final_plot <- patchwork::wrap_plots(
+  plotlist = list(row_block_bot, row_block_top),
+  ncol = 1
+)
+
+final_plot + plot_annotation(
+  theme = theme(plot.title = element_text(hjust = 0.5))
+)
+# Save figure
+ggsave("paper.fig4.pdf", final_plot, width = 7, height = 7, dpi = 300)
+```
+
+
+## population sim 2 
+
+### simple cox model
+
+```{r, message=FALSE}
+sim_cox_weibull_censored(n = 10000, pi_c = 0.00,
+                         v = 1, beta = 1*c(1, -1), seed = 1234) -> df
+m.cox1 <- coxph(Surv(time, status) ~., data = df, x = T, y = T)
+m.cox2 <- coxph(Surv(time, status) ~ x2, data = df, x = T, y = T)
+m.ln1 <- survreg(Surv(time, status) ~ .,
+                  data = df, dist="lognormal", x=TRUE, y=TRUE)
+m.ln2 <- survreg(Surv(time, status) ~ .,  scale = 2,
+                  data = df, dist="lognormal", x=TRUE, y=TRUE)
+cov1 <- names(m.cox1$coefficients)
+cov2 <- names(m.cox2$coefficients)
+
+output_file <- "paper.sim2_table.csv"
+t_star <- median(df$time)
+lapply(1:100, function(x){
+  sim_cox_weibull_censored(n = 3000, pi_c = 0.00,
+                         v = 1, beta = 1*c(1, -1), seed = x) -> df_test
+  pred1 <- pam.coxph_restricted(model = m.cox1, covs = cov1,
+                                new_data = df_test, tau = 10e10)
+  pred2 <- pam.coxph_restricted(model = m.cox2, covs = cov2,
+                                new_data = df_test, tau = 10e10)
+  pred3 <- pam.surverg_restricted(model = m.ln1, covs = cov1,
+                                  new_data = df_test, tau = 10e10)
+  pred4 <- pam.surverg_restricted(model = m.ln2, covs = cov1,
+                                  new_data = df_test, tau = 10e10)
+  mods <- list(Cox=pred1, Cox.reduce=pred2,
+               Ln=pred3, Ln.fix=pred4)
+  pam.summary(mods, tau = 10e10, t_star = t_star) -> table_out
+  table_out$index <- x
+  # append to CSV
+  if (!file.exists(output_file)) {
+    # if file doesn't exist → write header
+    write.csv(table_out, file = output_file, row.names = FALSE)
+  } else {
+    # if file exists → append without header
+    write.table(
+      table_out,
+      file = output_file,
+      sep = ",",
+      row.names = FALSE,
+      col.names = FALSE,
+      append = TRUE
+    )
+  }
+})
+
+```
+
+### complex cox model
+
+
+```{r, message=FALSE}
+sim_cox_weibull_censored(n = 10000, pi_c = 0.00,
+                         v = 3, beta = c(1,-1,-0.5,0.5), 
+                         seed = 1234, nonlinear = TRUE) -> df
+m.cox1 <- coxph(Surv(time, status) ~ ., data = df, x = T, y = T)
+m.cox2 <- coxph(Surv(time, status) ~ x2, data = df, x = T, y = T)
+m.ln1 <- survreg(Surv(time, status) ~ .,
+                  data = df, dist="lognormal", x=TRUE, y=TRUE)
+m.ln2 <- survreg(Surv(time, status) ~ .,  scale = 5,
+                  data = df, dist="lognormal", x=TRUE, y=TRUE)
+train_rf <- rfsrc(Surv(time, status) ~ ., df) 
+cov1 <- names(m.cox1$coefficients)
+cov2 <- names(m.cox2$coefficients)
+
+metrics <- c(
+    "Pseudo_R_square", "R_square", "L_square",
+    "Pseudo_R2_point", "R2_point", "L2_point",
+    "Harrell’s C", "Uno’s C", "R_E",
+    "Brier Score", "Time Dependent Auc"
+  )
+
+output_file <- "paper.sim2_extra_table.csv"
+t_star <- median(df$time)
+lapply(1:100, function(x){
+  sim_cox_weibull_censored(n = 3000, pi_c = 0.00,
+                         v = 3, beta = c(1,-1,-0.5,0.5), 
+                         seed = x, nonlinear = TRUE) -> df_test
+  pred1 <- pam.coxph_restricted(model = m.cox1, covs = cov1,
+                                new_data = df_test, tau = 10e10)
+  pred2 <- pam.coxph_restricted(model = m.cox2, covs = cov2,
+                                new_data = df_test, tau = 10e10)
+  pred3 <- pam.surverg_restricted(model = m.ln1, covs = cov1,
+                                  new_data = df_test, tau = 10e10)
+  pred4 <- pam.surverg_restricted(model = m.ln2, covs = cov1,
+                                  new_data = df_test, tau = 10e10)
+  
+  grid <- sort(df_test$time) 
+  S_pred <- predictSurvProb(train_rf, newdata = df_test, times = grid)
+  pred5 <- list(
+    model = NULL, 
+    times = df_test$time, 
+    surv_prob = S_pred, 
+    pred = NULL, 
+    status = df_test$status, 
+    new_data = NULL, 
+    covs = NULL
+  )
+
+  mods <- list(Cox = pred1, Cox.reduce = pred2,
+               Ln = pred3, Ln.fix = pred4, RF = pred5)
+  pam.summary(mods, tau = 10e10, t_star = t_star, metrics = metrics) -> table_out
+  table_out$index <- x
+  # append to CSV
+  if (!file.exists(output_file)) {
+    # if file doesn't exist → write header
+    write.csv(table_out, file = output_file, row.names = FALSE)
+  } else {
+    # if file exists → append without header
+    write.table(
+      table_out,
+      file = output_file,
+      sep = ",",
+      row.names = FALSE,
+      col.names = FALSE,
+      append = TRUE
+    )
+  }
+})
+```
+
+### plot
+
+```{r}
+combine_output <- read_csv("paper.sim2_table.csv")
+
+# originals to filter/loop with
+metric_levels <- c("Pseudo_R_square", "Brier Score", 
+                   "R_E","Harrell’s C", "Time Dependent Auc") #"R_sh", 
+model_levels  <- c("Cox", "Cox.reduce", "Ln", "Ln.fix")
+
+# pretty labels for display (use expressions where you want math)
+metric_labels <- list(
+  "Pseudo R²",
+  "Brier score",
+  #expression(R[sh]),
+  expression(R[E]),
+  "C-index",
+  "AUC"
+)
+
+# reshape & summarize (keep Metric as factor with ORIGINAL levels)
+df_long_mean <- combine_output %>%
+  pivot_longer(
+    cols = all_of(model_levels),
+    names_to = "Model",
+    values_to = "Value"
+  ) %>%
+  filter(Metric %in% metric_levels) %>%
+  group_by(Metric, Model) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Metric = factor(Metric, levels = metric_levels),
+    Model  = factor(Model, levels = model_levels,
+                    labels = c("Cox", "Cox (Reduced)", "Ln", "Ln (Scale = 2)"))
+  )
+
+# one plot per metric; use expression titles from metric_labels
+plot_list <- lapply(seq_along(metric_levels), function(i) {
+  m   <- metric_levels[i]
+  lab <- metric_labels[[i]]
+  df_m <- df_long_mean %>% filter(Metric == m)
+
+  ggplot(df_m, aes(x = Model, y = mean_value)) +
+    geom_col(width = 0.7) +
+    geom_text(aes(label = round(mean_value, 3)), vjust = -0.3, size = 3) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +  # add headroom for labels
+    labs(x = NULL, y = "Mean Value") +
+    ggtitle(lab) +  # expression-friendly title
+    theme_bw() +
+    theme(
+      plot.title  = element_text(hjust = 0.5, face = "bold", size = 11),
+      axis.text.x = element_text(angle = 30, hjust = 1, size = 9),
+      axis.title.y = element_text(size = 9)
+    )
+})
+
+# arrange (e.g., 2 rows x 3 cols)
+final_plot <- wrap_plots(plotlist = plot_list, nrow = 2) +
+  plot_annotation(
+    theme = theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+  )
+
+final_plot
+# Save figure
+ggsave("paper.fig5.pdf", final_plot, width = 10, height = 5, dpi = 300)
+```
+
+
+```{r}
+combine_output <- read_csv("paper.sim2_extra_table.csv")
+
+# originals to filter/loop with
+metric_levels <- c("Pseudo_R_square", "Brier Score", 
+                   "Harrell’s C", "Time Dependent Auc") #"R_sh", 
+model_levels  <- c("RF", "Cox", "Ln")
+
+# pretty labels for display (use expressions where you want math)
+metric_labels <- list(
+  "Pseudo R²", 
+  "Brier score",
+  #expression(R[sh]),
+  #expression(R[E]),
+  "C-index",
+  "AUC"
+)
+
+# reshape & summarize (keep Metric as factor with ORIGINAL levels)
+df_long_mean <- combine_output %>%
+  pivot_longer(
+    cols = all_of(model_levels),
+    names_to = "Model",
+    values_to = "Value"
+  ) %>%
+  filter(Metric %in% metric_levels) %>%
+  group_by(Metric, Model) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Metric = factor(Metric, levels = metric_levels),
+    Model  = factor(Model, levels = model_levels,
+                    labels = c("RF", "Cox", "Ln"))
+  )
+
+# one plot per metric; use expression titles from metric_labels
+plot_list <- lapply(seq_along(metric_levels), function(i) {
+  m   <- metric_levels[i]
+  lab <- metric_labels[[i]]
+  df_m <- df_long_mean %>% filter(Metric == m)
+
+  ggplot(df_m, aes(x = Model, y = mean_value)) +
+    geom_col(width = 0.5) +
+    geom_text(aes(label = round(mean_value, 3)), vjust = -0.3, size = 3) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +  # add headroom for labels
+    labs(x = NULL, y = "Mean Value") +
+    ggtitle(lab) +  # expression-friendly title
+    theme_bw() +
+    theme(
+      plot.title  = element_text(hjust = 0.5, face = "bold", size = 11),
+      axis.text.x = element_text(angle = 30, hjust = 1, size = 9),
+      axis.title.y = element_text(size = 9)
+    )
+})
+
+# arrange (e.g., 2 rows x 3 cols)
+final_plot <- wrap_plots(plotlist = plot_list, nrow = 2) +
+  plot_annotation(
+    theme = theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+  )
+
+final_plot
+# Save figure
+ggsave("paper.fig5.2.pdf", final_plot, width = 5.5, height = 3.5, dpi = 300)
+```
+
+## sample simulation
+
+```{r, message=FALSE}
+### test data
+sim_table_sample <- expand.grid(n = c(300, 3000),
+                                censore = c(0.0, 0.3, 0.7),
+                                v = 1,
+                                beta = 1,
+                                index = c(1:100))
+sim_table_sample$index <- 1:dim(sim_table_sample)[1]
+sim_table_sample <- left_join(sim_table_sample, sim_model, by = c("v", "beta"))
+
+sim_cox_weibull_censored(n = 10000, pi_c = 0.00,
+                         v = 1, beta = c(1, -1), seed = 1234) -> df_ref
+t_50 <- median(df_ref$time)
+t_90 <- quantile(df_ref$time, 0.9) %>% as.numeric()
+
+output_file <-  "paper.sim3_table.csv"
+apply(sim_table_sample, 1, function(x){
+  sim_cox_weibull_censored(n = x[["n"]], pi_c = x[["censore"]],
+                           v = x[["v"]], beta = x[["beta"]]*c(1, -1), 
+                           seed = x[["index"]]) -> df
+  m.cox.index <- x[["model"]]
+  m.cox <- model_list[[m.cox.index]][["m.cox"]]
+  covs <- names(m.cox$coefficients)
+  pred1 <- pam.coxph_restricted(model = m.cox, covs = covs, 
+                                new_data = df, tau = t_50)
+  pam.summary(list(value=pred1), tau = t_50, t_star = t_50) -> table_out1
+  table_out1$index <- x[["index"]]
+  table_out1$n <- x[["n"]]
+  table_out1$censore <- x[["censore"]]
+  table_out1$model <- x[["model"]]
+  table_out1$quantile <- 50
+  
+  pred2 <- pam.coxph_restricted(model = m.cox, covs = covs, 
+                                new_data = df, tau = t_90)
+  pam.summary(list(value=pred2), tau = t_90, t_star = t_90) -> table_out2
+  table_out2$index <- x[["index"]]
+  table_out2$n <- x[["n"]]
+  table_out2$censore <- x[["censore"]]
+  table_out2$model <- x[["model"]]
+  table_out2$quantile <- 90
+  
+  table_out <- rbind(table_out1, table_out2)
+  
+  if (!file.exists(output_file)) {
+    # if file doesn't exist → write header
+    write.csv(table_out, file = output_file, row.names = FALSE)
+  } else {
+    # if file exists → append without header
+    write.table(
+      table_out,
+      file = output_file,
+      sep = ",",
+      row.names = FALSE,
+      col.names = FALSE,
+      append = TRUE
+    )
+  }
+  
+  return(table_out)
+}) -> data_list
+```
+
+
+```{r, message=FALSE}
+ref_output <- read_csv("paper.sim3_table.csv") %>%
+  group_by(Metric, n, censore, quantile) %>% 
+  summarise(ref = round(mean(value, na.rm = TRUE), 3), .groups = "drop") %>% 
+  filter(n == 3000, censore == 0) %>% 
+  select(-c(n, censore))
+sample_output <- read_csv("paper.sim3_table.csv") %>%
+  left_join(ref_output, by = c("Metric", "quantile")) %>% 
+  mutate(bias = value - ref, quantile = factor(quantile, levels = c(90, 50)))
+
+# --- Data prep ---
+
+# 1) Choose the metrics to include (and their order)
+metrics_to_plot <- c("Pseudo_R_square", "Brier Score", "R_E",  #"R_sh",
+                     "Harrell’s C", "Uno’s C", "Time Dependent Auc")
+
+# 2) Pretty labels (mix of strings + plotmath expressions is fine)
+metric_pretty <- list(
+  "Pseudo_R_square"   = expression("Pseudo R"^2),
+  "Brier Score"       = "Brier score",
+  #"R_sh"              = expression(R[sh]),
+  "R_E"               = expression(R[E]),
+  "Harrell’s C"       = "Harrell’s C",
+  "Uno’s C"           = "Uno’s C",
+  "Time Dependent Auc"= "AUC"
+)
+
+
+df <- sample_output %>%
+  filter(Metric %in% metrics_to_plot) %>%
+  mutate(
+    Metric = factor(Metric, levels = metrics_to_plot),
+    cens_pct = paste0(round(censore * 100), "%"),
+    n = as.numeric(n)
+  )
+
+y_limits <- df %>%
+  dplyr::group_by(Metric) %>%
+  dplyr::summarise(
+    ymin = min(bias, na.rm = TRUE),
+    ymax = max(bias, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  dplyr::mutate(Metric = as.character(Metric))
+
+metrics <- levels(df$Metric)
+cens_levels <- sort(unique(df$censore))
+row_tags <- letters[seq_along(cens_levels)]
+row_labels <- paste0("(", row_tags, ") censoring ", 
+                     paste0(round(cens_levels * 100), "%"))
+
+# ---- Update the small-plot maker to use pretty labels ----
+make_metric_boxplot <- function(dat, metric_name, show_xlab = FALSE, show_ylab = TRUE) {
+  m_chr <- as.character(metric_name)
+  lim_row <- y_limits[y_limits$Metric == m_chr, ]
+  ylims   <- c(lim_row$ymin, lim_row$ymax)
+
+  # Pick pretty label (expression or string)
+  y_lab <- if (show_ylab) metric_pretty[[m_chr]] else NULL
+
+  ggplot(dat %>% dplyr::filter(Metric == metric_name),
+         aes(x = factor(n), y = bias, fill = quantile)) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_boxplot(
+      outlier.shape = NA, 
+      width = 0.6, 
+      color = "black",        # consistent outline
+      position = position_dodge(width = 0.75)
+    ) +
+    # --- Fill colors: one gray, one white (hollow-like) ---
+    scale_fill_manual(
+      values = c("90" = "gray70", "50" = "white"),  # color-blind friendly
+      name = "Quantile",
+      labels = c("90%", "50%")
+    ) +
+    scale_y_continuous(limits = ylims, 
+                       expand = expansion(mult = c(0.05, 0.05))) +
+    labs(
+      x = NULL,
+      y = y_lab
+    ) +
+    theme_bw(base_size = 12) +
+    theme(
+      panel.grid.minor = element_blank(),
+      plot.margin = margin(6, 6, 6, 6),
+      axis.title.y = if (show_ylab) element_text() else element_blank()
+    )
+}
+
+# --- Assemble all rows ---
+row_grobs <- lapply(seq_along(cens_levels), function(i) {
+  # For the last row, show x-axis labels; otherwise, hide them
+  show_xlab <- (i == length(cens_levels))
+  
+  # Modify make_metric_boxplot call to accept show_xlab info
+  build_row_mod <- function(cens_val, row_lab, show_xlab_row) {
+    row_data <- df %>% dplyr::filter(censore == cens_val)
+    lab_plot <- ggplot() +
+      annotate("text",
+               x = 0, y = 1, label = row_lab,
+               hjust = -0.2, vjust = -1.5,
+               fontface = "bold", size = 4.8) +
+      xlim(0, 1) + ylim(0, 1) +
+      coord_cartesian(clip = "off") +
+      theme_void(base_size = 12) +
+      theme(plot.margin = margin(t = 22, r = 16, b = 4, l = 14))
+    
+    mid_id <- ceiling(length(metrics) / 2)
+    metric_plots <- lapply(seq_along(metrics), function(i) {
+      make_metric_boxplot(
+        dat = row_data,
+        metric_name = metrics[i],
+        show_xlab = show_xlab_row && (i == mid_id)
+      )
+    })
+    
+    patchwork::wrap_plots(
+      c(list(lab_plot), metric_plots),
+      ncol = length(metrics) + 1,
+      widths = c(0.1, rep(1, length(metrics)))
+    )
+  }
+  
+  build_row_mod(cens_levels[i], row_labels[i], show_xlab)
+})
+
+# --- Combine ---
+big_figure <- Reduce(`/`, row_grobs) +
+  plot_layout(heights = rep(1, length(row_grobs))) &
+  theme(legend.position = "none")
+
+
+x_label <- ggplot() +
+  annotate("text", x = 0.5, y = 0.5,
+           label = "Sample size", size = 5) +
+  theme_void()
+
+final_plot <- wrap_plots(
+  big_figure,
+  x_label,
+  ncol = 1,
+  heights = c(1, 0.05)  # adjust spacing
+)
+
+final_plot
+
+# Save figure
+ggsave("paper.fig6.pdf", final_plot, width = 13, height = 6, dpi = 300)
+```
+
+
+
+# Real data
+## Right-censored
+
+```{r}
+library(tidyverse)
+library(survival)
+set.seed(1234567)
+data(pbc, package = "survival")
+df <- pbc %>% 
+  filter(is.na(trt)==F) %>% 
+  mutate(log_albumin = log(albumin),
+         log_bili = log(bili),
+         log_protime = log(protime),
+         status = ifelse(status==2, 1, 0)) %>% 
+  select(time, status, age, log_albumin, log_bili, log_protime, edema)
+covs <- names(df)[-c(1:2)]
+covs2 <- covs[c(1,5)]
+train_df_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
+train_df <- df[train_df_idx, ]
+train_df2 <- df[train_df_idx, c(names(df)[c(1:2)], covs)]
+test_df <- df[-train_df_idx, ]
+test_df2 <- df[-train_df_idx, c(names(df)[c(1:2)], covs)]
+
+## model 
+m.cox1 <- coxph(Surv(time, status) ~ ., data = train_df, x = TRUE, y = TRUE)
+m.cox2 <- coxph(Surv(time, status) ~ ., data = train_df[,c(1:2,3,7)], x = TRUE, y = TRUE)
+m.wei1 <- survreg(Surv(time, status) ~ ., 
+                   data = train_df, dist="weibull", x=TRUE, y=TRUE)
+m.wei2 <- survreg(Surv(time, status) ~ .,  scale = 5,
+                   data = train_df, dist="weibull", x=TRUE, y=TRUE)
+m.ln1 <- survreg(Surv(time, status) ~ ., 
+                   data = train_df, dist="lognormal", x=TRUE, y=TRUE)
+## predict prob
+
+pred1 <- pam.coxph_restricted(model = m.cox1, covs = covs, new_data = test_df) 
+pred2 <- pam.coxph_restricted(model = m.cox2, covs = covs2, new_data = test_df2)
+pred3 <- pam.surverg_restricted(model = m.wei1, covs = covs, new_data = test_df) 
+pred4 <- pam.surverg_restricted(model = m.wei2, covs = covs, new_data = test_df) 
+pred5 <- pam.surverg_restricted(model = m.ln1, covs = covs, new_data = test_df) 
+```
+
+
+```{r}
+mods <- list(
+  Cox = pred1,
+  Cox.Reduce = pred2,
+  Weibull.AFT = pred3 #, Weibull.AFT.fix = pred4
+)
+pam.summary(mods, tau = 10e10)
+```
+
+
+```{r}
+summary_pred_plot(
+  data_list = mods, ncol = 3,
+  titles = c("Cox PH", "Cox PH (Reduced)", 
+             "Weibull AFT"), 
+  invert_linear = c(FALSE, FALSE, TRUE) 
+)
+ggsave("paper.fig1.pdf", width = 9, height = 3.5)
+```
+
+
+### for talk slides
+
+```{r}
+set.seed(1234567)
+data(pbc, package = "survival")
+df <- pbc %>% 
+  filter(is.na(trt)==F) %>% 
+  mutate(log_albumin = log(albumin),
+         log_bili = log(bili),
+         log_protime = log(protime),
+         status = ifelse(status==2, 1, 0)) %>% 
+  select(time, status, age, log_albumin, log_bili, log_protime, edema)
+covs <- names(df)[-c(1:2)]
+covs2 <- covs[c(1,5)]
+train_df_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
+train_df <- df[train_df_idx, ]
+train_df2 <- df[train_df_idx, c(names(df)[c(1:2)], covs)]
+test_df <- df[-train_df_idx, ]
+test_df2 <- df[-train_df_idx, c(names(df)[c(1:2)], covs)]
+
+## model 
+m.cox1 <- coxph(Surv(time, status) ~ ., data = train_df, x = TRUE, y = TRUE)
+m.cox2 <- coxph(Surv(time, status) ~ ., data = train_df[,c(1:2,3,7)], x = TRUE, y = TRUE)
+m.wei1 <- survreg(Surv(time, status) ~ ., 
+                   data = train_df, dist="weibull", x=TRUE, y=TRUE)
+m.wei2 <- survreg(Surv(time, status) ~ .,  scale = 5,
+                   data = train_df, dist="weibull", x=TRUE, y=TRUE)
+m.ln1 <- survreg(Surv(time, status) ~ ., 
+                   data = train_df, dist="lognormal", x=TRUE, y=TRUE)
+
+tau <- 10e10
+pred1 <- pam.coxph_restricted(model = m.cox1, covs = covs, new_data = test_df, tau = tau) 
+pred3 <- pam.surverg_restricted(model = m.wei1, covs = covs, new_data = test_df, tau = tau)  
+pred5 <- pam.surverg_restricted(model = m.ln1, covs = covs, new_data = test_df, tau = tau) 
+mods <- list(
+  Cox = pred1,
+  Weibull.AFT = pred3,
+  Lognomal.AFT = pred5
+)
+pam.summary(mods, tau = tau)
+
+tau <- 4459
+pred1 <- pam.coxph_restricted(model = m.cox1, covs = covs, new_data = test_df, tau = tau) 
+pred3 <- pam.surverg_restricted(model = m.wei1, covs = covs, new_data = test_df, tau = tau)  
+pred5 <- pam.surverg_restricted(model = m.ln1, covs = covs, new_data = test_df, tau = tau) 
+mods <- list(
+  Cox = pred1,
+  Weibull.AFT = pred3,
+  Lognomal.AFT = pred5
+)
+pam.summary(mods, tau = tau)
+summary_pred_plot(
+  data_list = mods, ncol = 3,
+  titles = c("Cox PH", "wb", 
+             "ln"), 
+  invert_linear = c(FALSE, TRUE, TRUE) 
+)
+tau <- 2000
+pred1 <- pam.coxph_restricted(model = m.cox1, covs = covs, new_data = test_df, tau = tau) 
+pred3 <- pam.surverg_restricted(model = m.wei1, covs = covs, new_data = test_df, tau = tau)  
+pred5 <- pam.surverg_restricted(model = m.ln1, covs = covs, new_data = test_df, tau = tau) 
+mods <- list(
+  Cox = pred1,
+  Weibull.AFT = pred3,
+  Lognomal.AFT = pred5
+)
+pam.summary(mods, tau = tau)
+summary_pred_plot(
+  data_list = mods, ncol = 3,
+  titles = c("Cox PH", "wb", 
+             "ln"), 
+  invert_linear = c(FALSE, TRUE, TRUE) 
+)
+tau <- 1000
+pred1 <- pam.coxph_restricted(model = m.cox1, covs = covs, new_data = test_df, tau = tau) 
+pred3 <- pam.surverg_restricted(model = m.wei1, covs = covs, new_data = test_df, tau = tau)  
+pred5 <- pam.surverg_restricted(model = m.ln1, covs = covs, new_data = test_df, tau = tau) 
+mods <- list(
+  Cox = pred1,
+  Weibull.AFT = pred3,
+  Lognomal.AFT = pred5
+)
+pam.summary(mods, tau = tau)
+
+tau <- 10e10
+pred1 <- pam.coxph_restricted(model = m.cox1, covs = covs, new_data = test_df, tau = tau) 
+pred3 <- pam.surverg_restricted(model = m.wei1, covs = covs, new_data = test_df, tau = tau)  
+pred5 <- pam.surverg_restricted(model = m.ln1, covs = covs, new_data = test_df, tau = tau) 
+mods <- list(
+  Cox = pred1,
+  Weibull.AFT = pred3,
+  Lognomal.AFT = pred5
+)
+results <- NULL
+metrics_list <- c("Pseudo_R2_point", "Harrell’s C", "Uno’s C", 
+                  "Brier Score", "Time Dependent Auc")
+for(i in 1:5){
+  for(t in seq(1000, 5000, length.out=11)){
+    pam.summary(mods, tau = t, t_star = t, 
+                metrics = metrics_list[i])->l
+    temp_out <- data.frame(l, t=t)
+    results <- rbind(results, temp_out)
+  }
+}
+
+```
+
+
+## Competing-risk
+
+```{r}
+library(cmprsk)
+library(tidyverse)
+set.seed(1234567)
+data(framingham, package = "riskCommunicator")
+df_ref <- framingham %>% filter(PERIOD==1) %>% 
+  select(DEATH, TIMEDTH, HYPERTEN, TIMEHYP, 
+         RANDID, SEX:educ, RANDID, TIME) %>% 
+  group_by(RANDID) %>% 
+  mutate(time = min(TIMEDTH, TIMEHYP),
+         status = ifelse(time==TIMEDTH, DEATH*2, HYPERTEN)) %>% 
+  select(time, status, everything()) %>% 
+  filter(time!=0) %>% ungroup() %>% 
+  select(time, status, RANDID) %>% na.omit() #SEX:educ, -BPMEDS
+
+df <- df_ref %>% 
+  left_join(framingham %>% 
+              select(RANDID, TIME, PERIOD, SEX:educ, -BPMEDS), 
+            by = "RANDID") %>%
+  na.omit() %>% 
+  filter(time > TIME) %>% 
+  group_by(RANDID) %>% 
+  slice(n()) %>% 
+  ungroup() %>% 
+  mutate(time = time - TIME) %>% 
+  select(-c(RANDID, TIME, PERIOD))
+
+covs <- names(df)[-c(1:2)]
+covs2 <- covs[c(1:3, 5)]
+train_df_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
+train_df <- df[train_df_idx, ]
+train_df2 <- df[train_df_idx, c(names(df)[c(1:2)], covs2)]
+test_df <- df[-train_df_idx, ]
+test_df2 <- df[-train_df_idx, c(names(df)[c(1:2)], covs2)]
+
+m.fg1 <- crr(train_df$time, train_df$status, train_df[, covs, drop = FALSE])
+m.fg2 <- crr(train_df$time, train_df$status, train_df[, covs2, drop = FALSE])
+m.aft1 <- survreg(Surv(time, status==1) ~.,
+                      data = train_df, x = T, dist="weibull")
+m.aft2 <- survreg(Surv(time, status==2) ~., 
+                      data = train_df, x = T, dist="weibull")
+m.aft3 <- survreg(Surv(time, status==1) ~., scale = 5,
+                      data = train_df, x = T, dist="weibull")
+m.aft4 <- survreg(Surv(time, status==2) ~., scale = 5,
+                      data = train_df, x = T, dist="weibull")
+
+pred1 <- pam.predict_cr(fg_model = m.fg1, newdata = test_df, covs = covs, tau = 5475)
+pred2 <- pam.predict_cr(fg_model = m.fg2, newdata = test_df2, covs = covs2, tau = 5475)
+pred3 <- pam.predict_cr(model1 = m.aft1, model2 = m.aft2, newdata = test_df, covs = covs, tau = 5475)
+pred4 <- pam.predict_cr(model1 = m.aft3, model2 = m.aft4, newdata = test_df, covs = covs, tau = 5475)
+
+mods_cr <- list(
+  FG = pred1,
+  FG.Reduced = pred2,
+  CSH.AFT = pred3,
+  CSH.AFT.FIX = pred4
+)
+
+pam.summary_cr(mods_cr, event_type = 1, tau = 5475, t_star = 5475)
+```
+
+
+```{r}
+summary_pred_plot(
+  mods_cr,
+  titles = c("Fine–Gray", "Fine–Gray (Reduced)", 
+             "CSH Weibull AFT", "CSH Weibull AFT (Scale = 5)"),
+  invert_linear = c(FALSE, FALSE, TRUE, TRUE),
+  label_name = c("Censored", "Event of interest", "Competing event"),
+  ncol = 2,
+  sample_size = 200,
+  restrict_time = 5475
+)
+ggsave("paper.fig2.pdf", width = 9, height = 7)
+```
+
+
+## Sample design
+
+```{r}
+library(survival)
+library(tidyverse)
+set.seed(2025)
+data(GBSG2, package="pec")
+df <- GBSG2 %>% 
+    mutate(status = cens,
+           id = row_number()) %>% 
+    filter(time!=0) %>% 
+    select(time, status, id, horTh:estrec) %>% na.omit()
+
+covs <- names(df)[-c(1:3)]
+train_df_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
+train_df <- df[train_df_idx, ]
+test_df <- df[-train_df_idx, ]
+
+### Unstratified case-cohort 
+subco_size <- 0.10                     
+subcohort  <- sample(train_df$id, round(nrow(train_df) * subco_size))
+sub.test  <- sample(test_df$id, round(nrow(test_df) * subco_size))
+m.km <- survfit(Surv(time, 1 - status) ~ 1, data = train_df)
+
+cc_train <- train_df %>% mutate(subco = id %in% subcohort, case = status == 1)
+cc_train$weights <- cc_weights(time = cc_train$time, 
+                               status = cc_train$status,
+                               subcohort = cc_train$subco)
+cc_train <- cc_train %>% filter(subco | status == 1)
+train_weights <- cc_train$weights
+cc_train <- cc_train %>% select(time, status, all_of(covs))
+cc_train2 <- train_df %>% 
+  filter(id %in% sample(train_df$id, dim(cc_train)[1])) %>% 
+  select(time, status, all_of(covs))
+
+cc_test <- test_df %>% mutate(subco = id %in% sub.test, case = status == 1)
+cc_test$weights <- cc_weights(time = cc_test$time,
+                              status = cc_test$status,
+                              subcohort = cc_test$subco)
+cc_test <- cc_test %>% filter(subco | status == 1)
+test_weights <- cc_test$weights
+cc_test <- cc_test %>% select(time, status, all_of(covs))
+
+
+fit_cox1 <- coxph(Surv(time, status) ~., data = cc_train,
+                  weights = train_weights, x = TRUE, y = TRUE)
+fit_cox2 <- coxph(Surv(time, status) ~ ., data = cc_train2, x = TRUE, y = TRUE)
+pred1 <- pam.coxph_restricted(model = fit_cox1, covs = covs, new_data = cc_test)
+pred2 <- pam.coxph_restricted(model = fit_cox2, covs = covs, new_data = cc_test)
+
+mods <- list(
+  Cox.cc = pred1,
+  Cox.random = pred2
+)
+pam.sample_design(models = mods, km_cens = m.km, case_weights = test_weights)
+```
+
+
+```{r}
+summary_pred_plot(
+  data_list = mods,
+  titles    = c("Cox (Case-cohort)", "Cox (Random sample)"),
+  ncol      = 2,
+  tag_levels = "a",          
+  invert_linear = c(FALSE, FALSE) 
+)
+ggsave("paper.fig3.pdf", width = 9, height = 4)
+```
+
+
