@@ -4,7 +4,7 @@ Title: Unified performance metrics for survival models with right-censoring, com
 Version: 0.1.0
 Date: 2025-08-30
 Author: Tong Zhu, Zian Zhuang, Wen Su, Xiaowu Dai, and Gang Li
-Maintainer: Tong Zhu<toz015@ucla.edu>
+Maintainer: Tong Zhu <toz015@ucla.edu>
 Description: The TimeMetric package provides a comprehensive framework for 
     evaluating prediction performance in survival analysis. It consolidates a 
     wide range of metrics, including pseudo R-squared measures, concordance 
