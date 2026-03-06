@@ -16,7 +16,7 @@ Description: The TimeMetric package provides a comprehensive framework for
     for researchers and practitioners working with survival models.
 Depends: R (>= 3.1)
 Imports: survival, stats, tdROC, yardstick, ggplot2, patchwork, dplyr
-License: GPL-3
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
