@@ -130,7 +130,7 @@ Time-Dependent AUC & \times &  &  &  &  &  &   &  &  \\
 }
 \end{table}
 :::
-
+ 
 # Reference
 
 ::::::::::::: {#refs .references .csl-bib-body .hanging-indent entry-spacing="0"}
