@@ -30,7 +30,6 @@ header-includes:
   - \usepackage{float} 
 ---
 
-
 # Summary {#summary .unnumbered}
 
 The evaluation of predictive performance is critical for survival models
@@ -46,36 +45,33 @@ subjects through outcome ranking (e.g., C-index, time-dependent AUC)
 (Harrell et al. 1982; Uno et al. 2011; Heagerty, Lumley, and Pepe 2000),
 and calibration measures, which assess the agreement between predicted
 probabilities and observed event rates (e.g., Brier score) (Brier 1950;
-Graf et al. 1999). Existing packages offer implementations for some of
-these metrics, and none provide a comprehensive solution. Table 
-\ref{tab:metrics} provides a comparison of predictive
-performance measures currently implemented across some existing `R`
-packages. `TimeMetric` bridges this gap by delivering a unified
+Graf et al. 1999).
+
+`TimeMetric` addresses these challenges by delivering a unified
 framework for performance evaluation across diverse survival data
 scenarios, including right-censored data, competing risks, and special
-designs such as nested case-control and case-cohort studies.
-
+designs such as nested case-control and case-cohort studies. 
 Designed for ease of implementation, `TimeMetric` allows researchers to
 compute a suite of metrics for evaluating the predictive performance of
-a model or algorithm. For each type of survival data, `TimeMetric`
-provides two key modules. First, it incorporates a comprehensive suite
-of performance evaluation metrics, implemented in the
-`Performance Metric Module`, including $R^2$-type measures (pseudo $R^2$
-(Li and Wang 2019; Zhuang et al. 2025), Schemper and Henderson's
-$R_{\text{sh}}$ (Schemper and Henderson 2000; Lusa, Miceli, and Mariani
-2007), and $R_E$ (Stare, Perme, and Henderson 2011)), discrimination
-indices (Harrell's C-index (Harrell et al. 1982) and Uno's C-index (Uno
-et al. 2011)), calibration tools (Brier score (Brier 1950; Graf et al.
-1999)), and time-dependent AUC (Heagerty, Lumley, and Pepe 2000). A
-complete summary of available metrics for each data type is presented in
-Table \ref{tab:metrics}. `Performance Metric Module` takes
-predicted survival probabilities (or cumulative incidence functions for
-competing risks data)---regardless of how they are obtained---as input
-to compute predictive performance metrics. Second, the
-`Prediction Module` provides functions for several common survival
-models to calculate predicted survival probabilities (or cumulative
-incidence functions for competing risks data) over the observation times
-for all individuals in a test dataset.
+a model or algorithm.
+
+# Statement of Need
+
+Existing packages offer implementations for some of
+these metrics, and none provide a comprehensive solution. 
+The target audience of `TimeMetric` includes statistical method developers,
+machine learning researchers, and applied investigators who develop,
+implement, or compare prediction models for time-to-event outcomes. Rather
+than being restricted to a particular modeling approach, `TimeMetric`
+provides a unified framework for evaluating the predictive or prognostic
+performance of any model or algorithm that produces predicted survival
+probabilities or cumulative incidence functions.
+
+# State of the Field
+
+Table \ref{tab:metrics} provides a comparison of predictive
+performance measures currently implemented across some existing `R`
+packages.
 
 ::: {=latex}
 \begin{table}[H]
@@ -130,7 +126,67 @@ Time-Dependent AUC & \times &  &  &  &  &  &   &  &  \\
 }
 \end{table}
 :::
- 
+
+Although several existing `R` packages implement selected predictive
+performance measures for survival data, these tools are often limited to
+specific metrics or data settings. The unique contribution of `TimeMetric`
+is to provide a comprehensive framework that brings together $R^2$-type
+measures, C-index, Brier score, and time-dependent AUC across right-censored
+data, competing risks data, case-cohort studies, and nested case-control
+studies. A standalone package is therefore more appropriate than adding
+individual functions to existing packages, because the goal of `TimeMetric`
+is not only to implement selected metrics, but also to provide a unified
+workflow for evaluating and comparing models across multiple performance
+measures and survival data structures.
+
+# Software Design
+
+For each type of survival data, `TimeMetric`
+provides two key modules. First, it incorporates a comprehensive suite
+of performance evaluation metrics, implemented in the
+`Performance Metric Module`, including $R^2$-type measures (pseudo $R^2$
+(Li and Wang 2019; Zhuang et al. 2025), Schemper and Henderson's
+$R_{\text{sh}}$ (Schemper and Henderson 2000; Lusa, Miceli, and Mariani
+2007), and $R_E$ (Stare, Perme, and Henderson 2011)), discrimination
+indices (Harrell's C-index (Harrell et al. 1982) and Uno's C-index (Uno
+et al. 2011)), calibration tools (Brier score (Brier 1950; Graf et al.
+1999)), and time-dependent AUC (Heagerty, Lumley, and Pepe 2000). A
+complete summary of available metrics for each data type is presented in
+Table \ref{tab:metrics}. `Performance Metric Module` takes
+predicted survival probabilities (or cumulative incidence functions for
+competing risks data)---regardless of how they are obtained---as input
+to compute predictive performance metrics.
+
+Second, the
+`Prediction Module` provides functions for several common survival
+models to calculate predicted survival probabilities (or cumulative
+incidence functions for competing risks data) over the observation times
+for all individuals in a test dataset.
+
+The design of `TimeMetric` separates prediction generation from performance
+metric evaluation. This modular design allows users to use the prediction
+functions provided by `TimeMetric` or to supply predictions from external
+models or algorithms. As a result, the same evaluation framework can be
+used across different performance measures and survival data settings.
+
+# Research Impact Statement
+
+`TimeMetric` has been used to support ongoing methodological work on
+time-dependent pseudo $R^2$ for competing risks data, which provides one
+of the motivating applications for the package (Zhuang et al. 2025). In
+addition, we are preparing a tutorial and simulation-based study that uses
+`TimeMetric` to compare commonly used prediction performance metrics across
+different survival data scenarios using simulated and real-world datasets.
+Together, these efforts highlight the package's role in both implementing
+recent methodological developments and supporting broader comparative
+evaluation of survival prediction models.
+
+# AI Usage Disclosure
+
+Generative AI tools were used only to assist with language polishing.
+All scientific content, software implementation, references, and 
+conclusions were reviewed and verified by the authors.
+
 # Reference
 
 ::::::::::::: {#refs .references .csl-bib-body .hanging-indent entry-spacing="0"}
@@ -181,7 +237,7 @@ Explained Variation for Event History Data." *Biometrics* 67 (3):
 :::
 
 ::: {#ref-uno2011c .csl-entry}
-Uno, Hajime, Tianxi Cai, Michael J Pencina, Ralph B D'Agostino, and
+Uno, Hajime, Tianxi Cai, Michael J Pencina, Ralph C. D'Agostino, and
 Lee-Jen Wei. 2011. "On the c-Statistics for Evaluating Overall Adequacy
 of Risk Prediction Procedures with Censored Survival Data." *Statistics
 in Medicine* 30 (10): 1105--17.
