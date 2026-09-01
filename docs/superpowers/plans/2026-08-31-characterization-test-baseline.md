@@ -6,7 +6,7 @@
 
 **Architecture:** `testthat` 3rd edition suite under `tests/testthat/`. Each test combines **hard-coded structural assertions** (component names, types, lengths, ranges, specific error messages) with a **small snapshot of selected numeric values** rounded to 6 decimal places. Whole model objects and large matrices are never snapshotted — they are reduced to compact fingerprints first. Structural assertions catch shape drift; numeric snapshots catch value drift; neither requires transcribing floats into this plan.
 
-**Tech Stack:** R 4.5+, `testthat` (3e), `devtools`, `roxygen2`, `covr`. Package runtime deps: `survival`, `rms`, `expint`, `survminer`, `pec`, `tdROC`, `yardstick`, `ggplot2`, `patchwork`, `dplyr`, `magrittr`, `purrr`, `tibble`.
+**Tech Stack:** R 4.5+, `testthat` (3e), `pkgload`, `roxygen2`, `covr`. (`devtools` is deliberately not used: its `gert`/`ragg` dependencies need system libraries -- libgit2, libpng, freetype, harfbuzz -- that add setup cost for no benefit here. `pkgload::load_all()` and `testthat::test_local()` provide everything this plan needs.) Package runtime deps: `survival`, `rms`, `expint`, `survminer`, `pec`, `tdROC`, `yardstick`, `ggplot2`, `patchwork`, `dplyr`, `magrittr`, `purrr`, `tibble`.
 
 ## Global Constraints
 
@@ -118,14 +118,14 @@ Use `"’"` escapes in test code so the test files stay ASCII-only while still m
 
 **Interfaces:**
 - Consumes: nothing
-- Produces: a package that loads under `devtools::load_all()` and a working `devtools::test()` entry point that every later task calls.
+- Produces: a package that loads under `devtools::load_all()` and a working `testthat::test_local()` entry point that every later task calls.
 
 Installing dependencies **locally** so the package loads is distinct from **declaring** them in `DESCRIPTION`, which is spec step 2 and out of scope here.
 
 - [ ] **Step 1: Install the toolchain and every runtime dependency**
 
 ```bash
-Rscript -e 'install.packages(c("devtools","roxygen2","testthat","covr","rms","expint","survminer","pec","tdROC","yardstick","patchwork","dplyr","magrittr","purrr","tibble","ggplot2","survival"), repos="https://cloud.r-project.org")'
+Rscript -e 'install.packages(c("roxygen2","testthat","covr","pkgload","rms","expint","survminer","pec","tdROC","yardstick","patchwork","dplyr","magrittr","purrr","tibble","ggplot2","survival"), repos="https://cloud.r-project.org")'
 ```
 
 `rms`, `pec`, and `survminer` compile and pull large dependency trees; expect 10-20 minutes. One-time cost.
@@ -140,7 +140,7 @@ Expected: every line `OK`. Do not proceed with any `MISSING`.
 - [ ] **Step 3: Verify the package loads**
 
 ```bash
-Rscript -e 'devtools::load_all("."); cat("loaded OK\n")'
+Rscript -e 'pkgload::load_all("."); cat("loaded OK\n")'
 ```
 Expected: `loaded OK`. Warnings about undeclared imports are expected here and are fixed in spec step 2.
 
@@ -193,7 +193,7 @@ test_that("functions this suite reaches with ::: are genuinely internal", {
 
 - [ ] **Step 7: Run the suite**
 
-Run: `Rscript -e 'devtools::test()'`
+Run: `Rscript -e 'testthat::test_local()'`
 Expected: PASS, 0 failures.
 
 If any name in step 6's first block is absent from `exports`, stop: the `NAMESPACE` differs from the spec's analysis. Record the difference in `findings.md` before continuing.
@@ -384,7 +384,7 @@ test_that("fixture numbers are snapshot-stable", {
 
 - [ ] **Step 4: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "fixtures")'`
+Run: `Rscript -e 'testthat::test_local(filter = "fixtures")'`
 
 Expected: PASS. This first run **creates** `tests/testthat/_snaps/fixtures.md`.
 
@@ -392,7 +392,7 @@ If `fx_cr()` errors, read `R/simulateTwoCauseFineGrayModel.R` to find how many c
 
 - [ ] **Step 5: Run again to confirm snapshots compare rather than re-record**
 
-Run: `Rscript -e 'devtools::test(filter = "fixtures")'`
+Run: `Rscript -e 'testthat::test_local(filter = "fixtures")'`
 Expected: PASS with no "adding new snapshot" messages.
 
 - [ ] **Step 6: Commit**
@@ -542,14 +542,14 @@ test_that("pam.Brier_metric default t_star is the median observed time", {
 
 - [ ] **Step 2: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "cluster-c-metrics")'`
+Run: `Rscript -e 'testthat::test_local(filter = "cluster-c-metrics")'`
 Expected: PASS, snapshots created.
 
 If `pam.rsph_metric` returns no scalar numeric components, the `vapply` filter yields an empty vector; replace that snapshot with `expect_snapshot_value(snap_num(res$Re), style = "serialize")` using whatever component the names snapshot revealed, and record the real structure in `findings.md`.
 
 - [ ] **Step 3: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "cluster-c-metrics")'`
+Run: `Rscript -e 'testthat::test_local(filter = "cluster-c-metrics")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 4: Commit**
@@ -658,14 +658,14 @@ test_that("pec::predictSurvProb drives pam.Brier and is reachable", {
 
 - [ ] **Step 2: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "brier-pec-chain")'`
+Run: `Rscript -e 'testthat::test_local(filter = "brier-pec-chain")'`
 Expected: PASS, snapshots created.
 
 If the "differs from the naive median" assertion fails, the two medians coincide for this fixture. Change `fx_surv()`'s seed in that test only by constructing a local dataset with heavier censoring, so the distinction stays meaningful; record that you did so.
 
 - [ ] **Step 3: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "brier-pec-chain")'`
+Run: `Rscript -e 'testthat::test_local(filter = "brier-pec-chain")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 4: Commit**
@@ -797,14 +797,14 @@ test_that("pam.predict_cr rejects an unrecognised model type", {
 
 - [ ] **Step 2: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "prediction-module")'`
+Run: `Rscript -e 'testthat::test_local(filter = "prediction-module")'`
 Expected: PASS, snapshots created.
 
 `pam.predict_cr` accepts four alternative model arguments (`model1`, `model2`, `fg_model`, `cr_model`). If passing a `coxph` fit as `model1` hits "Unknown model type", read `R/pam.predict_cr.R:60-105` to see which classes each argument dispatches on, use the matching one, and record the accepted classes in `findings.md` — the roxygen does not state them.
 
 - [ ] **Step 3: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "prediction-module")'`
+Run: `Rscript -e 'testthat::test_local(filter = "prediction-module")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 4: Commit**
@@ -958,7 +958,7 @@ test_that("pam.survival_eval requires train_data and covariates", {
 
 - [ ] **Step 2: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "eval-survival")'`
+Run: `Rscript -e 'testthat::test_local(filter = "eval-survival")'`
 Expected: PASS, snapshots created.
 
 If `R_sh` comes back `NA` with a message about Cox-only support or factor variables, that is current behaviour — keep the assertion that the metric is *present* and record the `NA` condition in `findings.md`.
@@ -967,7 +967,7 @@ If `pam.summary`'s per-model column is not named after the list element, read `R
 
 - [ ] **Step 3: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "eval-survival")'`
+Run: `Rscript -e 'testthat::test_local(filter = "eval-survival")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 4: Commit**
@@ -1114,7 +1114,7 @@ test_that("competing-risks status codes include a third level", {
 
 - [ ] **Step 2: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "eval-competing-risks")'`
+Run: `Rscript -e 'testthat::test_local(filter = "eval-competing-risks")'`
 Expected: PASS, snapshots created.
 
 Two shapes to verify against the source rather than assume:
@@ -1124,7 +1124,7 @@ Two shapes to verify against the source rather than assume:
 
 - [ ] **Step 3: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "eval-competing-risks")'`
+Run: `Rscript -e 'testthat::test_local(filter = "eval-competing-risks")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 4: Commit**
@@ -1295,7 +1295,7 @@ test_that("two-phase default metric names are pinned with current spelling", {
 
 - [ ] **Step 2: Run and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "two-phase")'`
+Run: `Rscript -e 'testthat::test_local(filter = "two-phase")'`
 Expected: PASS, snapshots created.
 
 `cc_weights` and `ncc_weights` delegate to `weighted_param`; the `if (is.list(w)) w[[1]] else w` guard handles either return shape, but record the actual shape in `findings.md` since the roxygen does not document it. If `length(wv)` is not 200, the weights are returned only for a sampled subset — record that and relax the length assertion to match, since it changes how `tm_evaluate_two_phase` must be documented.
@@ -1304,7 +1304,7 @@ If `pam.sample_design` requires additional per-model fields, read `R/pam.predict
 
 - [ ] **Step 3: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "two-phase")'`
+Run: `Rscript -e 'testthat::test_local(filter = "two-phase")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 4: Commit**
@@ -1435,7 +1435,7 @@ test_that("summary_pred_plot combines one panel per input", {
 
 - [ ] **Step 3: Run both files and record snapshots**
 
-Run: `Rscript -e 'devtools::test(filter = "rsph-dispatch")'` then `Rscript -e 'devtools::test(filter = "plots")'`
+Run: `Rscript -e 'testthat::test_local(filter = "rsph-dispatch")'` then `Rscript -e 'testthat::test_local(filter = "plots")'`
 Expected: PASS, snapshots created.
 
 If `pam.rsph(fit, test_data = d)` errors because `Gmat` has no default, read `R/pam.rsph.R:76-90` for how it is constructed, replicate that construction in the test, and record the undocumented requirement in `findings.md`.
@@ -1446,7 +1446,7 @@ If `expect_silent(print(p))` fails because ggplot emits a message about removed 
 
 - [ ] **Step 4: Run again to confirm stability**
 
-Run: `Rscript -e 'devtools::test(filter = "rsph-dispatch")'`
+Run: `Rscript -e 'testthat::test_local(filter = "rsph-dispatch")'`
 Expected: PASS, no snapshots added.
 
 - [ ] **Step 5: Commit**
@@ -1471,7 +1471,7 @@ git commit -m "test: characterize R_E dispatch and plotting functions"
 
 - [ ] **Step 1: Run the entire suite**
 
-Run: `Rscript -e 'devtools::test()'`
+Run: `Rscript -e 'testthat::test_local()'`
 Expected: all tests PASS, 0 failures, no "adding new snapshot" messages.
 
 - [ ] **Step 2: Confirm every exported function is exercised**
@@ -1487,7 +1487,7 @@ Expected: `all exports referenced`. Any name listed here needs a test before thi
 
 - [ ] **Step 3: Confirm the suite runs inside the time budget**
 
-Run: `Rscript -e 'system.time(devtools::test())'`
+Run: `Rscript -e 'system.time(testthat::test_local())'`
 Expected: elapsed under 60 seconds. If it exceeds that, reduce fixture `n` from 200 to 100 in `helper-simdata.R`, delete `tests/testthat/_snaps/`, re-run the "record snapshots" step of Tasks 2-9, and update the hard-coded `200L` length assertions to `100L`.
 
 - [ ] **Step 4: Measure and record coverage**
@@ -1511,7 +1511,7 @@ the call graph in the spec, section 2.
 - [ ] **Step 6: Record the starting R CMD check state**
 
 ```bash
-Rscript -e 'devtools::check(document = FALSE, args = c("--no-manual"))' 2>&1 | tail -40 > docs/superpowers/baseline-check.txt
+R CMD build . >/dev/null 2>&1 && R CMD check --no-manual TimeMetric_0.1.0.tar.gz 2>&1 | tail -40 > docs/superpowers/baseline-check.txt
 cat docs/superpowers/baseline-check.txt
 ```
 Expected: the pre-existing errors and warnings about undeclared imports remain. This is the recorded starting point, not a passing check — spec step 2 is what clears them.
@@ -1546,7 +1546,7 @@ git commit -m "test: record baseline coverage and check output before remediatio
 
 ## Done criteria for this step
 
-1. `devtools::test()` passes with 0 failures and completes in under 60 seconds
+1. `testthat::test_local()` passes with 0 failures and completes in under 60 seconds
 2. Every exported function is referenced by at least one test (Task 10 step 2 reports none uncovered)
 3. A second consecutive run adds no new snapshots — proving comparison, not re-recording
 4. No snapshot contains a fitted model object or a full prediction matrix
