@@ -34,8 +34,9 @@ demonstrates both on every push.
 | Decision | Choice | Rationale |
 |---|---|---|
 | Target venue | Resubmit to JOSS | Rejection was software-only; manuscript is sound |
-| API naming | `tm_` prefix, selective deprecation | Fixes S3-method check warning, typos, and PAmeasure optics |
+| API naming | `tm_` prefix, wrappers for all old exports | Fixes `survial`/`surverg` typos, metric-name chaos, PAmeasure optics. **Not** an S3 check fix — see §4 |
 | Test depth | All four categories incl. reference comparison | Numerical correctness is the package's entire value proposition |
+| Test ordering | Characterization tests **before** any deletion or refactor | Locks in current behaviour so refactors are provably safe |
 | Sequencing | Package first, paper later | Package work is a prerequisite and independent of downstream choices |
 | Encoding | UTF-8 files, ASCII-only source | Files already UTF-8; non-ASCII *string literals* must go (see §5) |
 | Metric names | ASCII canonical set, legacy accepted with warning | Same metric currently has up to 4 spellings (see §5) |
@@ -116,7 +117,15 @@ each other or from roxygen `@examples`):
 Cluster C are self-contained metric implementations that take vectors rather than
 fitted models. They are dead as the code stands, but before deleting, confirm they
 are not a better foundation for `tm_evaluate_two_phase` than the current
-model-coupled path. **Delete only after that check.**
+model-coupled path.
+
+**Nothing in any cluster is deleted or refactored until characterization tests
+exist for it.** For Cluster C specifically, pin the current numeric output of
+`pam.rsh_metric`, `pam.rsph_metric`, and `pam.Brier_metric` on fixed-seed data
+*first*. Those tests serve two purposes: they document behaviour before removal,
+and if the functions are instead promoted to back `tm_evaluate_two_phase`, they
+become that path's regression suite. The same rule applies to the two-phase
+metrics, which have no coverage at all today.
 
 ### Explicitly NOT dead — verified live
 
@@ -199,10 +208,46 @@ ORCIDs, as CRAN prefers and JOSS expects.
 
 ## 4. API rename
 
-R parses `pam.foo` as an S3 method for class `foo` on generic `pam`, so
-`R CMD check` emits "apparent S3 methods exported but not registered" — a CRAN
-blocker. The prefix also foregrounds the PAmeasure derivation the editor asked
-about. Renaming resolves both, plus the `survial` / `surverg` typos, in one pass.
+### Correction: the S3 rationale was wrong
+
+An earlier draft justified this rename as fixing a CRAN-blocking
+"apparent S3 methods exported but not registered" warning. **That was tested and
+is false.** A minimal probe package, built with `R CMD build` and checked with
+`R CMD check --as-cran`, gives:
+
+| Exported name | Finding |
+|---|---|
+| `pam.coxph_restricted`, `pam.summary` | none |
+| `pam.rsph.coxph` | `checking S3 generic/method consistency ... NOTE` |
+
+`R CMD check` treats `a.b` as an apparent S3 method only when `a` is an
+**exported generic**. `pam` is not a generic anywhere. `pam.rsph` *is* one
+(`UseMethod`, `R/pam.rsph.R:74`) but is not exported, so even its methods do not
+currently trigger the note. The finding is a NOTE, not a WARNING, and not a
+blocker.
+
+### The rename still stands, on other grounds
+
+- `survial` and `surverg` are misspellings in the public API
+- metric identifiers are inconsistent across entry points (§5)
+- the `pam.` prefix foregrounds the PAmeasure derivation the editor asked about
+- dotted names read as S3 dispatch to R users even where the check tolerates them
+
+### Consequence for the deprecation policy
+
+Because exported `pam.*` wrappers reintroduce **no** check finding, the wrapper
+policy is unconstrained by `R CMD check` and can be decided purely on migration
+grounds. The earlier "selective deprecation" rule is therefore relaxed:
+
+**Retain a deprecating wrapper for every currently-exported function.** There is
+no technical cost, and it maximises compatibility for `paper.code.Rmd` and the
+Zhuang et al. (2025) analysis.
+
+This is re-confirmed empirically during implementation: after the wrappers land,
+`R CMD check --as-cran` on the real package must show no new findings
+attributable to them. If that assumption fails, fall back to unexported wrappers
+plus a migration guide.
+
 
 | Current export | New export |
 |---|---|
@@ -285,10 +330,25 @@ wrong to get a result:
 Normalisation is case-insensitive and treats `_`, space, `’` and `'` as
 equivalent, so all historical spellings resolve.
 
-**To confirm during implementation:** `Pseudo_R2_point` and
-`Time Dependent Auc Empirical` may be genuinely distinct variants (point estimate
-vs. curve) rather than spelling drift. Verify before folding them into the
-canonical names above.
+### No merge without mathematical verification
+
+The table above is a *hypothesis about naming*, not a licence to unify
+computations. Before any two identifiers collapse to one canonical name, the
+quantities behind them must be shown mathematically identical — by deriving the
+estimators, and by a test asserting numeric equality on fixed-seed data.
+
+Three cases must be resolved this way and **must not** be merged on the strength
+of similar names:
+
+| Question | Why it matters |
+|---|---|
+| Does `R_sph` equal `R_E`? | `R_sph` comes from `pam.rsph`/`pam.rsph_metric`; `R_E` is Stare, Perme & Henderson (2011). Shared provenance is not proof of identity. |
+| Is `Pseudo_R2_point` distinct from `Pseudo_R_square`? | Plausibly a point-in-time estimate versus an integrated measure. If so, both survive under distinct canonical names. |
+| Does `Time Dependent Auc Empirical` differ from `Time Dependent Auc`? | Likely an empirical versus a model-based estimator. If so they are separate metrics, not spellings. |
+
+Where verification shows a genuine distinction, both survive with distinct
+canonical identifiers (e.g. `pseudo_r2` and `pseudo_r2_point`). Where it shows
+identity, one becomes a deprecated alias. Unresolved cases stay un-merged.
 
 All source files are already UTF-8; this concerns non-ASCII *content* in code,
 not file encoding. New and edited files stay UTF-8 with ASCII-only source.
@@ -297,6 +357,21 @@ not file encoding. New and edited files stay UTF-8 with ASCII-only source.
 
 `tests/testthat/`, one file per metric family, roughly 40–60 tests. Shared
 fixtures in `helper-simdata.R` with fixed seeds so every test is deterministic.
+
+**Category 0 — characterization tests, written first.** Before any dependency
+change, rename, refactor, or deletion, pin the *current* numeric output of every
+reachable function on fixed-seed data. These encode behaviour as it is today,
+correct or not. They are what makes every subsequent step provably
+behaviour-preserving, and they are the first commit of the implementation.
+
+Priority targets, being the least protected: Cluster C (`pam.rsh_metric`,
+`pam.rsph_metric`, `pam.Brier_metric`), the two-phase case-cohort and NCC paths,
+and the `pam.Brier()` -> `predictSurvProb()` chain that governs whether `pec` can
+be dropped.
+
+If a characterization test later conflicts with a correctness test, that conflict
+is a **finding** — an existing bug — resolved deliberately, never by quietly
+adjusting the expected value.
 
 **Category 1 — known answers.** Provable values, no reference package needed:
 Harrell's C is 1 for a perfectly ordering predictor and 0.5 for a constant one;
@@ -313,9 +388,21 @@ implementation (`R_sh`, `R_E`, pseudo `R^2`, case-cohort / NCC variants).
 **Category 3 — edge cases.** All observations censored; ties in event times; a
 single distinct time point; `t_star` beyond the last event; `tau` defaulting.
 
-**Category 4 — input validation.** `expect_error()` with informative messages on
-mismatched vector lengths, `status` outside `{0,1,2}`, missing `time`/`status`
-columns, prediction dimensions disagreeing with the data.
+**Category 4 — input validation, function-specific.** Validation rules differ by
+data setting and must not be applied uniformly:
+
+| Setting | Valid `status` | Functions |
+|---|---|---|
+| Right-censored survival | `{0, 1}` | `tm_survival_eval`, `tm_predict_coxph`, `tm_predict_survreg`, `tm_evaluate_two_phase` |
+| Competing risks | `{0, 1, …, K}` for K event types | `tm_survival_eval_cr`, `tm_predict_cif`, `tm_summarize_cr` |
+
+A blanket `{0,1,2}` rule would wrongly accept a competing-risks code in a
+single-event function and wrongly reject a third event type in the
+competing-risks functions. Each function validates against its own contract.
+
+Also covered: mismatched vector lengths, missing `time`/`status` columns,
+prediction dimensions disagreeing with the data, and `event.type` outside the
+codes present in the data.
 
 `tm_evaluate_two_phase` gets dedicated coverage for **both** the case-cohort and
 nested case-control paths, including weight construction via
@@ -334,7 +421,13 @@ documented as a deliberate definitional difference.
 Replace `main.yml`, which only builds the JOSS draft PDF and runs no checks:
 
 - `R-CMD-check.yaml` — r-lib standard matrix, Ubuntu / macOS / Windows against R
-  release and devel
+  release and devel.
+- `R-CMD-check-full.yaml` — **one job that installs every reference package**
+  (`pec`, `SurvMetrics`, `timeROC`, `survC1`, `randomForestSRC`) and runs the
+  suite with skipping disabled. Reference comparisons guarded by
+  `skip_if_not_installed()` are worthless if they silently skip in every
+  environment; this job is what turns them into real evidence. Sets
+  `NOT_CRAN=true` and **fails the build if any test reports as skipped**.
 - `test-coverage.yaml` — covr + codecov, badge in README
 - `draft-pdf.yaml` — the existing JOSS paper build, preserved unchanged
 
@@ -352,14 +445,47 @@ quick-start. Every exported function gets a working `@examples` block.
 
 ## Exit criteria
 
-1. `R CMD check --as-cran` — 0 errors, 0 warnings
-2. `devtools::test()` — all tests pass, under 60 seconds
-3. CI green on all platforms in the matrix
-4. README and all `.Rd` files reference only functions that exist
-5. No non-source files in `R/`; no key material in the working tree or history
-6. No non-ASCII characters in R source; all files UTF-8
-7. Metric names canonical everywhere; every legacy spelling still resolves with a warning
-8. Retained deprecated wrappers verified: `paper.code.Rmd` still runs
+Every item is a hard gate.
+
+1. `R CMD check --as-cran` on a tarball built by `R CMD build`: **0 errors,
+   0 warnings, and no avoidable notes.** Any remaining note is individually
+   justified in writing (e.g. "new submission"), not merely tolerated.
+2. `devtools::test()` — all tests pass, **none skipped** in the full-dependency
+   CI job, total runtime under 60 seconds
+3. All documentation examples execute under `R CMD check --run-donttest`; no
+   `dontrun` blocks used to hide examples that do not work
+4. Characterization tests written before, and passing after, every refactor and
+   deletion
+5. Every metric merge backed by a mathematical-equivalence test; unresolved cases
+   left un-merged
+6. README and all `.Rd` files reference only functions that exist
+7. No non-source files in `R/`; no key material in the working tree or history
+8. No non-ASCII characters in R source; all files UTF-8
+9. Metric names canonical everywhere; every legacy spelling still resolves with a
+   deprecation warning
+10. Deprecated wrappers verified: `paper.code.Rmd` still runs
+11. **CI green on every platform in the matrix *after* the history rewrite and
+    force-push** — the rewrite is not done until CI has re-run and passed on the
+    rewritten history
+
+## Implementation order
+
+Small, individually reviewable commits, each leaving the package in a working
+state. Later steps depend on earlier ones.
+
+| # | Step | Gate before proceeding |
+|---|---|---|
+| 1 | **Baseline characterization tests** — pin current behaviour of all reachable functions; set up `testthat` scaffolding | Suite passes against unmodified code |
+| 2 | **Dependencies** — add `rms`, `expint`, `survminer`, `pec` to `Imports`; drop stale `randomForestSRC` import; reconcile `DESCRIPTION`/`NAMESPACE` | Dependency findings clear; step 1 tests still pass |
+| 3 | **New `tm_` API** — new names alongside old, no removals yet; export and document `tm_evaluate_two_phase` | Step 1 tests pass through both old and new names |
+| 4 | **Compatibility decision** — add deprecating wrappers; re-run `R CMD check --as-cran` to confirm no new findings | Empirical confirmation of §4; `paper.code.Rmd` runs |
+| 5 | **Dead-code removal** — Clusters A, B, then C after the Cluster C foundation check | Characterization tests still pass; coverage does not drop |
+| 6 | **Metric standardization** — canonical names plus normalisation, after the §5 equivalence verifications | Equivalence tests pass; no unverified merges |
+| 7 | **Documentation and CI** — README rewrite, examples, workflows including the full-dependency job | CI green on all platforms |
+| 8 | **History rewrite** — `git filter-repo`, force-push, contributors re-clone | CI re-run and green on the rewritten history |
+
+Steps 1 and 2 are the riskiest to skip and the cheapest to do. Step 8 is
+irreversible and happens only once everything else is green.
 
 ## Phase 2 preview (not in scope)
 
