@@ -37,7 +37,8 @@ demonstrates both on every push.
 | API naming | `tm_` prefix, selective deprecation | Fixes S3-method check warning, typos, and PAmeasure optics |
 | Test depth | All four categories incl. reference comparison | Numerical correctness is the package's entire value proposition |
 | Sequencing | Package first, paper later | Package work is a prerequisite and independent of downstream choices |
-| Encoding | UTF-8 throughout; ASCII-only in code | Files are already UTF-8; non-ASCII *string literals* must go (see §5) |
+| Encoding | UTF-8 files, ASCII-only source | Files already UTF-8; non-ASCII *string literals* must go (see §5) |
+| Metric names | ASCII canonical set, legacy accepted with warning | Same metric currently has up to 4 spellings (see §5) |
 
 ---
 
@@ -81,67 +82,117 @@ Support can purge on request.
 
 ## 2. Dead code removal
 
-Static analysis of every function definition against all call sites, S3 dispatch,
-and `paper.code.Rmd`. **Exactly three functions are unreachable:**
+Reachability computed as a call graph rooted at the 15 `NAMESPACE` exports plus
+`UseMethod("pam.rsph")` dispatch targets. **Ten functions are unreachable**, in
+three clusters:
 
-| Function | File | Evidence |
+**Cluster A — standalone orphans** (no reference anywhere beyond their own
+definition):
+
+| Function | File | Action |
 |---|---|---|
-| `pam.prediction_survial_eval` | `R/pam.prediction_survial_eval.R` | Unexported; sole reference is its own definition |
-| `pam.prediction_metrics_cr` | `R/pam.prediction_metrics_cr.R` | Unexported; sole reference is its own definition |
-| `pam.print.rsph` | `R/pam.rsph.R` | Would dispatch on a `pam.print` generic that does not exist |
+| `pam.coxph` | `R/pam.coxph.R` | delete file |
+| `pam.nlm` | `R/pam.nlm.R` | delete file |
+| `pam.survreg` | `R/pam.survreg.R` | delete file |
+| `pam.print.rsph` | `R/pam.rsph.R` | delete function; would dispatch on a `pam.print` generic that does not exist |
 
-Delete these three and the two files that contain only them.
+**Cluster B — the legacy `prediction_*` chain** (unexported, referenced only from
+each other or from roxygen `@examples`):
 
-**Explicitly NOT dead**, despite appearing uncalled by name — verified live:
+| Function | File | Action |
+|---|---|---|
+| `pam.prediction_survial_eval` | `R/pam.prediction_survial_eval.R` | delete file |
+| `pam.prediction_metrics` | `R/pam.prediction_metrics.R` | delete file |
+| `pam.prediction_metrics_cr` | `R/pam.prediction_metrics_cr.R` | delete file |
 
-- `pam.rsph.aareg`, `pam.rsph.coxph`, `pam.rsph.survreg` — reached by
-  `UseMethod("pam.rsph")` at `R/pam.rsph.R:74`. Deleting these would break the
-  `R_sh` metric entirely.
-- `find_mu_c`, `handle_error`, `m_cif`, `pam.survreg`, `pam.summary.rsph` — each
-  has genuine internal call sites.
+**Cluster C — transitively dead**, reachable only from Cluster B:
 
-These S3 methods are dispatched but never registered via `S3method()` in
-`NAMESPACE`. Since `pam.rsph` is internal this is not currently a check failure,
-but roxygen regeneration should register them properly.
+| Function | File | Note |
+|---|---|---|
+| `pam.rsh_metric` | `R/pam.rsh_metric.R` | sole caller is `pam.prediction_metrics` |
+| `pam.rsph_metric` | `R/pam.rsph_metric.R` | sole caller is `pam.prediction_metrics` |
+| `pam.Brier_metric` | `R/pam.Brier_metric.R` | sole caller is `pam.prediction_metrics` |
+
+Cluster C are self-contained metric implementations that take vectors rather than
+fitted models. They are dead as the code stands, but before deleting, confirm they
+are not a better foundation for `tm_evaluate_two_phase` than the current
+model-coupled path. **Delete only after that check.**
+
+### Explicitly NOT dead — verified live
+
+Name-based searching produces false positives for functions passed as *values*
+rather than called. Each of these is live:
+
+- `find_mu_c` — `uniroot(find_mu_c, …)`, `simulateTwoCauseFineGrayModel.R:116`
+- `handle_error` — `error = handle_error`, `pam.predict_cr.R:120,127`
+- `m_cif` — `apply(…, 2, m_cif, …)`, five live call sites
+- `integrate_survival` — three live call sites
+- `pam.rsph.aareg`, `pam.rsph.coxph`, `pam.rsph.survreg` — reached via
+  `UseMethod("pam.rsph")` at `R/pam.rsph.R:74`. These serve the **`R_E`** metric
+  (`pam.summary.rsph(pam.rsph(…))`, `pam.predicted_survial_eval.R:226`), *not*
+  `R_sh`. Deleting them would remove `R_E` entirely.
+
+Any further pruning must re-run the call graph including function-as-value
+references, not grep for `name(`.
+
+### Orphan documentation
+
+`man/find_mu_c.Rd` and `man/integrate_survival.Rd` document unexported internal
+helpers, which produces check warnings. Mark both `@keywords internal` / `@noRd`
+and drop the generated pages. `man/pam.predicted_survial_eval_two_phase.Rd`
+becomes valid once that function is exported (§4).
 
 ## 3. Dependency reconciliation
 
-`R CMD check` fails today independently of tests. Verified by scanning all
-`pkg::fn` call sites in `R/*.R`:
+`R CMD check` fails today independently of tests. Determined by scanning both
+qualified (`pkg::fn`) and **unqualified** call sites — the latter matter because
+`importFrom` makes functions available bare.
 
-### Remove — declared but never used
+### Keep — `pec`
 
-`importFrom(pec, predictSurvProb)` and `importFrom(randomForestSRC, predict.rfsrc)`
-are **stale imports for code that does not exist**. There are zero `pec::` or
-`randomForestSRC::` calls anywhere in `R/`. The only `predictSurvProb` reference
-is the package's own `predictSurvProb2survreg`.
+`pec` is a live runtime dependency, not a stale import. `R/pam.Brier.R:66` calls
+`predictSurvProb(obj, test_data, t_star0)` **unqualified**, resolved through
+`importFrom(pec, predictSurvProb)`. The chain is:
 
-These are deleted outright rather than moved to `Suggests` — there is no optional
-backend to guard. (`pec` returns to `Suggests` in §4 solely as a *test* reference
-implementation.)
+```
+tm_fit_and_eval()  ->  pam.Brier()  ->  predictSurvProb()   [pec]
+```
 
-### Add — used but undeclared
+`pec` stays in `Imports` until that legacy chain is rewritten or removed. Only
+then does it move to `Suggests` as a test reference implementation. **Do not
+remove it in this phase unless the chain is rewritten first.**
 
-Three packages are called at runtime yet appear in neither `DESCRIPTION` nor
-`NAMESPACE`:
+### Add to Imports — used but undeclared
 
-| Package | Call sites |
-|---|---|
-| `rms` | `rms::cph` (3×), `rms::predictrms` (1×) |
-| `survminer` | `survminer::surv_summary` (1×, `R/pam.Ct.R:63`) |
-| `expint` | `expint::gammainc` (1×, `R/pam.surverg_restricted.R:136`) |
+| Package | Call sites | Why required |
+|---|---|---|
+| `rms` | `rms::cph` (3×), `rms::predictrms` (1×) | `R_sh` is in the **default** `metrics` vector (`pam.predicted_survial_eval.R:82`), so this is not an optional path |
+| `expint` | `expint::gammainc` (`pam.surverg_restricted.R:136`) | required while `tm_predict_survreg()` uses it |
+
+### Remove — genuinely stale
+
+`importFrom(randomForestSRC, predict.rfsrc)` has zero call sites, qualified or
+unqualified. Delete the import. Add to `Suggests` only if a test needs it as a
+prediction backend.
+
+### Conditional — `survminer`
+
+One call: `survminer::surv_summary()` at `R/pam.Ct.R:63`, inside the legacy
+`Gt()` / Brier chain. It is a heavy dependency for a single call.
+
+- If the legacy Brier/`Gt()` chain is removed, `survminer` goes with it.
+- Otherwise, replace with base `summary(survfit(...))` **and add a test asserting
+  numerical equivalence** before the swap is accepted. Do not swap unverified.
+
+Until one of those happens, `survminer` must be declared in `Imports` — it is
+currently used and undeclared.
 
 ### Verify and correct
 
-`tdROC` and `yardstick` are genuinely used and correctly in `DESCRIPTION`, but
+`tdROC` and `yardstick` are genuinely used and correctly in `DESCRIPTION` but
 lack `@importFrom` tags. `magrittr`, `purrr`, `tibble` are imported in `NAMESPACE`
-but absent from `DESCRIPTION`. Roxygen regeneration plus a corrected
-`DESCRIPTION` resolves both directions.
-
-**Recommendation (flagged, not assumed):** `survminer` is a heavy dependency
-pulled in for a single `surv_summary()` call, which is replaceable with base
-`summary(survfit(...))`. Dropping it would meaningfully reduce the install
-footprint. Requires maintainer confirmation that behaviour is equivalent.
+but absent from `DESCRIPTION`. Roxygen regeneration plus a corrected `DESCRIPTION`
+resolves both directions.
 
 Bump `Version` to `0.2.0`. Convert `Author`/`Maintainer` to `Authors@R` with
 ORCIDs, as CRAN prefers and JOSS expects.
@@ -199,24 +250,48 @@ genuine functional gap, not merely a documentation error. Export it, write full
 roxygen documentation with runnable examples for *both* designs, and test both
 paths (§5).
 
-## 5. String-literal correctness
+## 5. Metric name standardization
 
-Two user-facing defects in metric-name arguments, both of which force users to
-type something wrong to get results:
+The same metric currently has up to four different string identifiers depending
+on the entry point, so result tables carry different column names for the same
+quantity:
 
-1. **`Pesudo_R` / `Pesudo_R_square`** — misspelling of "Pseudo", 14 occurrences,
-   appearing in default `metrics =` arguments.
-2. **Curly apostrophes** — `"Harrell’s C"` and `"Uno’s C"` (U+2019) in
-   `R/pam.predicted_survial_eval_two_phase.R:45`. Users must type a typographic
-   apostrophe for metric selection to match, which is close to undiscoverable.
-   It is also a CRAN "found non-ASCII strings" NOTE.
+| Canonical (new) | Legacy spellings found in `R/` |
+|---|---|
+| `pseudo_r2` | `Pseudo_R_square`, `Pesudo_R` |
+| `r_square` | `R_square` |
+| `l_square` | `L_square` |
+| `harrell_c` | `Harrells_C`, `Harrell’s C` |
+| `uno_c` | `Unos_C`, `Uno’s C`, `Uno's C` |
+| `r_sh` | `R_sh` |
+| `r_e` | `R_E`, `R_sph`, `rsph` |
+| `brier_score` | `Brier Score`, `Brier_Score` |
+| `td_auc` | `Time Dependent Auc`, `Time_Dependent_Auc`, `Time Dependent AUC`, `AUC` |
 
-Correct both to `"Pseudo_R"` and ASCII `"Harrell's C"` / `"Uno's C"`. Metric
-matching should additionally be made tolerant (case-insensitive, apostrophe
-normalising) so neither variant silently returns nothing.
+Adopt the ASCII canonical set throughout. Legacy names remain accepted at the
+argument boundary via a normalisation lookup that emits a deprecation warning
+naming the replacement, so existing scripts keep working for one release cycle.
 
-All source files are already UTF-8 encoded; this is about non-ASCII *content* in
-code, not file encoding. New and edited files remain UTF-8 with ASCII-only source.
+Two defects this fixes, both of which currently force users to type something
+wrong to get a result:
+
+1. **`Pesudo_R`** — misspelling of "Pseudo", 13 occurrences, present in default
+   `metrics =` arguments. A user asking for `Pseudo_R` gets nothing back.
+2. **Curly apostrophes** — `"Harrell’s C"` / `"Uno’s C"` use U+2019
+   (`pam.predicted_survial_eval_two_phase.R:45,177`). Selection only matches if
+   the user types a typographic apostrophe. Also a CRAN "found non-ASCII strings"
+   NOTE.
+
+Normalisation is case-insensitive and treats `_`, space, `’` and `'` as
+equivalent, so all historical spellings resolve.
+
+**To confirm during implementation:** `Pseudo_R2_point` and
+`Time Dependent Auc Empirical` may be genuinely distinct variants (point estimate
+vs. curve) rather than spelling drift. Verify before folding them into the
+canonical names above.
+
+All source files are already UTF-8; this concerns non-ASCII *content* in code,
+not file encoding. New and edited files stay UTF-8 with ASCII-only source.
 
 ## 6. Test suite
 
@@ -283,7 +358,8 @@ quick-start. Every exported function gets a working `@examples` block.
 4. README and all `.Rd` files reference only functions that exist
 5. No non-source files in `R/`; no key material in the working tree or history
 6. No non-ASCII characters in R source; all files UTF-8
-7. Retained deprecated wrappers verified: `paper.code.Rmd` still runs
+7. Metric names canonical everywhere; every legacy spelling still resolves with a warning
+8. Retained deprecated wrappers verified: `paper.code.Rmd` still runs
 
 ## Phase 2 preview (not in scope)
 
