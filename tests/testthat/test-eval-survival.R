@@ -18,6 +18,10 @@ ev_result <- function() {
 }
 
 test_that("pam.predicted_survial_eval returns a Metric/Value data frame", {
+  # FINDING 11: concordancefit() is called unqualified and never imported,
+  # so survival must be on the search path. Scoped to this test, not global.
+  withr::local_package("survival")
+
   res <- ev_result()
 
   expect_metric_table(res)
@@ -28,6 +32,10 @@ test_that("pam.predicted_survial_eval returns a Metric/Value data frame", {
 })
 
 test_that("the default metric set includes R_sh and R_E in the Metric column", {
+  # FINDING 11: concordancefit() is called unqualified and never imported,
+  # so survival must be on the search path. Scoped to this test, not global.
+  withr::local_package("survival")
+
   # Metric names live in res$Metric; names(res) is c("Metric", "Value").
   # R_sh reaches rms::cph + pam.schemper; R_E reaches pam.rsph dispatch.
   # Asserting both here proves those two code paths execute by default.
@@ -47,6 +55,10 @@ test_that("the default metric set includes R_sh and R_E in the Metric column", {
 })
 
 test_that("pam.predicted_survial_eval rejects an unknown metric name", {
+  # FINDING 11: concordancefit() is called unqualified and never imported,
+  # so survival must be on the search path. Scoped to this test, not global.
+  withr::local_package("survival")
+
   pred <- ev_pred()
 
   expect_error(
@@ -68,8 +80,6 @@ test_that("concordancefit is called but never imported (FINDING 11)", {
   # R/pam.predicted_survial_eval.R:162,169 call concordancefit() unqualified.
   # survival exports it, but TimeMetric's NAMESPACE does not import it, so the
   # call only resolves when survival happens to be attached to the search path.
-  # Loading TimeMetric alone and calling this function fails with
-  # "could not find function \"concordancefit\"".
   imported <- unlist(getNamespaceImports("TimeMetric"), use.names = FALSE)
 
   expect_false("concordancefit" %in% imported)
@@ -77,7 +87,50 @@ test_that("concordancefit is called but never imported (FINDING 11)", {
   expect_true("concordancefit" %in% getNamespaceExports("survival"))
 })
 
+test_that("a clean session without survival attached reproduces FINDING 11", {
+  # The definitive reproduction: a fresh R subprocess that loads TimeMetric and
+  # nothing else. No withr::local_package here on purpose -- this is the state a
+  # first-time user is in, and the primary evaluation function must fail in it.
+  #
+  # When FINDING 11 is fixed (spec: post-baseline priority 1), invert this test
+  # to assert success rather than deleting it.
+  skip_on_cran()
+  pkg_root <- normalizePath(test_path("..", ".."), mustWork = TRUE)
+
+  script <- sprintf('
+    suppressWarnings(pkgload::load_all(%s, quiet = TRUE, attach_testthat = FALSE))
+    stopifnot(!"package:survival" %%in%% search())
+    d <- sim_cox_weibull_censored(n = 50, pi_c = 0.3, v = 2,
+                                  beta = c(0.5, -0.5), seed = 1001)
+    d <- d[, c("time", "status", "x1", "x2")]
+    m <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+                         data = d, x = TRUE, y = TRUE)
+    p <- pam.coxph_restricted(model = m, covs = c("x1", "x2"),
+                              new_data = d, tau = 10e10)
+    r <- try(pam.predicted_survial_eval(
+      model = m, event_time = p$times, predicted_probability = p$surv_prob,
+      status = p$status, covariates = c("x1", "x2"), new_data = d, tau = 10e10
+    ), silent = TRUE)
+    cat(if (inherits(r, "try-error")) as.character(r) else "NO ERROR")
+  ', shQuote(pkg_root))
+
+  out <- suppressWarnings(system2(
+    file.path(R.home("bin"), "Rscript"),
+    args = c("--vanilla", "-e", shQuote(script)),
+    stdout = TRUE, stderr = TRUE
+  ))
+  out <- paste(out, collapse = "\n")
+
+  expect_match(out, "could not find function")
+  expect_match(out, "concordancefit")
+  expect_no_match(out, "NO ERROR")
+})
+
 test_that("R_E and pam.rsph_metric's r2 are NOT the same number (FINDING 7)", {
+  # FINDING 11: concordancefit() is called unqualified and never imported,
+  # so survival must be on the search path. Scoped to this test, not global.
+  withr::local_package("survival")
+
   # Bears directly on the spec's open question of whether R_sph equals R_E.
   # If these were the same quantity the two names could be merged; they are not.
   d <- fx_surv()
@@ -93,6 +146,10 @@ test_that("R_E and pam.rsph_metric's r2 are NOT the same number (FINDING 7)", {
 })
 
 test_that("pam.summary pivots one model into a Metric column table", {
+  # FINDING 11: concordancefit() is called unqualified and never imported,
+  # so survival must be on the search path. Scoped to this test, not global.
+  withr::local_package("survival")
+
   res <- pam.summary(list(value = ev_pred()), tau = 10e10)
 
   expect_metric_table(res)
@@ -102,6 +159,10 @@ test_that("pam.summary pivots one model into a Metric column table", {
 })
 
 test_that("pam.summary puts one column per model and rounds to digits", {
+  # FINDING 11: concordancefit() is called unqualified and never imported,
+  # so survival must be on the search path. Scoped to this test, not global.
+  withr::local_package("survival")
+
   d <- fx_surv()
   p_cox <- pam.coxph_restricted(model = fx_cox(), covs = fx_covs(),
                                 new_data = d, tau = 10e10)

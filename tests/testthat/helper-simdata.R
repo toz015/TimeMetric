@@ -1,12 +1,12 @@
 # Deterministic fixtures shared by all characterization tests.
 # Seeds are fixed; never change them without regenerating every snapshot.
 
-# TimeMetric calls survival::concordancefit unqualified without importing it
-# (see findings.md #11), so the package only works when survival is attached --
-# which is what paper.code.Rmd and every real user session does. Attaching it
-# here characterizes the package as users actually experience it. The missing
-# import is asserted separately in test-eval-survival.R.
-library(survival)
+# survival is deliberately NOT attached here. TimeMetric calls concordancefit()
+# unqualified without importing it (findings.md #11), and a global attach would
+# hide that defect from the whole suite. Tests that genuinely need it use
+# withr::local_package("survival"), which scopes the attach to one test and
+# detaches on exit. test-eval-survival.R reproduces the failure in a clean
+# subprocess.
 
 fx_covs <- function() c("x1", "x2")
 

@@ -178,11 +178,28 @@ remove it in this phase unless the chain is rewritten first.**
 | `rms` | `rms::cph` (3×), `rms::predictrms` (1×) | `R_sh` is in the **default** `metrics` vector (`pam.predicted_survial_eval.R:82`), so this is not an optional path |
 | `expint` | `expint::gammainc` (`pam.surverg_restricted.R:136`) | required while `tm_predict_survreg()` uses it |
 
-### Remove — genuinely stale
+### Optional backends — stale import, live feature
 
-`importFrom(randomForestSRC, predict.rfsrc)` has zero call sites, qualified or
-unqualified. Delete the import. Add to `Suggests` only if a test needs it as a
-prediction backend.
+`importFrom(randomForestSRC, predict.rfsrc)` has zero call sites, so the *import*
+is stale and is deleted. But `randomForestSRC` is **not** an unused dependency:
+`pam.predict_cr()`'s `cr_model` argument dispatches on an `rfsrc` fit
+(`R/pam.predict_cr.R:23-31`), making it a supported optional backend.
+
+The same applies to `cmprsk`, which supplies the `fg_model` (Fine-Gray `crr`)
+path at `R/pam.predict_cr.R:13-21` and is currently declared nowhere at all.
+
+For both:
+
+1. Remove any `NAMESPACE` import.
+2. Declare in `Suggests`.
+3. Guard the dispatch branch with `requireNamespace(..., quietly = TRUE)` and an
+   informative install message naming the package and the argument that needs it.
+4. Add a **guarded integration test** (`skip_if_not_installed()`) exercising the
+   backend end to end, so the path is proven rather than assumed. The
+   full-dependency CI job of section 7 installs both, so these tests actually run
+   there rather than skipping everywhere.
+
+Neither belongs in `Imports`: each serves one optional branch of one function.
 
 ### Conditional — `survminer`
 
@@ -342,7 +359,7 @@ of similar names:
 
 | Question | Why it matters |
 |---|---|
-| Does `R_sph` equal `R_E`? | `R_sph` comes from `pam.rsph`/`pam.rsph_metric`; `R_E` is Stare, Perme & Henderson (2011). Shared provenance is not proof of identity. |
+| ~~Does `R_sph` equal `R_E`?~~ **RESOLVED: no.** | Measured on identical fixture data and risk scores, `R_E` = 0.311868 while `pam.rsph_metric()$r2` = 0.320817 (findings.md #13). They are **different quantities and must remain separate canonical metrics.** Do not alias them. |
 | Is `Pseudo_R2_point` distinct from `Pseudo_R_square`? | Plausibly a point-in-time estimate versus an integrated measure. If so, both survive under distinct canonical names. |
 | Does `Time Dependent Auc Empirical` differ from `Time Dependent Auc`? | Likely an empirical versus a model-based estimator. If so they are separate metrics, not spellings. |
 
@@ -467,6 +484,22 @@ Every item is a hard gate.
 11. **CI green on every platform in the matrix *after* the history rewrite and
     force-push** — the rewrite is not done until CI has re-run and passed on the
     rewritten history
+
+## Post-baseline priority: three defects blocking any reviewer
+
+The characterization baseline surfaced defects that make the package fail for a
+first-time user. These are fixed **first**, immediately after the baseline lands
+and before the rename or any other step, because each is independently
+reviewer-visible.
+
+| Priority | Finding | Fix | Verification |
+|---|---|---|---|
+| 1 | #11 — `concordancefit()` called unqualified and never imported, so `library(TimeMetric)` alone breaks the primary evaluation function | Either `importFrom(survival, concordancefit)` or qualify the call as `survival::concordancefit()`. Prefer qualifying: it is explicit at the call site | Characterization values must be **numerically identical** before and after. The clean-session test that currently reproduces the failure inverts to assert success |
+| 2 | #12 — `pam.survival_eval()` passes `covariates=`/`newdata=` to functions taking `covs=`/`new_data=`, so it has never run | Correct both call sites, `R/pam.survial_eval.R:110,113` | The test currently pinning `expect_error(..., "unused arguments")` inverts to a successful-result characterization |
+| 3 | #14 — `pam.predicted_survial_eval_cr()` returns `Value` as character while `pam.predicted_survial_eval()` returns double | Return numeric from the competing-risks path | `expect_type(cr$Value, "double")`; `is.finite()` must hold without `as.numeric()` |
+
+Each fix inverts an existing characterization test rather than deleting it, so
+the change in behaviour is explicit in the diff.
 
 ## Implementation order
 
