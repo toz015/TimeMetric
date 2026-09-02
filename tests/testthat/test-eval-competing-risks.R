@@ -116,7 +116,7 @@ test_that("competing-risks default metrics use C_index, not Harrell/Uno", {
   expect_true("Pseudo_R_square" %in% res$Metric)
   expect_false("R_sh" %in% res$Metric)
   expect_false("R_E" %in% res$Metric)
-  expect_false("Harrell’s C" %in% res$Metric)
+  expect_false("Harrell\u2019s C" %in% res$Metric)
 })
 
 test_that("pam.predicted_survial_eval_cr rejects an unknown metric name", {

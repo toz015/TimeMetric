@@ -23,3 +23,35 @@ expect_metric_table <- function(res) {
   testthat::expect_false(any(duplicated(res$Metric)))
   invisible(res)
 }
+
+# Path to the package SOURCE root, or NULL when tests run against an installed
+# package (as under covr or R CMD check), where no source tree is present.
+# Tests that read DESCRIPTION/NAMESPACE or re-load the source must skip then.
+pkg_source_root <- function() {
+  root <- tryCatch(
+    normalizePath(testthat::test_path("..", ".."), mustWork = TRUE),
+    error = function(e) NULL
+  )
+  if (is.null(root)) return(NULL)
+  if (!file.exists(file.path(root, "DESCRIPTION"))) return(NULL)
+  if (!dir.exists(file.path(root, "R"))) return(NULL)
+  root
+}
+
+skip_without_source_tree <- function() {
+  root <- pkg_source_root()
+  testthat::skip_if(is.null(root), "no package source tree (installed-package run)")
+  root
+}
+
+# The clean-subprocess reproductions re-load the package source in a fresh R
+# session. Under covr the source is instrumented in a temporary library, so a
+# plain pkgload::load_all() there fails for reasons unrelated to what the test
+# asserts. Skip them during coverage runs only; they run normally otherwise.
+skip_if_covr <- function() {
+  testthat::skip_if(
+    nzchar(Sys.getenv("R_COVR")),
+    "clean-subprocess reload is incompatible with covr instrumentation"
+  )
+}
+

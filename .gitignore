@@ -9,3 +9,6 @@ test.r
 paper*.pdf
 paper_test*.Rmd
 paper*.csv
+# build artifacts
+*.Rcheck/
+TimeMetric_*.tar.gz

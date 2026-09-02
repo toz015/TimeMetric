@@ -1,0 +1,41 @@
+Baseline R CMD check - recorded 2026-09-02, before any remediation.
+
+Command:
+  R CMD build .
+  R CMD check --no-manual TimeMetric_0.1.0.tar.gz
+
+This is the recorded STARTING POINT, not a passing check. Spec step 2
+(dependency reconciliation) is what clears it.
+
+Note that check ABORTS at the dependency stage, so the later checks never run.
+The full set of problems is therefore not yet visible here: rms, survminer and
+expint are also used but undeclared (spec section 3) and will only surface as
+findings once this first ERROR is resolved.
+
+* using log directory ‘/Users/wanghd/Documents/workplace/TimeMetrics/TimeMetric/TimeMetric.Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin25.3.0
+* R was compiled by
+    Apple clang version 17.0.0 (clang-1700.6.4.2)
+    GNU Fortran (Homebrew GCC 15.2.0_1) 15.2.0
+* running under: macOS Tahoe 26.5.1
+* using session charset: UTF-8
+* using option ‘--no-manual’
+* checking for file ‘TimeMetric/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘TimeMetric’ version ‘0.1.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... ERROR
+Namespace dependencies missing from DESCRIPTION Imports/Depends entries:
+  'magrittr', 'pec', 'purrr', 'randomForestSRC', 'tibble'
+
+See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
+manual.
+* DONE
+
+Status: 1 ERROR
+See
+  ‘/Users/wanghd/Documents/workplace/TimeMetrics/TimeMetric/TimeMetric.Rcheck/00check.log’
+for details.
+

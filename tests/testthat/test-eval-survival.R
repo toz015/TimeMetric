@@ -47,8 +47,8 @@ test_that("the default metric set includes R_sh and R_E in the Metric column", {
   expect_true("Pseudo_R_square" %in% res$Metric)
   expect_true("Time Dependent Auc" %in% res$Metric)
   # curly apostrophes, written as unicode escapes so this file stays ASCII
-  expect_true("Harrell’s C" %in% res$Metric)
-  expect_true("Uno’s C" %in% res$Metric)
+  expect_true("Harrell\u2019s C" %in% res$Metric)
+  expect_true("Uno\u2019s C" %in% res$Metric)
   # the ASCII spellings are NOT what the package uses
   expect_false("Harrells_C" %in% res$Metric)
   expect_false("Unos_C" %in% res$Metric)
@@ -95,7 +95,8 @@ test_that("a clean session without survival attached reproduces FINDING 11", {
   # When FINDING 11 is fixed (spec: post-baseline priority 1), invert this test
   # to assert success rather than deleting it.
   skip_on_cran()
-  pkg_root <- normalizePath(test_path("..", ".."), mustWork = TRUE)
+  skip_if_covr()
+  pkg_root <- skip_without_source_tree()
 
   script <- sprintf('
     suppressWarnings(pkgload::load_all(%s, quiet = TRUE, attach_testthat = FALSE))

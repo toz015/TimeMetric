@@ -13,8 +13,10 @@ test_that("pam.rsph methods are never registered with S3method (FINDING 17)", {
   # the namespace -- dispatch resolves, which is why R_E still computes in
   # pam.predicted_survial_eval. A user calling from the global environment gets
   # "no applicable method". Reproduced in a clean subprocess below.
+  root <- skip_without_source_tree()
+
   expect_false(
-    any(grepl("S3method", readLines(test_path("..", "..", "NAMESPACE"))))
+    any(grepl("S3method", readLines(file.path(root, "NAMESPACE"))))
   )
 })
 
@@ -25,7 +27,8 @@ test_that("a clean session cannot dispatch pam.rsph (FINDING 17)", {
   #
   # When the methods are registered (spec step 3), invert this test.
   skip_on_cran()
-  pkg_root <- normalizePath(test_path("..", ".."), mustWork = TRUE)
+  skip_if_covr()
+  pkg_root <- skip_without_source_tree()
 
   script <- sprintf('
     suppressWarnings(pkgload::load_all(%s, quiet = TRUE, attach_testthat = FALSE))

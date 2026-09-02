@@ -171,8 +171,8 @@ test_that("two-phase default metric names are pinned with current spelling", {
   )$metrics)
 
   expect_true("Pesudo_R" %in% defaults)
-  expect_true("Harrell’s C" %in% defaults)
-  expect_true("Uno’s C" %in% defaults)
+  expect_true("Harrell\u2019s C" %in% defaults)
+  expect_true("Uno\u2019s C" %in% defaults)
   expect_false("Pseudo_R" %in% defaults)
   expect_snapshot_value(defaults, style = "serialize")
 })
