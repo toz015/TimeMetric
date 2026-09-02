@@ -21,6 +21,7 @@
 - Internal (unexported) functions are reached with `TimeMetric:::`. See the export table below — getting this wrong produces "could not find function" at runtime.
 - Target total suite runtime under 60 seconds. Fixtures use `n = 200`, never the `n = 3000`/`n = 10000` of `paper.code.Rmd`.
 - Commit after every task. Never run `testthat::snapshot_accept()` after the baseline task without reviewing the diff.
+- `pkgload::load_all()` + `testthat::test_local()` are a **local development convenience only**. They load source directly and do not exercise installation, `NAMESPACE` resolution, or `Imports` declarations. CI (spec step 7) must still run `R CMD build` followed by `R CMD check --as-cran` against the built tarball, which is the only thing that validates the installed package. Do not let this substitution propagate into the workflow files.
 
 ## Reference: exported vs internal
 

@@ -33,8 +33,9 @@ fx_cox <- function() {
 }
 
 fx_survreg <- function() {
+  # x = TRUE, y = TRUE is required: pam.surverg_restricted errors without it
   survival::survreg(
     survival::Surv(time, status) ~ x1 + x2,
-    data = fx_surv(), dist = "weibull"
+    data = fx_surv(), dist = "weibull", x = TRUE, y = TRUE
   )
 }
