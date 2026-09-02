@@ -1,6 +1,13 @@
 # Deterministic fixtures shared by all characterization tests.
 # Seeds are fixed; never change them without regenerating every snapshot.
 
+# TimeMetric calls survival::concordancefit unqualified without importing it
+# (see findings.md #11), so the package only works when survival is attached --
+# which is what paper.code.Rmd and every real user session does. Attaching it
+# here characterizes the package as users actually experience it. The missing
+# import is asserted separately in test-eval-survival.R.
+library(survival)
+
 fx_covs <- function() c("x1", "x2")
 
 fx_surv <- function() {
