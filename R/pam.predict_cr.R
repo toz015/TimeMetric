@@ -61,6 +61,10 @@ pam.predict_cr <- function(model1 = NULL, model2 = NULL,
   if(is.null(tau)) tau <- max(newdata$time)
   ###  Handle Fine-Gray model (crr model fg_model)
   if (!is.null(fg_model)) {
+    if (!requireNamespace("cmprsk", quietly = TRUE)) {
+      stop("The 'fg_model' argument requires the 'cmprsk' package. ",
+           "Install it with install.packages(\"cmprsk\").", call. = FALSE)
+    }
     m_pred <- predict(fg_model, as.matrix(newdata[, covs, drop = FALSE]))
     if (is.null(dim(m_pred[, -1]))) return(NULL)
     pred <- apply(m_pred[, -1], 2, m_cif, time.cif = m_pred[, 1], tau = tau)
@@ -71,6 +75,11 @@ pam.predict_cr <- function(model1 = NULL, model2 = NULL,
   }
   
   if (!is.null(cr_model)) {
+    if (!requireNamespace("randomForestSRC", quietly = TRUE)) {
+      stop("The 'cr_model' argument requires the 'randomForestSRC' package. ",
+           "Install it with install.packages(\"randomForestSRC\").",
+           call. = FALSE)
+    }
     cr_pred <- predict(cr_model, newdata = newdata)
     cif_event <- cr_pred$cif[,,event.type]
     m_pred <- cbind(cr_pred$time.interest, t(cif_event))

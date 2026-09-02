@@ -63,10 +63,6 @@ test_that("pam.predicted_survial_eval_cr returns a Metric/Value table", {
 })
 
 test_that("eval_cr returns Value as character, eval returns double (FINDING 14)", {
-  # FINDING 11: concordancefit() is called unqualified and never imported,
-  # so survival must be on the search path. Scoped to this test, not global.
-  withr::local_package("survival")
-
   # The two evaluation entry points disagree on the type of the Value column,
   # so a user switching between survival and competing-risks results must
   # convert in one case and not the other.

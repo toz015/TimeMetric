@@ -11,7 +11,6 @@
 #'
 #' @importFrom survival Surv
 #' @importFrom pec predictSurvProb
-#' @importFrom randomForestSRC predict.rfsrc
 #' @importFrom stats median
 #' @param object An object of class \code{Surv}, created by the \code{Surv} function, or a fitted survival model, such as those produced by \code{coxph}, \code{survreg}, or \code{rfsrc}.
 #' @param pre_sp 
