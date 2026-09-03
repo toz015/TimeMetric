@@ -41,12 +41,22 @@ at the dependency stage).
 Remaining NOTEs:
 
 1. **`New submission`** -- inherent to a package not yet on CRAN. Not actionable.
-2. **Undefined global functions `pam.concordance_metric` and `prediction_metrics`**,
-   plus `pam.rsph_metric(..., start_time)` passing an argument that signature does
-   not accept. All three are inside `pam.prediction_metrics` and
-   `pam.prediction_metrics_cr` -- the Cluster B dead code the spec's call graph
-   identified as unreachable. They call functions that **exist nowhere in the
-   package**, which is further confirmation they have never run. This NOTE clears
-   when spec step 5 deletes them; it is deliberately left until then rather than
-   patched, since patching unreachable code adds no value.
+2. ~~Undefined global functions `pam.concordance_metric` and `prediction_metrics`~~
+   **RESOLVED** by deleting Cluster B (2026-09-03). The NOTE was caused entirely
+   by that dead code calling functions which existed nowhere in the package.
+
+## Status after Cluster B removal
+
+`R CMD check --as-cran`: **0 errors, 0 warnings, 1 NOTE** -- and that NOTE is only
+`New submission`, which is inherent to a package not yet on CRAN.
+
+Deleted: `pam.prediction_survial_eval`, `pam.prediction_metrics`,
+`pam.prediction_metrics_cr` (408 lines, 3 files). Each was its own file, generated
+no `.Rd`, and was referenced nowhere in tests, README, or the paper.
+
+**Cluster A** (`pam.coxph`, `pam.nlm`, `pam.survreg`, `pam.print.rsph`) and
+**Cluster C** (`pam.rsh_metric`, `pam.rsph_metric`, `pam.Brier_metric`) remain.
+Cluster C is deliberately retained until the two-phase equivalence gate of spec
+section 5 is resolved -- it may be the better foundation for
+`tm_evaluate_two_phase` than the current model-coupled path.
 

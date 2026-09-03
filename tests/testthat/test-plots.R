@@ -36,8 +36,7 @@ test_that("plot_pred documents the arguments it actually has (FINDING 20)", {
   # man/plot_pred.Rd previously documented a sample_size argument that did not
   # exist, while the real sample_index -- whose NULL default blanked the plot --
   # was undocumented.
-  root <- skip_without_source_tree()
-  rd <- paste(readLines(file.path(root, "man", "plot_pred.Rd"), warn = FALSE),
+  rd <- paste(readLines(skip_without_rd("plot_pred.Rd"), warn = FALSE),
               collapse = "\n")
 
   expect_true(grepl("item{sample_index}", rd, fixed = TRUE))

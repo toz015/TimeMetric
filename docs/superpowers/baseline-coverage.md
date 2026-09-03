@@ -1,21 +1,20 @@
-# Baseline Coverage - characterization suite
+# Baseline Coverage - after Cluster B removal
 
-Measured 2026-09-02, before any rename, dependency change, or deletion. This is
-the floor: spec step 5 (dead-code removal) must not reduce coverage of any
-function that survives. Files at 0% are the deletion candidates the spec's call
-graph identified as unreachable.
+Measured 2026-09-03 on the package **as committed** -- unlike the first baseline,
+which had to be taken on a patched copy because findings.md #6 made the real
+package impossible to install.
 
-**Caveat.** Coverage could not be measured on the package as committed, because
-`R CMD INSTALL` fails outright (findings.md #6: `NAMESPACE` imports
-`randomForestSRC`, which is declared in no `DESCRIPTION` field and is not
-installed). The measurement below was taken on an identical copy with that one
-`importFrom` line removed, which is sufficient to make installation succeed.
-Re-measure on the real package once that finding is fixed.
+Coverage rose from 63.09% to 75.38%. The package gained no tests in between; the
+increase comes from deleting the 408 lines of unreachable Cluster B code that
+were dragging the denominator down.
 
-The two clean-subprocess reproductions (findings #11 and #17) skip under covr,
-which instruments the source into a temporary library and breaks a plain
-`pkgload::load_all()` in a child process. They run normally in `testthat::test_local()`
-and in CI.
+This is the floor for any further removal: deleting Cluster C or Cluster A must
+not reduce coverage of a function that survives.
+
+The two clean-subprocess reproductions and the Rd-reading test skip under covr,
+which installs an instrumented copy to a temporary library where a child-process
+pkgload::load_all() fails and man/ does not exist. They run normally under
+testthat::test_local() and in CI.
 
 ```
 ```

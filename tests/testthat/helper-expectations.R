@@ -55,3 +55,13 @@ skip_if_covr <- function() {
   )
 }
 
+# Path to an .Rd file in the package source, skipping when man/ is absent.
+# Under covr and R CMD check the package is installed to a temporary library
+# where Rd sources are replaced by a help database, so man/ does not exist.
+skip_without_rd <- function(name) {
+  root <- skip_without_source_tree()
+  rd <- file.path(root, "man", name)
+  testthat::skip_if(!file.exists(rd), paste0("man/", name, " not present"))
+  rd
+}
+
