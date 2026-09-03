@@ -416,10 +416,10 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
 #'
 #' @param models A **named list**; each element is a list with components:
 #'   \itemize{
-#'     \item \code{pred_cif}   — numeric matrix of predicted CIF values (rows: time grid; cols: subjects)
-#'     \item \code{time.cif}   — numeric vector of the time grid corresponding to \code{pred_cif} rows
-#'     \item \code{event_time} — numeric vector of observed times
-#'     \item \code{status}     — integer vector of event codes (0=censoring; \code{event_type}=target; others=competing)
+#'     \item \code{pred_cif}   -- numeric matrix of predicted CIF values (rows: time grid; cols: subjects)
+#'     \item \code{time.cif}   -- numeric vector of the time grid corresponding to \code{pred_cif} rows
+#'     \item \code{event_time} -- numeric vector of observed times
+#'     \item \code{status}     -- integer vector of event codes (0=censoring; \code{event_type}=target; others=competing)
 #'   }
 #' @param metrics Character vector of metrics to compute (passed through to
 #'   \code{pam.predicted_survial_eval_cr()}); use \code{"all"} for all supported.

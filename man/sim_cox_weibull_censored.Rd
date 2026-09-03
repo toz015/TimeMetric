@@ -39,6 +39,9 @@ no calibration is performed.}
 
 \item{interact}{Logical (default \code{FALSE}). 
 If \code{TRUE}, include pre-defined interaction terms as described above.}
+
+\item{nonlinear}{Logical. If `TRUE`, generates two covariates plus their
+interaction and a quadratic term; `beta` must then have length 4.}
 }
 \value{
 A \code{data.frame} with columns:

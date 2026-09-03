@@ -1,10 +1,10 @@
 #' @title Performance Metrics for Survival Analysis Models
 #'
-#' @description This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell’s C, Uno’s C, R_sph (distance-based estimator for survival predictive accuracy), R_sh, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
+#' @description This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, R_sph (distance-based estimator for survival predictive accuracy), R_sh, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
 #'
 #' @param train_data A data frame containing the survival data.
 #' @param covariates A character vector of covariate names to include in the model.
-#' @param model A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.
+#' @param models A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.
 #' @param metrics A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
 #'   \itemize{
 #'     \item "R_square": R-squared metric.
@@ -77,7 +77,7 @@ pam.survival_eval <- function (train_data, covariates, models = "coxph",
   formula <- as.formula(formula_text)
   
   model_types <- if (("all" %in% models)) c("coxph", "exp", "lognormal", "weibull") else models
-  metrics <- if (("all" %in% metrics))c("Pseudo_R_square", "R_square", "L_square", "Harrell’s C", "Uno’s C", "R_sph", "R_sh", "Brier Score", "Time Dependent Auc") else metrics
+  metrics <- if (("all" %in% metrics))c("Pseudo_R_square", "R_square", "L_square", "Harrell\u2019s C", "Uno\u2019s C", "R_sph", "R_sh", "Brier Score", "Time Dependent Auc") else metrics
   # Define a list to hold metrics
   metrics_results <- list()
   
@@ -125,12 +125,12 @@ pam.survival_eval <- function (train_data, covariates, models = "coxph",
       metrics_results[[fit_name]]$L_square <- round(r_l_list[2], 2)
     }
     
-    if ("Harrell’s C" %in% metrics) {
-      metrics_results[[fit_name]]$"Harrell’s C" <- pam.concordance(fits[[fit_name]], newdata = test_data)$concordance
+    if ("Harrell\u2019s C" %in% metrics) {
+      metrics_results[[fit_name]]$"Harrell\u2019s C" <- pam.concordance(fits[[fit_name]], newdata = test_data)$concordance
     }
     
-    if ("Uno’s C" %in% metrics) {
-      metrics_results[[fit_name]]$"Uno’s C" <- pam.concordance(fits[[fit_name]], newdata = test_data, timewt="n/G2")$concordance
+    if ("Uno\u2019s C" %in% metrics) {
+      metrics_results[[fit_name]]$"Uno\u2019s C" <- pam.concordance(fits[[fit_name]], newdata = test_data, timewt="n/G2")$concordance
     }
     
     if ("R_sph" %in% metrics) {

@@ -45,15 +45,17 @@ if \code{NULL}, defaults to "Panel 1", "Panel 2", etc.}
 
 \item{shape_style}{Numeric vector of plotting symbols for censoring/event status.}
 
-\item{sample_size}{Number. set it if you want to sample the number of points in your plot}
+\item{sample_size}{Optional integer. If supplied, that many subjects are
+sampled at random for each panel using \code{seed}; otherwise every
+subject is plotted.}
+
+\item{restrict_time}{Optional numeric. If supplied, observed times above
+this value are capped at it and a dashed horizontal reference line is
+drawn, which keeps a few long follow-up times from compressing the plot.}
 
 \item{legend_name}{Character string for the legend title (default = "status").}
 
 \item{seed}{(option) random seed for sampling points.}
-
-\item{tag_prefix, tag_suffix}{Strings for wrapping tags, e.g., "(" and ")" for "(a)", "(b)" (default).}
-
-\item{legend_position}{Legend position for the combined plot (default = "bottom").}
 }
 \value{
 A patchwork \code{ggplot} object combining all panels.

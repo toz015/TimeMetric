@@ -10,14 +10,14 @@ pam.summary(models, metrics = NULL, t_star = NULL, tau = 1e+11, digits = 2)
 \item{models}{A **named list** in which each element corresponds to a fitted model.
 Each model entry must itself be a list containing:
 \itemize{
-  \item \code{times} — numeric vector of observed follow-up times.
-  \item \code{surv_prob} — an \eqn{n \times K} matrix (or data frame) of
+  \item \code{times} -- numeric vector of observed follow-up times.
+  \item \code{surv_prob} -- an \eqn{n \times K} matrix (or data frame) of
         subject-specific predicted survival probabilities on a common time grid.
-  \item \code{status} — event indicator (1 = event, 0 = censored).
-  \item \code{pred} — (optional) predicted mean survival time (restricted or unrestricted).
-  \item \code{new_data} — (optional) dataset used for prediction.
-  \item \code{covs} — character vector of covariate names used for prediction.
-  \item \code{model} — (optional) the underlying fitted survival model object.
+  \item \code{status} -- event indicator (1 = event, 0 = censored).
+  \item \code{pred} -- (optional) predicted mean survival time (restricted or unrestricted).
+  \item \code{new_data} -- (optional) dataset used for prediction.
+  \item \code{covs} -- character vector of covariate names used for prediction.
+  \item \code{model} -- (optional) the underlying fitted survival model object.
 }
 Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.}
 

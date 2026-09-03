@@ -4,9 +4,9 @@
 #' Gt is used to calculate G(t) at any timepoint you want.
 #'
 #' @param object object of class \code{Surv} created by Surv function.
-#' @param timepoint any point in time you want to get the Kaplan–Meier estimate of the censoring.
+#' @param timepoint any point in time you want to get the Kaplan-Meier estimate of the censoring.
 #'
-#' @return The Kaplan–Meier estimate of the censoring distribution and the value of G(t) is between 0 and 1.
+#' @return The Kaplan-Meier estimate of the censoring distribution and the value of G(t) is between 0 and 1.
 #'
 #' @references
 #' Graf, Erika, Schmoor, Claudia, Sauerbrei, & Willi, et al. (1999). Assessment and comparison of prognostic classification schemes for survival data. Statist. Med., 18(1718), 2529-2545.

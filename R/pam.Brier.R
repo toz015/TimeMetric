@@ -49,7 +49,7 @@
 #' @noRd
 
 pam.Brier <- function(object, pre_sp, t_star = -1) {
-  # case1、coxph AND testing set
+  # case1, coxph AND testing set
   if (inherits(object, "coxph")) {
     obj <- object
     test_data <- pre_sp
@@ -71,7 +71,7 @@ pam.Brier <- function(object, pre_sp, t_star = -1) {
   }
   
   
-  # case2、RSF AND testing set
+  # case2, RSF AND testing set
   if (inherits(object, c("rfsrc"))) {
     obj <- object
     test_data <- pre_sp

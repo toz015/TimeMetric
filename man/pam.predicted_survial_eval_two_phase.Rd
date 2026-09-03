@@ -27,12 +27,12 @@ If NULL, it defaults to the median survival time.}
 \item{tau}{(Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 If NULL, it defaults to the maximum observed survival time.}
 
+\item{km_cens_fit}{Kaplan-Meier estimate of the censoring distribution, a
+`survival::survfit` object.}
+
 \item{case_weights}{Numeric vector of case weights (from `weighted_param()`).}
 
-\item{analysis_data}{A data frame containing the analysis dataset used in the fitted Cox model.
-Must include `time` and `status` columns.}
-
-\item{km_cens}{Kaplan–Meier estimate of censoring distribution (`survival::survfit` object).}
+\item{metrics}{Character vector of metrics to compute.}
 }
 \value{
 A tibble with columns:
@@ -44,7 +44,7 @@ This function constructs a standardized evaluation dataset (`dat1`) from the
 analysis dataset, predicted survival probabilities, and sampling weights, and
 computes key performance metrics in a tidy table format.
 Works for common two-phase sampling designs:
-  - Case–cohort (unstratified or stratified)
-  - Nested case–control (matched or unmatched)
+  - Case-cohort (unstratified or stratified)
+  - Nested case-control (matched or unmatched)
 }
 \keyword{internal}

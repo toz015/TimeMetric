@@ -51,7 +51,13 @@ to \code{c(1, 19)} for two levels (censored vs event) or
 of \code{linear.pred} so that higher values correspond to higher risk.
 Set to \code{FALSE} if you want higher values correspond to lower risk.}
 
-\item{sample_size}{Number. set it if you want to sample the number of points in your plot}
+\item{sample_index}{Optional integer vector selecting which subjects to
+plot, e.g. \code{sample(seq_len(n), 200)} to thin a crowded chart. If
+\code{NULL} (default), every subject is plotted.}
+
+\item{restrict_time}{Optional numeric. If supplied, observed times above
+this value are capped at it and a dashed horizontal reference line is
+drawn, which keeps a few long follow-up times from compressing the plot.}
 }
 \value{
 A \code{ggplot} object that can be further customized.

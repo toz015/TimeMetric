@@ -32,7 +32,12 @@
 #' @param invert_linear Logical; if \code{TRUE} (default), plots the negative
 #'   of \code{linear.pred} so that higher values correspond to higher risk.
 #'   Set to \code{FALSE} if you want higher values correspond to lower risk.
-#' @param sample_size Number. set it if you want to sample the number of points in your plot
+#' @param sample_index Optional integer vector selecting which subjects to
+#'   plot, e.g. \code{sample(seq_len(n), 200)} to thin a crowded chart. If
+#'   \code{NULL} (default), every subject is plotted.
+#' @param restrict_time Optional numeric. If supplied, observed times above
+#'   this value are capped at it and a dashed horizontal reference line is
+#'   drawn, which keeps a few long follow-up times from compressing the plot.
 #' @details
 #' The function is primarily designed for quick visual diagnostics in survival
 #' model development. The line (\code{pred} vs \code{linear.pred}) shows the
@@ -70,6 +75,11 @@ plot_pred <- function(data,
   
   # optionally invert the linear predictor
   x_var <- if (invert_linear) -data$linear.pred else data$linear.pred
+
+  # NULL means "plot every subject". Without this, x_var[NULL] returns a
+  # zero-length vector and the plot renders empty.
+  if (is.null(sample_index)) sample_index <- seq_along(x_var)
+
   df <- data.frame(
     x_var = x_var[sample_index],
     pred  = data$pred[sample_index],
@@ -116,8 +126,6 @@ plot_pred <- function(data,
 #' @param plot_fun Function that creates a single panel (default = \code{plot_pred}).
 #' @param ncol Number of columns in the panel layout (default = 2).
 #' @param tag_levels Letter style for tags: \code{"a"}, \code{"A"}, \code{"1"}, \code{"i"}, or \code{"I"}.
-#' @param tag_prefix,tag_suffix Strings for wrapping tags, e.g., "(" and ")" for "(a)", "(b)" (default).
-#' @param legend_position Legend position for the combined plot (default = "bottom").
 #'
 #' @param invert_linear Logical or logical vector; if length 1, recycled to all panels.
 #' @param xlab,ylab Axis labels applied to all panels (defaults are "Risk Score" and "Days").
@@ -125,7 +133,12 @@ plot_pred <- function(data,
 #' @param levels Numeric vector for \code{status} level ordering.
 #' @param shape_style Numeric vector of plotting symbols for censoring/event status.
 #' @param legend_name Character string for the legend title (default = "status").
-#' @param sample_size Number. set it if you want to sample the number of points in your plot
+#' @param sample_size Optional integer. If supplied, that many subjects are
+#'   sampled at random for each panel using \code{seed}; otherwise every
+#'   subject is plotted.
+#' @param restrict_time Optional numeric. If supplied, observed times above
+#'   this value are capped at it and a dashed horizontal reference line is
+#'   drawn, which keeps a few long follow-up times from compressing the plot.
 #' @param seed (option) random seed for sampling points. 
 #'
 #' @return A patchwork \code{ggplot} object combining all panels.

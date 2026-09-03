@@ -2,14 +2,14 @@
 % Please edit documentation in R/cc_weights.R
 \name{cc_weights}
 \alias{cc_weights}
-\title{Case–cohort sampling weights}
+\title{Case-cohort sampling weights}
 \usage{
 cc_weights(time, status, subcohort = NULL, strata = NULL)
 }
 \arguments{
 \item{time}{Numeric vector of follow-up times.}
 
-\item{status}{Numeric {0,1}, 1 = event, 0 = censored.}
+\item{status}{Numeric \{0,1\}, 1 = event, 0 = censored.}
 
 \item{subcohort}{Logical vector; TRUE if in subcohort.}
 
@@ -19,6 +19,6 @@ cc_weights(time, status, subcohort = NULL, strata = NULL)
 Numeric vector of weights.
 }
 \description{
-Computes Prentice-style weights for case–cohort designs. If `strata`
-is provided, stratified case–cohort weights are computed.
+Computes Prentice-style weights for case-cohort designs. If `strata`
+is provided, stratified case-cohort weights are computed.
 }

@@ -22,4 +22,17 @@ Both branches check availability with `requireNamespace()` and raise an
 informative error naming the package to install.
 }
 
+\author{
+\strong{Maintainer}: Tong Zhu \email{toz015@ucla.edu}
+
+Authors:
+\itemize{
+  \item Tong Zhu \email{toz015@ucla.edu}
+  \item Zian Zhuang
+  \item Wen Su
+  \item Xiaowu Dai
+  \item Gang Li
+}
+
+}
 \keyword{internal}

@@ -1,13 +1,13 @@
 # -------------------------------------------------------------------
 # PUBLIC: NCC weights (handles matched if `strata` given)
 # -------------------------------------------------------------------
-#' Nested case–control (NCC) sampling weights
+#' Nested case-control (NCC) sampling weights
 #'
 #' Computes inverse-selection weights for NCC designs. If `strata` is
 #' provided, matched NCC weights are computed.
 #'
 #' @param time Numeric vector of follow-up times.
-#' @param status Numeric {0,1}, 1 = event, 0 = censored.
+#' @param status Numeric \{0,1\}, 1 = event, 0 = censored.
 #' @param strata Optional factor/character for matching sets (matched NCC).
 #' @param m Integer, number of controls per case (required).
 #' @return Numeric vector of weights.

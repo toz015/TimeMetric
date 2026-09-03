@@ -13,37 +13,50 @@ test_that("plot_pred requires linear.pred, pred, times and status", {
   )
 })
 
-test_that("plot_pred with the default sample_index draws NOTHING (FINDING 18)", {
-  # sample_index defaults to NULL, and the function then subsets with
-  # x_var[sample_index]. x[NULL] is a zero-length vector, so the data frame
-  # behind the plot is empty and the chart is blank -- silently, with no
-  # warning, on the documented default call.
-  #
-  # When this is fixed, invert the test to expect 200 rows.
+test_that("plot_pred with the default sample_index draws every subject (FINDING 18 fixed)", {
+  # sample_index defaults to NULL, which previously reached x_var[NULL] and
+  # produced a zero-length data frame -- a silently blank chart on the
+  # documented default call. NULL now means "plot every subject".
   p <- plot_pred(plot_input())
   built <- ggplot2::ggplot_build(p)
 
   expect_s3_class(p, "ggplot")
-  expect_identical(nrow(p$data), 0L)
-  expect_identical(nrow(built$data[[1]]), 0L)
-  expect_identical(nrow(built$data[[2]]), 0L)
+  expect_identical(nrow(p$data), 200L)
+  expect_identical(nrow(built$data[[1]]), 200L)
+  expect_identical(nrow(built$data[[2]]), 200L)
 })
 
-test_that("plot_pred renders every subject when sample_index is supplied", {
-  p <- plot_pred(plot_input(), sample_index = seq_len(200))
+test_that("plot_pred sample_index thins the plot to the chosen subjects", {
+  built <- ggplot2::ggplot_build(plot_pred(plot_input(), sample_index = 1:50))
+
+  expect_identical(nrow(built$data[[1]]), 50L)
+})
+
+test_that("plot_pred documents the arguments it actually has (FINDING 20)", {
+  # man/plot_pred.Rd previously documented a sample_size argument that did not
+  # exist, while the real sample_index -- whose NULL default blanked the plot --
+  # was undocumented.
+  root <- skip_without_source_tree()
+  rd <- paste(readLines(file.path(root, "man", "plot_pred.Rd"), warn = FALSE),
+              collapse = "\n")
+
+  expect_true(grepl("item{sample_index}", rd, fixed = TRUE))
+  expect_true(grepl("item{restrict_time}", rd, fixed = TRUE))
+  expect_false(grepl("sample_size", rd, fixed = TRUE))
+})
+
+test_that("plot_pred builds exactly two layers", {
+  p <- plot_pred(plot_input())
   built <- ggplot2::ggplot_build(p)
 
   expect_identical(length(p$layers), 2L)
-  expect_identical(nrow(built$data[[1]]), 200L)
-  expect_identical(nrow(built$data[[2]]), 200L)
   expect_snapshot_value(
     vapply(built$data, nrow, integer(1)), style = "serialize"
   )
 })
 
 test_that("plot_pred uses the supplied labels", {
-  p <- plot_pred(plot_input(), sample_index = seq_len(200),
-                 title = "characterization", xlab = "RS", ylab = "Days")
+  p <- plot_pred(plot_input(), title = "characterization", xlab = "RS", ylab = "Days")
 
   expect_identical(p$labels$title, "characterization")
   expect_identical(p$labels$x, "RS")
@@ -51,7 +64,7 @@ test_that("plot_pred uses the supplied labels", {
 })
 
 test_that("plot_pred defaults xlab to Risk Score and ylab to Days", {
-  p <- plot_pred(plot_input(), sample_index = seq_len(200))
+  p <- plot_pred(plot_input())
 
   expect_identical(p$labels$x, "Risk Score")
   expect_identical(p$labels$y, "Days")
@@ -59,7 +72,7 @@ test_that("plot_pred defaults xlab to Risk Score and ylab to Days", {
 
 test_that("plot_pred restrict_time caps the plotted times", {
   cap <- 1
-  p <- plot_pred(plot_input(), sample_index = seq_len(200), restrict_time = cap)
+  p <- plot_pred(plot_input(), restrict_time = cap)
 
   expect_true(all(p$data$times <= cap))
   expect_gt(sum(p$data$times == cap), 0)

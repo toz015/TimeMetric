@@ -44,6 +44,8 @@
 #' @param sd Optional positive numeric. Standard deviation used in 
 #'   \eqn{\log C = \mu + r_i}. If \code{NULL}, defaults to \eqn{\mathrm{sd}(\log Y)}.
 #' @param seed Optional integer seed for reproducibility.
+#' @param nonlinear Logical. If `TRUE`, generates two covariates plus their
+#'   interaction and a quadratic term; `beta` must then have length 4.
 #' @param interact Logical (default \code{FALSE}). 
 #'   If \code{TRUE}, include pre-defined interaction terms as described above.
 #'

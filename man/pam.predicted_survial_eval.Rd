@@ -20,7 +20,7 @@ pam.predicted_survial_eval(
 \arguments{
 \item{model}{A fitted survival model object used by certain metrics:
 \itemize{
-  \item For \code{"R_sh"} (Schemper–Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
+  \item For \code{"R_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
         (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
   \item For \code{"R_E"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
 }}
@@ -40,7 +40,7 @@ pam.predicted_survial_eval(
 \item{covariates}{A character vector specifying the names of the covariates used in the model.}
 
 \item{new_data}{Optional data frame used by metrics that require refitting or
-prediction from \code{model} (e.g., Schemper–Henderson \code{"R_sh"} and
+prediction from \code{model} (e.g., Schemper-Henderson \code{"R_sh"} and
 rank-based \code{"R_E"}). If supplied, it should contain the variables
 needed by those procedures and columns \code{time} and \code{status}
 coded as above.}
@@ -48,12 +48,12 @@ coded as above.}
 \item{metrics}{A character vector specifying the evaluation metrics to compute. Options include:
 \itemize{
   \item "Pseudo_R_square" - Pseudo R-squared measure
-  \item "R_square" - Explained variation R²
+  \item "R_square" - Explained variation R^2
   \item "L_square" - L-squared measure
-  \item "Harrell’s C" - Harrell’s concordance index
-  \item "Uno's C" - Uno’s concordance index
+  \item "Harrell's C" - Harrell's concordance index
+  \item "Uno's C" - Uno's concordance index
   \item "R_sh" - Schemper-Henderson explained variation (R_sh)
-  \item "R_E" - Rank-based R²
+  \item "R_E" - Rank-based R^2
   \item "Brier Score" - Brier score for calibration
   \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)
 }

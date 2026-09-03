@@ -52,7 +52,7 @@
 #' 
 #' Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression. Biometrics 56, 249--255.
 #' 
-#' LUSA, L., MICELI, R. and MARIANI, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. Computer methods and programs in biomedicine 87 132–137.
+#' LUSA, L., MICELI, R. and MARIANI, L. (2007). Estimation of predictive accuracy in survival analysis using R and S-PLUS. Computer methods and programs in biomedicine 87 132-137.
 #' Graf, E., Schmoor, C., Sauerbrei, W., & et al. (1999). Assessment and comparison of prognostic classification schemes for survival data. *Statistical Medicine*, 18(17-18), 2529-2545.
 #' Schemper, M. and R. Henderson (2000). Predictive accuracy and explained variation in Cox regression.
 #' Biometrics 56, 249--255.
@@ -103,7 +103,7 @@ pam.prediction_survial_eval <- function (object, train_data, predicted_data, cov
   test_data <- predicted_data
   metrics_results <- list()
   
-  valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", "Harrell’s C", "Uno’s C",
+  valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", "Harrell\u2019s C", "Uno\u2019s C",
                      "R_sph", "R_sh", "Brier Score", "Time Dependent Auc")
   
   if ("all" %in% metrics) {
@@ -115,12 +115,12 @@ pam.prediction_survial_eval <- function (object, train_data, predicted_data, cov
   
   if (inherits(object, "coxph")){
     r_l_list <- pam.coxph_restricted(object, 
-                                     covariates = covariates, tau = tau, predicted_data = test_data) %>% 
+                                     covs = covariates, tau = tau, new_data = test_data, predict = FALSE) %>% 
       Reduce("c", .) %>% as.numeric()
   }
   else if (inherits(object, c("survreg"))) {
     r_l_list <- pam.surverg_restricted(object, 
-                                       covariates = covariates, tau = tau, predicted_data = test_data) %>% 
+                                       covs = covariates, tau = tau, new_data = test_data, predict = FALSE) %>% 
       Reduce("c", .) %>% as.numeric()
   }
   
@@ -137,13 +137,13 @@ pam.prediction_survial_eval <- function (object, train_data, predicted_data, cov
                                       2)
   }
 
-  if ("Harrell’s C" %in% metrics) {
-    metrics_results$"Harrell’s C" <- pam.concordance(object, 
+  if ("Harrell\u2019s C" %in% metrics) {
+    metrics_results$"Harrell\u2019s C" <- pam.concordance(object, 
                                                      newdata = test_data)$concordance
   }
   
-  if ("Uno’s C" %in% metrics) {
-    metrics_results$"Uno’s C" <- pam.concordance(object, 
+  if ("Uno\u2019s C" %in% metrics) {
+    metrics_results$"Uno\u2019s C" <- pam.concordance(object, 
                                                  newdata = test_data, timewt = "n/G2")$concordance
   }
   

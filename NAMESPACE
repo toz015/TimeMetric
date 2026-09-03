@@ -54,9 +54,11 @@ importFrom(stats,
   pnorm,
   predict,
   quantile,
+  rbinom,
   reshape,
   rnorm,
   runif,
+  rweibull,
   sd,
   uniroot
 )

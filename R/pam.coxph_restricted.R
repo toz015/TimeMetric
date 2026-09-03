@@ -14,15 +14,15 @@
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
 #' \itemize{
-#'   \item \code{model} — the fitted survival model object.
-#'   \item \code{times} — numeric vector of observed follow-up times for the evaluation dataset.
-#'   \item \code{status} — event indicators (1 = event, 0 = censored).
-#'   \item \code{surv_prob} — an \eqn{n \times K} matrix of predicted
+#'   \item \code{model} -- the fitted survival model object.
+#'   \item \code{times} -- numeric vector of observed follow-up times for the evaluation dataset.
+#'   \item \code{status} -- event indicators (1 = event, 0 = censored).
+#'   \item \code{surv_prob} -- an \eqn{n \times K} matrix of predicted
 #'         subject-specific survival probabilities on a common time grid.
-#'   \item \code{pred} — predicted mean survival time  
+#'   \item \code{pred} -- predicted mean survival time  
 #'         (restricted or unrestricted, depending on the function).
-#'   \item \code{covs} — character vector of covariate names used for prediction.
-#'   \item \code{new_data} — dataset on which the predictions were computed.
+#'   \item \code{covs} -- character vector of covariate names used for prediction.
+#'   \item \code{new_data} -- dataset on which the predictions were computed.
 #' }
 #' 
 #' @references

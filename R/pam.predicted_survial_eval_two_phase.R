@@ -13,11 +13,9 @@ km_surv <- function(t, km_cens) {
 #' analysis dataset, predicted survival probabilities, and sampling weights, and
 #' computes key performance metrics in a tidy table format.
 #' Works for common two-phase sampling designs:
-#'   - Case–cohort (unstratified or stratified)
-#'   - Nested case–control (matched or unmatched)
+#'   - Case-cohort (unstratified or stratified)
+#'   - Nested case-control (matched or unmatched)
 #'
-#' @param analysis_data A data frame containing the analysis dataset used in the fitted Cox model.
-#'   Must include `time` and `status` columns.
 #' @param case_weights Numeric vector of case weights (from `weighted_param()`).
 #' @param pred_results A numeric vector of predicted survival probabilities with (can be calculate by `pam.coxph_restricted()`) :
 #'   - `Prob`: predicted survival probabilities over time.
@@ -28,7 +26,9 @@ km_surv <- function(t, km_cens) {
 #'   If NULL, it defaults to the median survival time.
 #' @param tau (Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 #'   If NULL, it defaults to the maximum observed survival time.
-#' @param km_cens Kaplan–Meier estimate of censoring distribution (`survival::survfit` object).
+#' @param km_cens_fit Kaplan-Meier estimate of the censoring distribution, a
+#'   `survival::survfit` object.
+#' @param metrics Character vector of metrics to compute.
 #'
 #' @return A tibble with columns:
 #'   - `Metric`: name of metric
@@ -42,7 +42,7 @@ km_surv <- function(t, km_cens) {
 pam.predicted_survial_eval_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 
-                                                 metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score", "Time Dependent Auc")) {
+                                                 metrics = c("Pesudo_R", "Harrell\u2019s C", "Uno\u2019s C", "Brier Score", "Time Dependent Auc")) {
   
   if (is.null(t_star)) t_star <- quantile(pred_results$time, 0.5)
   if (is.null(tau)) tau <- max(pred_results$time)
@@ -91,21 +91,21 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
       if ("Pesudo_R" %in% metrics) results <- append(results, list("Pesudo_R" = round(as.numeric(r_l_list$Pseudo_R_squared), 2)))
     }
     
-    if ("Harrell’s C" %in% metrics) {
+    if ("Harrell\u2019s C" %in% metrics) {
       c_index <- survival::concordance(
         dat1$surv_obj ~ dat1$pred.t,
         weights = dat1$case_weights,
       )$concordance
-      results <- append(results, list("Harrell’s C" = round(c_index, 4)))
+      results <- append(results, list("Harrell\u2019s C" = round(c_index, 4)))
     }
     
-    if ("Uno’s C" %in% metrics) {
+    if ("Uno\u2019s C" %in% metrics) {
       c_index <- survival::concordance(
         dat1$surv_obj ~ dat1$pred.t,
         weights = dat1$case_weights,
         timewt = "n/G2",
       )$concordance
-      results <- append(results, list("Uno’s C" = round(c_index,4 )))
+      results <- append(results, list("Uno\u2019s C" = round(c_index,4 )))
     }
     
     # --- Brier score
@@ -152,18 +152,18 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
 #' @param models A **named list** in which each element corresponds to a fitted model.  
 #'   Each model entry must itself be a list containing:
 #'   \itemize{
-#'     \item \code{times} — numeric vector of observed follow-up times.
-#'     \item \code{surv_prob} — an \eqn{n \times K} matrix (or data frame) of
+#'     \item \code{times} -- numeric vector of observed follow-up times.
+#'     \item \code{surv_prob} -- an \eqn{n \times K} matrix (or data frame) of
 #'           subject-specific predicted survival probabilities on a common time grid.
-#'     \item \code{status} — event indicator (1 = event, 0 = censored).
-#'     \item \code{pred} — (optional) predicted mean survival time (restricted or unrestricted).
-#'     \item \code{new_data} — (optional) dataset used for prediction.
-#'     \item \code{covs} — character vector of covariate names used for prediction.
-#'     \item \code{model} — (optional) the underlying fitted survival model object.
+#'     \item \code{status} -- event indicator (1 = event, 0 = censored).
+#'     \item \code{pred} -- (optional) predicted mean survival time (restricted or unrestricted).
+#'     \item \code{new_data} -- (optional) dataset used for prediction.
+#'     \item \code{covs} -- character vector of covariate names used for prediction.
+#'     \item \code{model} -- (optional) the underlying fitted survival model object.
 #'   }
 #'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.
 #' @param case_weights Numeric vector of Prentice (or other) sampling weights for all subjects.
-#' @param km_cens A Kaplan–Meier fit for censoring (based on training data) used to compute IPCW.
+#' @param km_cens A Kaplan-Meier fit for censoring (based on training data) used to compute IPCW.
 #' @param metrics Character vector of metrics to compute (default shown below).
 #' @param t_star Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.
 #' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordence measure (default = 10e10).
@@ -174,7 +174,7 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
 pam.sample_design <- function(models,
                               case_weights,
                               km_cens,
-                              metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C",
+                              metrics = c("Pesudo_R", "Harrell\u2019s C", "Uno\u2019s C",
                                           "Brier Score", "Time Dependent Auc"),
                               t_star = NULL, tau = NULL,
                               digits = 2) {
@@ -237,7 +237,7 @@ pam.sample_design <- function(models,
   
   # Preferred ordering (keep present ones)
   preferred <- c("Pesudo_R", "R_square", "L_square",
-                 "Harrell’s C", "Uno’s C",
+                 "Harrell\u2019s C", "Uno\u2019s C",
                  "Brier Score", "Time Dependent Auc")
   present <- intersect(preferred, wide$Metric)
   others  <- setdiff(wide$Metric, preferred)

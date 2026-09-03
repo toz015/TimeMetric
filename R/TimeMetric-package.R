@@ -21,6 +21,13 @@
 #' @importFrom survival Surv survfit concordancefit
 #' @importFrom stats median na.omit pnorm predict uniroot sd runif rnorm
 #' @importFrom stats quantile complete.cases reshape approx
-#' @importFrom stats lm as.formula model.matrix
+#' @importFrom stats lm as.formula model.matrix rbinom rweibull
 #' @importFrom utils head
 "_PACKAGE"
+
+# Non-standard evaluation: these are column names referenced inside dplyr verbs
+# and ggplot2 aes() mappings, not undefined globals. Declaring them silences
+# "no visible binding for global variable" from R CMD check.
+utils::globalVariables(c(
+  ".", ".pred", "pred", "surv_obj", "weight_time", "x_var", "times", "status"
+))

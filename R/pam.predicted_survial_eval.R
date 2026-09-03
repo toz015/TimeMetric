@@ -5,7 +5,7 @@
 #' measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
 #' @param model A fitted survival model object used by certain metrics:
 #'   \itemize{
-#'     \item For \code{"R_sh"} (Schemper–Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
+#'     \item For \code{"R_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
 #'           (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
 #'     \item For \code{"R_E"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
 #'   }
@@ -20,7 +20,7 @@
 #' @param status A numeric vector indicating event occurrence (1 for event, 0 for censoring).
 #' @param covariates A character vector specifying the names of the covariates used in the model.
 #' @param new_data Optional data frame used by metrics that require refitting or
-#'   prediction from \code{model} (e.g., Schemper–Henderson \code{"R_sh"} and
+#'   prediction from \code{model} (e.g., Schemper-Henderson \code{"R_sh"} and
 #'   rank-based \code{"R_E"}). If supplied, it should contain the variables
 #'   needed by those procedures and columns \code{time} and \code{status}
 #'   coded as above.
@@ -28,12 +28,12 @@
 #' @param metrics A character vector specifying the evaluation metrics to compute. Options include:
 #'   \itemize{
 #'     \item "Pseudo_R_square" - Pseudo R-squared measure
-#'     \item "R_square" - Explained variation R²
+#'     \item "R_square" - Explained variation R^2
 #'     \item "L_square" - L-squared measure
-#'     \item "Harrell’s C" - Harrell’s concordance index
-#'     \item "Uno's C" - Uno’s concordance index
+#'     \item "Harrell's C" - Harrell's concordance index
+#'     \item "Uno's C" - Uno's concordance index
 #'     \item "R_sh" - Schemper-Henderson explained variation (R_sh)
-#'     \item "R_E" - Rank-based R²
+#'     \item "R_E" - Rank-based R^2
 #'     \item "Brier Score" - Brier score for calibration
 #'     \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)
 #'   }
@@ -78,10 +78,10 @@ pam.predicted_survial_eval <- function (model, event_time,
   
   valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
                      "Pseudo_R2_point", "R2_point", "L2_point",
-                     "Harrell’s C", "Uno’s C",
+                     "Harrell\u2019s C", "Uno\u2019s C",
                       "R_E","R_sh", "Brier Score", "Time Dependent Auc")
   default_metrics <- c("Pseudo_R_square", "Pseudo_R2_point",
-                       "Harrell’s C", "Uno’s C",
+                       "Harrell\u2019s C", "Uno\u2019s C",
                        "R_E","R_sh", "Brier Score", "Time Dependent Auc")
   
   if (is.null(metrics)){
@@ -157,15 +157,15 @@ pam.predicted_survial_eval <- function (model, event_time,
     metrics_results$L2_point <- round(as.numeric(r_l_p$L.square), 4)
   }
   
-  if ("Harrell’s C" %in% metrics) {
-    metrics_results$"Harrell’s C" <- round(
+  if ("Harrell\u2019s C" %in% metrics) {
+    metrics_results$"Harrell\u2019s C" <- round(
       concordancefit(y = Surv(event_time, status), 
                      x = predicted_data, 
                      reverse = FALSE)$concordance, 4)
   }
   
-  if ("Uno’s C" %in% metrics) {
-    metrics_results$"Uno’s C" <- round(
+  if ("Uno\u2019s C" %in% metrics) {
+    metrics_results$"Uno\u2019s C" <- round(
       concordancefit(y = Surv(event_time, status), 
                      x = predicted_data, ymax = tau,
                      reverse = FALSE, 
@@ -276,14 +276,14 @@ pam.predicted_survial_eval <- function (model, event_time,
 #' @param models A **named list** in which each element corresponds to a fitted model.  
 #'   Each model entry must itself be a list containing:
 #'   \itemize{
-#'     \item \code{times} — numeric vector of observed follow-up times.
-#'     \item \code{surv_prob} — an \eqn{n \times K} matrix (or data frame) of
+#'     \item \code{times} -- numeric vector of observed follow-up times.
+#'     \item \code{surv_prob} -- an \eqn{n \times K} matrix (or data frame) of
 #'           subject-specific predicted survival probabilities on a common time grid.
-#'     \item \code{status} — event indicator (1 = event, 0 = censored).
-#'     \item \code{pred} — (optional) predicted mean survival time (restricted or unrestricted).
-#'     \item \code{new_data} — (optional) dataset used for prediction.
-#'     \item \code{covs} — character vector of covariate names used for prediction.
-#'     \item \code{model} — (optional) the underlying fitted survival model object.
+#'     \item \code{status} -- event indicator (1 = event, 0 = censored).
+#'     \item \code{pred} -- (optional) predicted mean survival time (restricted or unrestricted).
+#'     \item \code{new_data} -- (optional) dataset used for prediction.
+#'     \item \code{covs} -- character vector of covariate names used for prediction.
+#'     \item \code{model} -- (optional) the underlying fitted survival model object.
 #'   }
 #'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.
 #' @param metrics Optional character vector of metrics to compute (passed through).
@@ -353,7 +353,7 @@ pam.summary <- function(models,
     direction = "wide"
   )
   
-  # clean column names like "Value.Cox" → "Cox"
+  # clean column names like "Value.Cox" ? "Cox"
   names(res_wide) <- sub("^Value\\.", "", names(res_wide))
   rownames(res_wide) <- NULL
   res_wide <- res_wide[, c("Metric", setdiff(names(res_wide), "Metric"))]
@@ -366,8 +366,8 @@ pam.summary <- function(models,
     "Pseudo_R2_point", 
     "R2_point", 
     "L2_point",
-    "Harrell’s C",
-    "Uno’s C",
+    "Harrell\u2019s C",
+    "Uno\u2019s C",
     "R_sh",
     "R_E",
     "Brier Score",

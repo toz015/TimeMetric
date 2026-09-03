@@ -19,6 +19,8 @@ pam.survival_eval(
 
 \item{covariates}{A character vector of covariate names to include in the model.}
 
+\item{models}{A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.}
+
 \item{metrics}{A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
 \itemize{
   \item "R_square": R-squared metric.
@@ -38,14 +40,12 @@ uses the same data as `data` for model evaluation.}
 \item{t_star}{(Optional) A positive numeric value specifying the time point at which the Brier score and AUC score is calculated.}
 
 \item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
-
-\item{model}{A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.}
 }
 \value{
 A data frame containing the selected model's performance metrics.
 }
 \description{
-This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell’s C, Uno’s C, R_sph (distance-based estimator for survival predictive accuracy), R_sh, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
+This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, R_sph (distance-based estimator for survival predictive accuracy), R_sh, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
 }
 \examples{
 data(pbc, package = "survival")

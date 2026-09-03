@@ -1,4 +1,4 @@
-# plot_pred renders every subject when sample_index is supplied
+# plot_pred builds exactly two layers
 
     WAoAAAACAAQFAwACAwAAAAANAAAAAgAAAMgAAADI
 
