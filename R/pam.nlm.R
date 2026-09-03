@@ -5,7 +5,6 @@
 #' @param y.predict A numeric vector containing the predicted response values from a fitted model.
 #' @return  A list containing two components: R-squared and L-squared
 #' @examples
-#' library(PAmeasures)
 #'
 #' data(moore)
 #'

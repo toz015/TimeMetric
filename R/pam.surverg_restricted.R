@@ -24,33 +24,27 @@
 #' }
 #' 
 #' @examples
-#'rm(list = ls())
-#'library(survival)
-#'library(TimeMetric)
-#'library(tidyverse)
-#'set.seed(2025)
-#'data(pbc, package = "survival")
-#'df <- pbc %>% 
-#'  filter(is.na(trt)==F) %>% 
-#'  mutate(log_albumin = log(albumin),
-#'         log_bili = log(bili),
-#'         log_protime = log(protime),
-#'         status = ifelse(status==2, 1, 0)) %>% 
-#'  select(time, status, age, log_albumin, log_bili, log_protime, edema)
-#'train_data_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
-#'train_data <- df[train_data_idx, ]
-#'test_data <- df[-train_data_idx, ]
-#'m.cox<- coxph(Surv(time, status) ~ .,
-#'                        data = train_data, x = TRUE, y = TRUE)
-#'m.wei <- survreg(Surv(time, status) ~ ., #scale = 0.1,
-#'                   data = train_data, dist="weibull", x=TRUE, y=TRUE)
-#'m.wei.fix <- survreg(Surv(time, status) ~ .,  scale = 5,
-#'                   data = train_data, dist="weibull", x=TRUE, y=TRUE)
-#'## predict prob
-#'covs <- names(df)[-c(1:2)]
-#'wei_pred <- pam.surverg_restricted(model = m.wei,
-#'                                   covs = covs, 
-#'                                   new_data = test_data) 
+#' data(pbc, package = "survival")
+#' pbc <- pbc[!is.na(pbc$trt), ]
+#' pbc$log_albumin <- log(pbc$albumin)
+#' pbc$log_bili    <- log(pbc$bili)
+#' pbc$log_protime <- log(pbc$protime)
+#' pbc$status <- ifelse(pbc$status == 2, 1, 0)
+#' covs <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
+#' df <- pbc[, c("time", "status", covs)]
+#' df <- df[stats::complete.cases(df), ]
+#'
+#' set.seed(2025)
+#' idx <- sample(seq_len(nrow(df)), round(2 / 3 * nrow(df)))
+#' train_data <- df[idx, ]
+#' test_data  <- df[-idx, ]
+#'
+#' m.wei <- survival::survreg(survival::Surv(time, status) ~ .,
+#'                            data = train_data, dist = "weibull",
+#'                            x = TRUE, y = TRUE)
+#' wei_pred <- pam.surverg_restricted(model = m.wei, covs = covs,
+#'                                    new_data = test_data)
+#' str(wei_pred$pred)
 #'
 #' @export
 

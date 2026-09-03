@@ -7,7 +7,6 @@
 #' @return  A list containing two components: R-squared and L-squared
 #' @examples
 #' library(survival)
-#' library(PAmeasures)
 #'
 #'# Use Mayo Clinic Primary Biliary Cirrhosis Data
 #'data(pbc)

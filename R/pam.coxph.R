@@ -9,7 +9,6 @@
 #' Li, G., & Wang, X. (2016). Prediction Accuracy Measures for a Nonlinear Model and for Right-Censored Time-to-Event Data. arXiv preprint arXiv:1611.03063. Available at https://arxiv.org/abs/1611.03063
 #' @examples
 #' library(survival)
-#' library(PAmeasures)
 #'
 #'# Use Mayo Clinic Primary Biliary Cirrhosis Data
 #'data(pbc)

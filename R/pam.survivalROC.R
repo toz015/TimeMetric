@@ -27,7 +27,6 @@
 #'
 #' @examples
 #' library(survival)
-#' library(PAmeasures)
 #' # Use Mayo Clinic Primary Biliary Cirrhosis Data
 #' data(pbc)
 #' pbc <- pbc %>% 

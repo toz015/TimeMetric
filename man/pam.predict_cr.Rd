@@ -49,25 +49,37 @@ accelerated failure time (AFT) models (Weibull, Log-normal, Log-logistic), Fine-
 and competing risks random survival forests.
 }
 \examples{
-library(cmprsk)
-library(tidyverse)
-set.seed(2025)
 data(pbc, package = "survival")
-df <- pbc \%>\% 
- filter(is.na(trt)==F) \%>\% 
- mutate(log_albumin = log(albumin),
-        log_bili = log(bili),
-        log_protime = log(protime)) \%>\% 
- select(time, status, age, log_albumin, log_bili, log_protime, edema)
-train_data_idx <- sample(1:dim(df)[1], round(2/3*dim(df)[1]))
-train_data <- df[train_data_idx, ]
-test_data <- df[-train_data_idx, ]
-covariates <- names(df)[-c(1:2)]
-fg_model <- crr(train_data$time, train_data$status, 
-               train_data[, covariates, drop = FALSE], failcode = 2)
-                     data = train_data, x = T, dist="weibull")
-pred_FineGray <- pam.predict_cr(fg_model = fg_model,
-                                            newdata = test_data,
-                                            covariates = covariates)
+pbc <- pbc[!is.na(pbc$trt), ]
+pbc$log_albumin <- log(pbc$albumin)
+pbc$log_bili    <- log(pbc$bili)
+pbc$log_protime <- log(pbc$protime)
+covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
+dat <- pbc[, c("time", "status", covariates)]
+dat <- dat[stats::complete.cases(dat), ]
+
+# Cause-specific Cox models: event of interest (1) and competing event (2)
+m1 <- survival::coxph(survival::Surv(time, status == 1) ~ age + log_albumin +
+                        log_bili + log_protime + edema,
+                      data = dat, x = TRUE, y = TRUE)
+m2 <- survival::coxph(survival::Surv(time, status == 2) ~ age + log_albumin +
+                        log_bili + log_protime + edema,
+                      data = dat, x = TRUE, y = TRUE)
+
+pred <- pam.predict_cr(model1 = m1, model2 = m2, newdata = dat,
+                       covs = covariates, event.type = 1,
+                       tau = max(dat$time))
+str(pred$pred)
+
+# Fine-Gray backend, available when cmprsk is installed
+if (requireNamespace("cmprsk", quietly = TRUE)) {
+  fg <- cmprsk::crr(ftime = dat$time, fstatus = dat$status,
+                    cov1 = as.matrix(dat[, covariates]),
+                    failcode = 1, cencode = 0)
+  pred_fg <- pam.predict_cr(fg_model = fg, newdata = dat,
+                            covs = covariates, event.type = 1,
+                            tau = max(dat$time))
+  str(pred_fg$pred)
+}
 
 }

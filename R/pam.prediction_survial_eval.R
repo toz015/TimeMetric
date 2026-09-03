@@ -77,7 +77,6 @@
 #' R package version 1.0.3.1. DOI: \doi{10.32614/CRAN.package.survivalROC}. Available at \url{https://CRAN.R-project.org/package=survivalROC}.
 #' 
 #' @examples
-#' library(PAmeasures)
 #' library(survival)
 #'
 #' # Use Mayo Clinic Primary Biliary Cirrhosis Data

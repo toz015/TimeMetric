@@ -26,32 +26,28 @@
 #' @return A data frame containing the selected model's performance metrics.
 #'
 #' @examples
-#' library(PAmeasures)
-#' library(survival)
-#' library(rms)
-#' library(dplyr)
-#'
-#' Use Mayo Clinic Primary Biliary Cirrhosis Data
-#' data(pbc)
-#' pbc <- pbc %>%
-#' filter(is.na(trt) == FALSE) %>%
-#' mutate(log_albumin = log(albumin),
-#' log_bili = log(bili),
-#' log_protime = log(protime),
-#' status = ifelse(status == 2, 1, 0))
-#'
-#' # Define variables
+#' data(pbc, package = "survival")
+#' pbc <- pbc[!is.na(pbc$trt), ]
+#' pbc$log_albumin <- log(pbc$albumin)
+#' pbc$log_bili    <- log(pbc$bili)
+#' pbc$log_protime <- log(pbc$protime)
+#' pbc$status <- ifelse(pbc$status == 2, 1, 0)
 #' covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
+#' dat <- pbc[, c("time", "status", covariates)]
+#' dat <- dat[stats::complete.cases(dat), ]
 #'
-#' # Call the function with all metrics and all models
-#' results <- pam.survival_eval(train_data = pbc,
-#' covariates = covariates)
+#' # All available models and metrics
+#' results <- pam.survival_eval(train_data = dat, covariates = covariates)
+#' results
 #'
-#' # Call the function with specific models and metrics
-#' results2 <- pam.survival_eval(train_data = pbc,
-#' covariates = covariates,
-#' models = c("lognormal", "weibull"),
-#' metrics = c("R_square", "L_square", "Brier Score"))
+#' # A specific subset of models and metrics
+#' results2 <- pam.survival_eval(
+#'   train_data = dat,
+#'   covariates = covariates,
+#'   models  = c("lognormal", "weibull"),
+#'   metrics = c("R_square", "L_square", "Brier Score")
+#' )
+#' results2
 #'
 #' @export
 

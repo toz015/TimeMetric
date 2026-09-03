@@ -13,7 +13,6 @@
 #'
 #' @examples
 #' 
-#' library(PAmeasure)
 #' predicted_data <- c(5, 4, 8, 2)
 #' survival_time <- c(6, 5, 10, 3)
 #' status <- c(1, 1, 0, 1)
