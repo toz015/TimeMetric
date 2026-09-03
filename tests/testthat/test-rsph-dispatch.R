@@ -1,31 +1,37 @@
-# pam.rsph's methods are defined in the namespace but never registered with
-# S3method(), so UseMethod cannot find them from outside the package. Tests that
-# need a method call it directly out of the namespace, which is what these
-# helpers do. See FINDING 17.
+# pam.rsph's methods are now registered with S3method(), so UseMethod finds
+# them from any environment. FINDING 17 fixed. The direct-access helper is kept
+# so the method-level tests stay independent of dispatch.
 rsph_method <- function(cls) {
   get(paste0("pam.rsph.", cls), envir = asNamespace("TimeMetric"))
 }
 
-test_that("pam.rsph methods are never registered with S3method (FINDING 17)", {
-  # NAMESPACE contains no S3method() directives at all, so pam.rsph.coxph and
-  # friends are invisible to UseMethod outside TimeMetric's own namespace.
-  # Inside the package -- and inside testthat, whose test environment inherits
-  # the namespace -- dispatch resolves, which is why R_E still computes in
-  # pam.predicted_survial_eval. A user calling from the global environment gets
-  # "no applicable method". Reproduced in a clean subprocess below.
+test_that("pam.rsph methods are registered with S3method (FINDING 17 fixed)", {
+  # All three methods are now declared with @exportS3Method, so NAMESPACE
+  # carries S3method(pam.rsph, <class>) and UseMethod resolves them anywhere.
   root <- skip_without_source_tree()
+  ns <- readLines(file.path(root, "NAMESPACE"))
 
-  expect_false(
-    any(grepl("S3method", readLines(file.path(root, "NAMESPACE"))))
+  expect_true(any(grepl("S3method(pam.rsph,coxph)", ns, fixed = TRUE)))
+  expect_true(any(grepl("S3method(pam.rsph,survreg)", ns, fixed = TRUE)))
+  expect_true(any(grepl("S3method(pam.rsph,aareg)", ns, fixed = TRUE)))
+})
+
+test_that("pam.rsph dispatches in-process for coxph and survreg", {
+  d <- fx_surv()
+
+  expect_no_error(TimeMetric:::pam.rsph(fx_cox(), test_data = d))
+  expect_no_error(TimeMetric:::pam.rsph(fx_survreg(), test_data = d))
+  # dispatch and direct method call must agree
+  expect_equal(
+    TimeMetric:::pam.rsph(fx_cox(), test_data = d)$Re,
+    rsph_method("coxph")(fx_cox(), test_data = d)$Re,
+    tolerance = 1e-8
   )
 })
 
-test_that("a clean session cannot dispatch pam.rsph (FINDING 17)", {
-  # The user-facing consequence of the missing S3method registration. Run in a
-  # fresh subprocess because testthat's own test environment inherits the
-  # package namespace and would mask the failure.
-  #
-  # When the methods are registered (spec step 3), invert this test.
+test_that("a clean session can now dispatch pam.rsph (FINDING 17 fixed)", {
+  # The user-facing check. Run in a fresh subprocess because testthat's own test
+  # environment inherits the package namespace and would mask a regression.
   skip_on_cran()
   skip_if_covr()
   pkg_root <- skip_without_source_tree()
@@ -48,9 +54,8 @@ test_that("a clean session cannot dispatch pam.rsph (FINDING 17)", {
   ))
   out <- paste(out, collapse = "\n")
 
-  expect_match(out, "no applicable method")
-  expect_match(out, "pam.rsph")
-  expect_no_match(out, "DISPATCH WORKED")
+  expect_no_match(out, "no applicable method")
+  expect_match(out, "DISPATCH WORKED")
 })
 
 test_that("pam.rsph.coxph works when called directly", {

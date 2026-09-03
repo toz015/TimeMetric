@@ -103,10 +103,16 @@ pam.survival_eval <- function (train_data, covariates, models = "coxph",
       tau <- max(event_times)
     }
     if (fit_name == "coxph") {
-      r_l_list <- pam.coxph_restricted(fits[[fit_name]], covariates = covariates, tau = tau, newdata = test_data) %>% Reduce("c", .) %>% as.numeric()
+      r_l_list <- pam.coxph_restricted(fits[[fit_name]], covs = covariates,
+                                       tau = tau, new_data = test_data,
+                                       predict = FALSE) %>%
+        Reduce("c", .) %>% as.numeric()
     } 
       else {
-      r_l_list <- pam.surverg_restricted(fits[[fit_name]], covariates = covariates, tau = tau, newdata = test_data) %>% Reduce("c", .) %>% as.numeric()
+      r_l_list <- pam.surverg_restricted(fits[[fit_name]], covs = covariates,
+                                         tau = tau, new_data = test_data,
+                                         predict = FALSE) %>%
+        Reduce("c", .) %>% as.numeric()
     }
     # Extract metrics if requested
     if ( "Pseudo_R_square" %in% metrics ){

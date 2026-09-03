@@ -160,18 +160,44 @@ test_that("pam.summary rejects a non-list or empty models argument", {
   expect_error(pam.summary("not a list"), "must be a non-empty named list")
 })
 
-test_that("pam.survival_eval is unconditionally broken (FINDING 12)", {
-  # R/pam.survial_eval.R:110,113 call pam.coxph_restricted / pam.surverg_restricted
-  # with covariates = and newdata =, but those functions take covs = and
-  # new_data =. Every invocation of this exported function fails, whatever the
-  # input. Pinned so the eventual fix is visible as a test change.
+test_that("pam.survival_eval fits and evaluates from raw data (FINDING 12 fixed)", {
+  # R/pam.survial_eval.R:106,112 previously passed covariates=/newdata= to
+  # functions taking covs=/new_data=, so every call failed. They now also pass
+  # predict = FALSE, which is the branch returning R.squared / L.squared that
+  # the caller indexes as r_l_list[1] and [2].
   d <- fx_surv()
 
-  expect_error(
-    pam.survival_eval(train_data = d, covariates = fx_covs(),
-                      models = "coxph", metrics = "all"),
-    "unused arguments"
+  res <- pam.survival_eval(train_data = d, covariates = fx_covs(),
+                           models = "coxph", metrics = "all")
+
+  expect_s3_class(res, "data.frame")
+  expect_identical(nrow(res), 1L)
+  expect_true("Model" %in% names(res))
+  expect_identical(res$Model, "coxph")
+  # wide layout: one column per metric, unlike the long Metric/Value frame
+  # returned by pam.predicted_survial_eval
+  expect_true(all(c("Pseudo_R_square", "R_square", "L_square",
+                    "Brier Score") %in% names(res)))
+  # R_sph and R_sh appear as separate columns, consistent with FINDING 13
+  expect_true(all(c("R_sph", "R_sh") %in% names(res)))
+
+  expect_snapshot_value(sort(names(res)), style = "serialize")
+  expect_snapshot_value(snap_num(res[["R_square"]]), style = "serialize")
+})
+
+test_that("pam.survival_eval honours an explicit model and metric subset", {
+  d <- fx_surv()
+
+  res <- pam.survival_eval(
+    train_data = d, covariates = fx_covs(),
+    models  = c("weibull", "lognormal"),
+    metrics = c("R_square", "L_square", "Brier Score")
   )
+
+  expect_s3_class(res, "data.frame")
+  expect_identical(nrow(res), 2L)
+  expect_setequal(res$Model, c("weibull", "lognormal"))
+  expect_false("Harrell\u2019s C" %in% names(res))
 })
 
 test_that("pam.survival_eval requires train_data and covariates", {

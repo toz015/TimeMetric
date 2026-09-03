@@ -54,18 +54,17 @@ test_that("pam.predicted_survial_eval_cr returns a Metric/Value table", {
 
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "Value"))
-  # FINDING 14: Value is a CHARACTER column here, while the right-censored
-  # pam.predicted_survial_eval returns it as double. Pinned as-is.
-  expect_type(res$Value, "character")
-  expect_true(all(is.finite(as.numeric(res$Value))))
+  # FINDING 14 fixed: Value is numeric here, matching the right-censored
+  # pam.predicted_survial_eval. is.finite() now works without coercion.
+  expect_type(res$Value, "double")
+  expect_true(all(is.finite(res$Value)))
   expect_snapshot_value(res$Metric, style = "serialize")
-  expect_snapshot_value(snap_num(as.numeric(res$Value)), style = "serialize")
+  expect_snapshot_value(snap_num(res$Value), style = "serialize")
 })
 
-test_that("eval_cr returns Value as character, eval returns double (FINDING 14)", {
-  # The two evaluation entry points disagree on the type of the Value column,
-  # so a user switching between survival and competing-risks results must
-  # convert in one case and not the other.
+test_that("both evaluation entry points return Value as double (FINDING 14 fixed)", {
+  # The two entry points previously disagreed on the type of the Value column,
+  # so is.finite() was silently FALSE for every competing-risks metric.
   p <- cr_pred()
   cr <- pam.predicted_survial_eval_cr(
     pred_cif = p$cif_pred[, -1], event_time = p$times,
@@ -80,8 +79,10 @@ test_that("eval_cr returns Value as character, eval returns double (FINDING 14)"
     covariates = fx_covs(), new_data = fx_surv(), tau = 10e10
   )
 
-  expect_type(cr$Value, "character")
+  expect_type(cr$Value, "double")
   expect_type(rc$Value, "double")
+  expect_true(all(is.finite(cr$Value)))
+  expect_true(all(is.finite(rc$Value)))
 })
 
 test_that("pred_cif is times-by-subjects with time.cif supplied separately", {

@@ -169,7 +169,7 @@ pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, statu
   
   result_df <- data.frame(
     Metric = names(metrics_results),
-    Value = unlist(metrics_results),
+    Value = as.numeric(unlist(metrics_results)),
     row.names = NULL,  
     stringsAsFactors = FALSE
   )
@@ -221,10 +221,9 @@ pam.censor.cr <- function(ftime, fstatus, tau,
 
   out <- pam.censor(ftime.new, pred, fstatus.new)
 
-  out <- c(out, 
-           Pseudo.R = format(round(as.numeric(out$R.squared) * 
-                                     as.numeric(out$L.squared), 
-                                   digits = 4), nsmall = 4))
+  out <- c(out,
+           Pseudo.R = round(as.numeric(out$R.squared) *
+                              as.numeric(out$L.squared), digits = 4))
   return(out)
 }
 
@@ -248,10 +247,9 @@ pam.censor.cr.point <- function(ftime, fstatus, tau,
   i.obs <- ifelse(ftime < tau & fstatus == event.type, 1, 0)
   out <- pam.censor.point(i.obs = i.obs, i.predict = pred.cif,
                           y =  ftime.new, delta = fstatus.new)
-  out <- c(out, 
-           Pseudo.R = format(round(as.numeric(out$R.squared) * 
-                                     as.numeric(out$L.squared), 
-                                   digits = 4), nsmall = 4))
+  out <- c(out,
+           Pseudo.R = round(as.numeric(out$R.squared) *
+                              as.numeric(out$L.squared), digits = 4))
   return(out)
 }
 
@@ -289,12 +287,12 @@ pam.censor.point <- function(i.obs, i.predict, y, delta){
   num.rho2<-sum(weight.km*(calibrate.fitted-sum(weight.km*y.sorted))^2)
   denom.rho2<-sum(weight.km*(y.sorted-sum(weight.km*y.sorted))^2)
   
-  R2 <-format(round(num.rho2/denom.rho2,digits = 4) ,nsmall=4)
+  R2 <- round(num.rho2 / denom.rho2, digits = 4)
   
   
   num.L2<- sum(weight.km*(y.sorted-calibrate.fitted)^2)
   denom.L2<- sum(weight.km*(y.sorted-y.predict.sorted)^2)
-  L2 <-format(round(num.L2/denom.L2,digits = 4),nsmall=4)
+  L2 <- round(num.L2 / denom.L2, digits = 4)
   
   return(list(R.squared=R2,L.squared=L2))
 }
@@ -329,11 +327,11 @@ pam.censor<-function(y,y.predict,delta){
   num.rho2<-sum(weight.km*(calibrate.fitted-sum(weight.km*y.sorted))^2)
   denom.rho2<-sum(weight.km*(y.sorted-sum(weight.km*y.sorted))^2)
   
-  R2 <-format(round(num.rho2/denom.rho2,digits = 4) ,nsmall=4)
+  R2 <- round(num.rho2 / denom.rho2, digits = 4)
   
   num.L2<- sum(weight.km*(y.sorted-calibrate.fitted)^2)
   denom.L2<- sum(weight.km*(y.sorted-y.predict.sorted)^2)
-  L2 <-format(round(num.L2/denom.L2,digits = 4),nsmall=4)
+  L2 <- round(num.L2 / denom.L2, digits = 4)
   
   return(list(R.squared=R2,L.squared=L2))
 }
