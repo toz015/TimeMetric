@@ -10,8 +10,7 @@ tm_evaluate_two_phase(
   tau = 1e+11,
   km_cens_fit,
   case_weights,
-  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
-    "Time Dependent Auc")
+  metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc")
 )
 }
 \arguments{

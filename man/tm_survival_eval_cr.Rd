@@ -33,15 +33,15 @@ tm_survival_eval_cr(
 The default is `"all"`, which computes all available metrics. 
 Valid options include:
 \itemize{
-  \item `"Pseudo_R_square"`
-  \item `"R_square"`
-  \item `"L_square"`
-  \item `"Pseudo_R2_point"`
-  \item `"R2_point"`
-  \item `"L2_point"`
-  \item `"C_index"`
-  \item `"Brier Score"`
-  \item `"Time Dependent Auc"`
+  \item `"pseudo_r2"`
+  \item `"r_square"`
+  \item `"l_square"`
+  \item `"pseudo_r2_point"`
+  \item `"r2_point"`
+  \item `"l2_point"`
+  \item `"c_index"`
+  \item `"brier_score"`
+  \item `"td_auc"`
 }}
 
 \item{t_star}{Optional numeric value specifying a reference time for evaluating point-version Pseudo_R_square, 

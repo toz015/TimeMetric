@@ -77,7 +77,7 @@ test_that("fg_model output feeds tm_summarize_cr like the coxph path", {
 
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "fg"))
-  expect_true("C_index" %in% res$Metric)
+  expect_true("c_index" %in% res$Metric)
 })
 
 test_that("cr_model backend computes CIF predictions via randomForestSRC", {

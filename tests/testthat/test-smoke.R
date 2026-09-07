@@ -11,7 +11,8 @@ test_that("package exports the tm_ API", {
   ) %in% exports))
   # every public function carries the prefix, apart from the deprecated aliases
   new_api <- grep("^tm_", exports, value = TRUE)
-  expect_length(new_api, 16L)
+  expect_length(new_api, 17L)   # 16 renamed functions + tm_metric_names()
+  expect_true("tm_metric_names" %in% exports)
 })
 
 test_that("the deleted Cluster C duplicates are gone", {

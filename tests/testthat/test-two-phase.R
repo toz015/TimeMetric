@@ -118,8 +118,8 @@ test_that("case-cohort and NCC weighting give different metric values", {
 })
 
 test_that("two-phase output labels AUC differently from tm_sample_design", {
-  # FINDING 15: the evaluator emits "Time Dependent AUC" while its own summary
-  # wrapper emits "Time Dependent Auc" for the same quantity.
+  # FINDING 15: the evaluator emits "td_auc" while its own summary
+  # wrapper emits "td_auc" for the same quantity.
   inp <- tp_inputs("cc")
 
   direct <- tm_evaluate_two_phase(
@@ -131,10 +131,10 @@ test_that("two-phase output labels AUC differently from tm_sample_design", {
     km_cens = inp$km_cens
   )
 
-  expect_true("Time Dependent AUC" %in% direct$Metric)
-  expect_false("Time Dependent Auc" %in% direct$Metric)
-  expect_true("Time Dependent Auc" %in% summarised$Metric)
-  expect_false("Time Dependent AUC" %in% summarised$Metric)
+  expect_true("td_auc" %in% direct$Metric)
+  expect_true("td_auc" %in% summarised$Metric)
+  # the two entry points now use identical labels, so results can be joined
+  expect_setequal(direct$Metric, summarised$Metric)
 })
 
 test_that("tm_sample_design validates its models argument", {
@@ -164,16 +164,17 @@ test_that("tm_sample_design summarises a two-phase design", {
 })
 
 test_that("two-phase default metric names are pinned with current spelling", {
-  # c("Pesudo_R", "Harrell<u2019>s C", "Uno<u2019>s C", "Brier Score",
-  #   "Time Dependent Auc") -- misspelling and curly apostrophes included.
+  # c("pseudo_r2", "Harrell<u2019>s C", "Uno<u2019>s C", "brier_score",
+  #   "td_auc") -- misspelling and curly apostrophes included.
   defaults <- eval(formals(
     tm_evaluate_two_phase
   )$metrics)
 
-  expect_true("Pesudo_R" %in% defaults)
-  expect_true("Harrell\u2019s C" %in% defaults)
-  expect_true("Uno\u2019s C" %in% defaults)
-  expect_false("Pseudo_R" %in% defaults)
+  expect_true("pseudo_r2" %in% defaults)
+  expect_true("harrell_c" %in% defaults)
+  expect_true("uno_c" %in% defaults)
+  expect_false("Pesudo_R" %in% defaults)
+  expect_true(all(defaults %in% tm_metric_names()))
   expect_snapshot_value(defaults, style = "serialize")
 })
 
@@ -187,6 +188,6 @@ test_that("two-phase uses Pesudo_R where the survival path uses Pseudo_R_square"
     case_weights = inp$weights
   )
 
-  expect_true("Pesudo_R" %in% res$Metric)
-  expect_false("Pseudo_R_square" %in% res$Metric)
+  expect_true("pseudo_r2" %in% res$Metric)
+  expect_false("Pesudo_R" %in% res$Metric)
 })

@@ -17,15 +17,15 @@
 #'   The default is `"all"`, which computes all available metrics. 
 #'   Valid options include:
 #'   \itemize{
-#'     \item `"Pseudo_R_square"`
-#'     \item `"R_square"`
-#'     \item `"L_square"`
-#'     \item `"Pseudo_R2_point"`
-#'     \item `"R2_point"`
-#'     \item `"L2_point"`
-#'     \item `"C_index"`
-#'     \item `"Brier Score"`
-#'     \item `"Time Dependent Auc"`
+#'     \item `"pseudo_r2"`
+#'     \item `"r_square"`
+#'     \item `"l_square"`
+#'     \item `"pseudo_r2_point"`
+#'     \item `"r2_point"`
+#'     \item `"l2_point"`
+#'     \item `"c_index"`
+#'     \item `"brier_score"`
+#'     \item `"td_auc"`
 #'   }
 #' @param t_star Optional numeric value specifying a reference time for evaluating point-version Pseudo_R_square, 
 #'   the Brier Score and Time-Dependent AUC. Defaults to the median of `event_time`.
@@ -58,11 +58,11 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
   
   metrics_results <- list()
   
-  valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
-                     "Pseudo_R2_point", "R2_point", "L2_point",
-                     "C_index", "Brier Score", "Time Dependent Auc")
-  default_metrics <- c("Pseudo_R_square", "Pseudo_R2_point", "C_index",
-                       "Brier Score", "Time Dependent Auc")
+  valid_metrics <- c("pseudo_r2", "r_square", "l_square", 
+                     "pseudo_r2_point", "r2_point", "l2_point",
+                     "c_index", "brier_score", "td_auc")
+  default_metrics <- c("pseudo_r2", "pseudo_r2_point", "c_index",
+                       "brier_score", "td_auc")
   if ("all" %in% metrics) {
     metrics <- valid_metrics
   } else {
@@ -70,6 +70,10 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
     if (length(invalid) > 0) 
       stop("Invalid metrics: ", paste(invalid, collapse = ", "))
   }
+  
+
+
+  metrics <- tm_normalize_metrics(metrics)
   
 
 
@@ -85,46 +89,46 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
   }
   
   
-  if("Pseudo_R_square" %in% metrics ||
-     "R_square" %in% metrics || 
-     "L_square" %in% metrics) {
+  if("pseudo_r2" %in% metrics ||
+     "r_square" %in% metrics || 
+     "l_square" %in% metrics) {
     r_l_list <- pam.censor.cr(event_time, status, tau, 
                               pred_cif, time.cif, event_type)
   }
   
-  if ("Pseudo_R_square" %in% metrics) {
-    metrics_results$Pseudo_R_square <- r_l_list$Pseudo.R
+  if ("pseudo_r2" %in% metrics) {
+    metrics_results$pseudo_r2 <- r_l_list$Pseudo.R
   } 
-  if ("R_square" %in% metrics) {
-    metrics_results$R_square <- r_l_list$R.squared
+  if ("r_square" %in% metrics) {
+    metrics_results$r_square <- r_l_list$R.squared
   }
-  if ("L_square" %in% metrics) {
-    metrics_results$L_square <- r_l_list$L.squared
+  if ("l_square" %in% metrics) {
+    metrics_results$l_square <- r_l_list$L.squared
   }
   
-  if("Pseudo_R2_point" %in% metrics ||
-     "R2_point" %in% metrics || 
-     "L2_point" %in% metrics) {
+  if("pseudo_r2_point" %in% metrics ||
+     "r2_point" %in% metrics || 
+     "l2_point" %in% metrics) {
     r_p_list <- pam.censor.cr.point(ftime = event_time, 
                                     fstatus = status,
                                     tau = t_star, pred.cif = pred_cif[time_idx, ],
                                     event.type = event_type)
   }
   
-  if ("Pseudo_R2_point" %in% metrics) {
-    metrics_results$Pseudo_R2_point <- r_p_list$Pseudo.R
+  if ("pseudo_r2_point" %in% metrics) {
+    metrics_results$pseudo_r2_point <- r_p_list$Pseudo.R
   } 
-  if ("R2_point" %in% metrics) {
-    metrics_results$R2_point <- r_p_list$R.squared
+  if ("r2_point" %in% metrics) {
+    metrics_results$r2_point <- r_p_list$R.squared
   }
-  if ("L2_point" %in% metrics) {
-    metrics_results$L2_point <- r_p_list$L.squared
+  if ("l2_point" %in% metrics) {
+    metrics_results$l2_point <- r_p_list$L.squared
   }
   
   pred_risk <- apply(pred_cif, 2, m_cif, time.cif=time.cif, tau=tau)
   
   
-  if ("C_index" %in% metrics) {
+  if ("c_index" %in% metrics) {
     C_index <- C_cr(
       time = event_time,
       status = status,
@@ -132,14 +136,14 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
       tau = tau,
       Cause_int = event_type
     )
-    metrics_results$"C_index" <- round(C_index, 4)
+    metrics_results$"c_index" <- round(C_index, 4)
   }
   
   status.recode <- ifelse(status == event_type, -1, status)
   status.recode <- ifelse(status.recode > 0, 2, status.recode)
   status.recode <- ifelse(status.recode == -1, 1, status.recode)
   
-  if ("Brier Score" %in% metrics) {
+  if ("brier_score" %in% metrics) {
     X <- pred_cif[time_idx, ]
     
     brier_result <- suppressMessages(tdROC::tdROC.cr(
@@ -149,12 +153,12 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
       tau = t_star, 
       nboot = 0))
     
-    metrics_results$"Brier Score" <- round(
+    metrics_results$"brier_score" <- round(
       as.numeric(brier_result$calibration_res[1]), 4)
   }
   
   
-  if ("Time Dependent Auc" %in% metrics) {
+  if ("td_auc" %in% metrics) {
     AUC_result <- suppressMessages(tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
@@ -163,7 +167,7 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
       method = "both", 
       output = "AUC"   
     ))
-    metrics_results$"Time Dependent Auc" <- round(AUC_result$main_res$AUC.A.integral, 4)
+    metrics_results$"td_auc" <- round(AUC_result$main_res$AUC.A.integral, 4)
     #metrics_results$"Time Dependent Auc Empirical" <- round(AUC_result$main_res$AUC.B.integral, 4)
   }
   
@@ -491,9 +495,9 @@ tm_summarize_cr <- function(models,
   res_wide <- res_wide[, c("Metric", setdiff(names(res_wide), "Metric"))]
   
   # optional: enforce a pleasant metric order if present
-  preferred_order <- c("Pseudo_R_square", "R_square", "L_square",
-                       "Pseudo_R2_point", "R2_point", "L2_point",
-                       "C_index", "Brier Score", "Time Dependent Auc")
+  preferred_order <- c("pseudo_r2", "r_square", "l_square",
+                       "pseudo_r2_point", "r2_point", "l2_point",
+                       "c_index", "brier_score", "td_auc")
   present <- intersect(preferred_order, res_wide$Metric)
   others  <- setdiff(res_wide$Metric, preferred_order)
   res_wide$Metric <- factor(res_wide$Metric, levels = c(present, sort(others)))

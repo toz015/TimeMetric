@@ -33,17 +33,17 @@ test_that("the default metric set includes R_sh and R_E in the Metric column", {
   # Asserting both here proves those two code paths execute by default.
   res <- ev_result()
 
-  expect_true("R_sh" %in% res$Metric)
-  expect_true("R_E" %in% res$Metric)
-  expect_true("Brier Score" %in% res$Metric)
-  expect_true("Pseudo_R_square" %in% res$Metric)
-  expect_true("Time Dependent Auc" %in% res$Metric)
-  # curly apostrophes, written as unicode escapes so this file stays ASCII
-  expect_true("Harrell\u2019s C" %in% res$Metric)
-  expect_true("Uno\u2019s C" %in% res$Metric)
-  # the ASCII spellings are NOT what the package uses
+  expect_true("r_sh" %in% res$Metric)
+  expect_true("r_e" %in% res$Metric)
+  expect_true("brier_score" %in% res$Metric)
+  expect_true("pseudo_r2" %in% res$Metric)
+  expect_true("td_auc" %in% res$Metric)
+  expect_true("harrell_c" %in% res$Metric)
+  expect_true("uno_c" %in% res$Metric)
+  # the legacy spellings are no longer emitted
   expect_false("Harrells_C" %in% res$Metric)
-  expect_false("Unos_C" %in% res$Metric)
+  expect_false("Harrell\u2019s C" %in% res$Metric)
+  expect_false("Pesudo_R" %in% res$Metric)
 })
 
 test_that("tm_survival_eval rejects an unknown metric name", {
@@ -58,7 +58,7 @@ test_that("tm_survival_eval rejects an unknown metric name", {
       covariates = fx_covs(),
       new_data = fx_surv(),
       tau = 10e10,
-      metrics = "Harrells_C"        # ASCII spelling is NOT in valid_metrics
+      metrics = "not_a_real_metric"
     ),
     "Invalid metrics"
   )
@@ -118,7 +118,7 @@ test_that("R_E comes from the canonical pam.rsph path", {
   # authors reference in test-r-e-reference.R.
   d <- fx_surv()
   res <- ev_result()
-  r_e <- res$Value[res$Metric == "R_E"]
+  r_e <- res$Value[res$Metric == "r_e"]
 
   expect_length(r_e, 1L)
   expect_true(is.finite(r_e))
@@ -155,8 +155,8 @@ test_that("tm_summarize puts one column per model and rounds to digits", {
   # default digits = 2
   expect_equal(res$cox, round(res$cox, 2), tolerance = 1e-12)
   # R_sh is Cox-only, so the weibull column carries NA for it
-  expect_true(is.na(res$weibull[res$Metric == "R_sh"]))
-  expect_false(is.na(res$cox[res$Metric == "R_sh"]))
+  expect_true(is.na(res$weibull[res$Metric == "r_sh"]))
+  expect_false(is.na(res$cox[res$Metric == "r_sh"]))
 
   expect_snapshot_value(snap_num(res$cox), style = "serialize")
   expect_snapshot_value(snap_num(res$weibull), style = "serialize")
@@ -183,13 +183,13 @@ test_that("tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)",
   expect_identical(res$Model, "coxph")
   # wide layout: one column per metric, unlike the long Metric/Value frame
   # returned by tm_survival_eval
-  expect_true(all(c("Pseudo_R_square", "R_square", "L_square",
-                    "Brier Score") %in% names(res)))
+  expect_true(all(c("pseudo_r2", "r_square", "l_square",
+                    "brier_score") %in% names(res)))
   # R_sph and R_sh appear as separate columns, consistent with FINDING 13
-  expect_true(all(c("R_sph", "R_sh") %in% names(res)))
+  expect_true(all(c("r_e", "r_sh") %in% names(res)))
 
   expect_snapshot_value(sort(names(res)), style = "serialize")
-  expect_snapshot_value(snap_num(res[["R_square"]]), style = "serialize")
+  expect_snapshot_value(snap_num(res[["r_square"]]), style = "serialize")
 })
 
 test_that("tm_fit_and_eval honours an explicit model and metric subset", {
@@ -198,13 +198,13 @@ test_that("tm_fit_and_eval honours an explicit model and metric subset", {
   res <- tm_fit_and_eval(
     train_data = d, covariates = fx_covs(),
     models  = c("weibull", "lognormal"),
-    metrics = c("R_square", "L_square", "Brier Score")
+    metrics = c("r_square", "l_square", "brier_score")
   )
 
   expect_s3_class(res, "data.frame")
   expect_identical(nrow(res), 2L)
   expect_setequal(res$Model, c("weibull", "lognormal"))
-  expect_false("Harrell\u2019s C" %in% names(res))
+  expect_false("harrell_c" %in% names(res))
 })
 
 test_that("tm_fit_and_eval requires train_data and covariates", {

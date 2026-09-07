@@ -42,7 +42,8 @@ km_surv <- function(t, km_cens) {
 tm_evaluate_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 
-                                                 metrics = c("Pesudo_R", "Harrell\u2019s C", "Uno\u2019s C", "Brier Score", "Time Dependent Auc")) {
+                                                 metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc")) {
+  metrics <- tm_normalize_metrics(metrics)
   
   if (is.null(t_star)) t_star <- quantile(pred_results$time, 0.5)
   if (is.null(tau)) tau <- max(pred_results$time)
@@ -79,55 +80,55 @@ tm_evaluate_two_phase <- function(pred_results,
     )
     results <- list()
     
-    if (any(c("R_square", "L_square", "Pesudo_R") %in% metrics)) {
+    if (any(c("r_square", "l_square", "pseudo_r2") %in% metrics)) {
       r_l_list <- pam.r2_metrics(pred_results$pred, 
                                  pred_results$time, 
                                  pred_results$status,
                                  tau = tau,
                                  case_weight = case_weights)
       
-      if ("R_square" %in% metrics) results <- append(results, list("R_square" = round(as.numeric(r_l_list$R_square), 2)))
-      if ("L_square" %in% metrics) results <- append(results, list("L_square" = round(as.numeric(r_l_list$L_square), 2)))
-      if ("Pesudo_R" %in% metrics) results <- append(results, list("Pesudo_R" = round(as.numeric(r_l_list$Pseudo_R_squared), 2)))
+      if ("r_square" %in% metrics) results <- append(results, list("r_square" = round(as.numeric(r_l_list$R_square), 2)))
+      if ("l_square" %in% metrics) results <- append(results, list("l_square" = round(as.numeric(r_l_list$L_square), 2)))
+      if ("pseudo_r2" %in% metrics) results <- append(results, list("pseudo_r2" = round(as.numeric(r_l_list$Pseudo_R_squared), 2)))
     }
     
-    if ("Harrell\u2019s C" %in% metrics) {
+    if ("harrell_c" %in% metrics) {
       c_index <- survival::concordance(
         dat1$surv_obj ~ dat1$pred.t,
         weights = dat1$case_weights,
       )$concordance
-      results <- append(results, list("Harrell\u2019s C" = round(c_index, 4)))
+      results <- append(results, list("harrell_c" = round(c_index, 4)))
     }
     
-    if ("Uno\u2019s C" %in% metrics) {
+    if ("uno_c" %in% metrics) {
       c_index <- survival::concordance(
         dat1$surv_obj ~ dat1$pred.t,
         weights = dat1$case_weights,
         timewt = "n/G2",
       )$concordance
-      results <- append(results, list("Uno\u2019s C" = round(c_index,4 )))
+      results <- append(results, list("uno_c" = round(c_index,4 )))
     }
     
     # --- Brier score
-    if ("Brier Score" %in% metrics) {
+    if ("brier_score" %in% metrics) {
       brier <- yardstick::brier_survival(
         data         = dat1,
         truth        = surv_obj,
         .pred,
         case_weights = case_weights
       )$.estimate
-      results <- append(results, list("Brier Score" = round(brier, 4)))
+      results <- append(results, list("brier_score" = round(brier, 4)))
     }
     
     # --- Time-dependent AUC
-    if ("Time Dependent Auc" %in% metrics) {
+    if ("td_auc" %in% metrics) {
       auc <- yardstick::roc_auc_survival(
         data         = dat1,
         truth        = surv_obj,
         .pred,
         case_weights = case_weights
       )$.estimate
-      results <- append(results, list("Time Dependent AUC" = round(auc, 4)))
+      results <- append(results, list("td_auc" = round(auc, 4)))
     }
     
 
@@ -174,10 +175,11 @@ tm_evaluate_two_phase <- function(pred_results,
 tm_sample_design <- function(models,
                               case_weights,
                               km_cens,
-                              metrics = c("Pesudo_R", "Harrell\u2019s C", "Uno\u2019s C",
-                                          "Brier Score", "Time Dependent Auc"),
+                              metrics = c("pseudo_r2", "harrell_c", "uno_c",
+                                          "brier_score", "td_auc"),
                               t_star = NULL, tau = NULL,
                               digits = 2) {
+  metrics <- tm_normalize_metrics(metrics)
   
   if (!is.list(models) || length(models) == 0)
     stop("'models' must be a non-empty named list.")
@@ -213,7 +215,7 @@ tm_sample_design <- function(models,
       stop(sprintf("Unexpected result from tm_evaluate_two_phase() for '%s'", name))
     
     # Normalize minor label variant
-    res$Metric <- gsub("^Time Dependent AUC$", "Time Dependent Auc", res$Metric)
+    res$Metric <- gsub("^Time Dependent AUC$", "td_auc", res$Metric)
     
     res$Model <- name
     res[, c("Model", "Metric", "Value")]
@@ -236,9 +238,9 @@ tm_sample_design <- function(models,
   wide           <- wide[, c("Metric", setdiff(names(wide), "Metric")), drop = FALSE]
   
   # Preferred ordering (keep present ones)
-  preferred <- c("Pesudo_R", "R_square", "L_square",
-                 "Harrell\u2019s C", "Uno\u2019s C",
-                 "Brier Score", "Time Dependent Auc")
+  preferred <- c("pseudo_r2", "r_square", "l_square",
+                 "harrell_c", "uno_c",
+                 "brier_score", "td_auc")
   present <- intersect(preferred, wide$Metric)
   others  <- setdiff(wide$Metric, preferred)
   wide$Metric <- factor(wide$Metric, levels = c(present, sort(others)))

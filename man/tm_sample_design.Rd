@@ -8,8 +8,7 @@ tm_sample_design(
   models,
   case_weights,
   km_cens,
-  metrics = c("Pesudo_R", "Harrell’s C", "Uno’s C", "Brier Score",
-    "Time Dependent Auc"),
+  metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc"),
   t_star = NULL,
   tau = NULL,
   digits = 2

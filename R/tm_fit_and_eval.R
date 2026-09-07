@@ -7,15 +7,15 @@
 #' @param models A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.
 #' @param metrics A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
 #'   \itemize{
-#'     \item "R_square": R-squared metric.
-#'     \item "L_square": L-squared metric.
-#'     \item "Pesudo_R": Pseudo-R-squared metric.
-#'     \item "Harrells_C": Harrell's Concordance Index.
-#'     \item "Unos_C": Uno's Concordance Index.
-#'     \item "R_sph": Explained variation (R_sph).
-#'     \item "R_sh": Explained variation (R_sh).
-#'     \item "Brier_Score": Brier Score.
-#'     \item "Time_Dependent_Auc": Time-dependent AUC.
+#'     \item "r_square": R-squared metric.
+#'     \item "l_square": L-squared metric.
+#'     \item "pseudo_r2": Pseudo-R-squared metric.
+#'     \item "harrell_c": Harrell's Concordance Index.
+#'     \item "uno_c": Uno's Concordance Index.
+#'     \item "r_e": Explained variation (R_sph).
+#'     \item "r_sh": Explained variation (R_sh).
+#'     \item "brier_score": Brier Score.
+#'     \item "td_auc": Time-dependent AUC.
 #'   }
 #'
 #' @param predicted_data (Optional) A data frame containing validation data. If `NULL`, the function 
@@ -45,7 +45,7 @@
 #'   train_data = dat,
 #'   covariates = covariates,
 #'   models  = c("lognormal", "weibull"),
-#'   metrics = c("R_square", "L_square", "Brier Score")
+#'   metrics = c("r_square", "l_square", "brier_score")
 #' )
 #' results2
 #'
@@ -77,7 +77,8 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
   formula <- as.formula(formula_text)
   
   model_types <- if (("all" %in% models)) c("coxph", "exp", "lognormal", "weibull") else models
-  metrics <- if (("all" %in% metrics))c("Pseudo_R_square", "R_square", "L_square", "Harrell\u2019s C", "Uno\u2019s C", "R_sph", "R_sh", "Brier Score", "Time Dependent Auc") else metrics
+  metrics <- tm_normalize_metrics(metrics)
+  metrics <- if (("all" %in% metrics))c("pseudo_r2", "r_square", "l_square", "harrell_c", "uno_c", "r_e", "r_sh", "brier_score", "td_auc") else metrics
   # Define a list to hold metrics
   metrics_results <- list()
   
@@ -115,30 +116,30 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
         Reduce("c", .) %>% as.numeric()
     }
     # Extract metrics if requested
-    if ( "Pseudo_R_square" %in% metrics ){
+    if ( "pseudo_r2" %in% metrics ){
       metrics_results[[fit_name]]$Pesudo_R <- round(r_l_list[1] * r_l_list[2], 2)
     }
-    if ("R_square" %in% metrics) {
-      metrics_results[[fit_name]]$R_square <- round(r_l_list[1], 2)
+    if ("r_square" %in% metrics) {
+      metrics_results[[fit_name]]$r_square <- round(r_l_list[1], 2)
     }
-    if ("L_square" %in% metrics) {
-      metrics_results[[fit_name]]$L_square <- round(r_l_list[2], 2)
-    }
-    
-    if ("Harrell\u2019s C" %in% metrics) {
-      metrics_results[[fit_name]]$"Harrell\u2019s C" <- pam.concordance(fits[[fit_name]], newdata = test_data)$concordance
+    if ("l_square" %in% metrics) {
+      metrics_results[[fit_name]]$l_square <- round(r_l_list[2], 2)
     }
     
-    if ("Uno\u2019s C" %in% metrics) {
-      metrics_results[[fit_name]]$"Uno\u2019s C" <- pam.concordance(fits[[fit_name]], newdata = test_data, timewt="n/G2")$concordance
+    if ("harrell_c" %in% metrics) {
+      metrics_results[[fit_name]]$"harrell_c" <- pam.concordance(fits[[fit_name]], newdata = test_data)$concordance
     }
     
-    if ("R_sph" %in% metrics) {
-      metrics_results[[fit_name]]$R_sph <- pam.rsph(fits[[fit_name]])$Re
+    if ("uno_c" %in% metrics) {
+      metrics_results[[fit_name]]$"uno_c" <- pam.concordance(fits[[fit_name]], newdata = test_data, timewt="n/G2")$concordance
+    }
+    
+    if ("r_e" %in% metrics) {
+      metrics_results[[fit_name]]$r_e <- pam.rsph(fits[[fit_name]])$Re
     }
     
     
-    if ("R_sh" %in% metrics) {
+    if ("r_sh" %in% metrics) {
       if (fit_name == "coxph" ) {
         rms_coxph <- rms::cph(formula, data = train_data, x = TRUE, y = TRUE)
         check_factors <- function(data) {
@@ -155,28 +156,28 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
         
         # Notify users about factors in both datasets and return NA if any are found
         if (check_factors(train_data) || check_factors(test_data)) {
-          metrics_results[[fit_name]]$R_sh <- NA
+          metrics_results[[fit_name]]$r_sh <- NA
         } else {
           R_sh_coxph <- pam.schemper(rms_coxph, traindata = train_data, 
                                      newdata = test_data)$Dx
-          metrics_results[[fit_name]]$R_sh <- R_sh_coxph 
+          metrics_results[[fit_name]]$r_sh <- R_sh_coxph 
         }
       } else {
-        metrics_results[[fit_name]]$R_sh <- NA
+        metrics_results[[fit_name]]$r_sh <- NA
       }
     }
     
-    if ("Brier Score" %in% metrics) {
+    if ("brier_score" %in% metrics) {
       if (is.null(t_star)) {
-        metrics_results[[fit_name]]$"Brier Score" <- pam.Brier(fits[[fit_name]], test_data)
+        metrics_results[[fit_name]]$"brier_score" <- pam.Brier(fits[[fit_name]], test_data)
       }
       else{
-        metrics_results[[fit_name]]$"Brier Score" <- pam.Brier(fits[[fit_name]], test_data, t_star)
+        metrics_results[[fit_name]]$"brier_score" <- pam.Brier(fits[[fit_name]], test_data, t_star)
       }
       
     }
     
-    if ("Time Dependent Auc" %in% metrics) {
+    if ("td_auc" %in% metrics) {
       if(!is.null(t_star)){
         pred_time <- t_star
       } else {
@@ -184,7 +185,7 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
       }
       auc <- pam.survivalROC(Stime = test_data[[time_var]], status = test_data[[status_var]], marker = predict(fits[[fit_name]], newdata = test_data, type = "lp"), predict.time = pred_time, method = "KM")$AUC
       auc <- max(auc, 1- auc)
-      metrics_results[[fit_name]]$"Time Dependent Auc" <- auc
+      metrics_results[[fit_name]]$"td_auc" <- auc
     }
   }
   

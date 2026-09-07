@@ -84,3 +84,33 @@ by `tests/testthat/test-r-e-reference.R` with locally stored expected values.
 | 31 | `R/pam.rsph.R:390` (was `pam.print.rsph`) | The reference names this `print.re`, an S3 method on `print` for class `"re"`. TimeMetric renamed it `pam.print.rsph`, which dispatches on a `pam.print` generic that does not exist, so the print method was dead. **FIXED**: restored as `print.rsph` with `S3method(print, rsph)`; `print(obj)` on an `rsph` object now works | The rename broke intended functionality rather than merely being cosmetic. Deleting it would have discarded a working feature; restoring it recovers one | Fixed |
 | 32 | `pam.summary` vs `pam.summary.rsph` | `pam.summary` is an exported ordinary function, not a generic, yet `pam.summary.rsph` is named as though it were its S3 method. A user calling `pam.summary()` on an `rsph` object reaches the models-list function and gets an error about a non-empty named list, never the rsph summary | A naming collision that looks like S3 dispatch but is not. Should be resolved during the `tm_` rename -- either make the rsph summary a real `summary.rsph` method or give it a non-colliding name | Open |
 
+## Metric name standardization (2026-09-06)
+
+Canonical set, emitted by every entry point and returned by `tm_metric_names()`:
+
+`brier_score`, `c_index`, `harrell_c`, `l_square`, `l2_point`, `pseudo_r2`,
+`pseudo_r2_point`, `r_e`, `r_sh`, `r_square`, `r2_point`, `td_auc`, `uno_c`
+
+Legacy spellings are still accepted at the `metrics` argument and resolve with a
+deprecation warning naming the replacement. Matching is case-insensitive and
+treats `_`, space, and straight or curly apostrophes as equivalent.
+
+Findings closed by this change:
+
+* **#4, #22** -- the U+2019 curly apostrophes in `Harrell's C` / `Uno's C` are
+  gone from the emitted labels; users no longer need to reproduce a typographic
+  apostrophe for metric selection to match.
+* **#15** -- the evaluator and `tm_sample_design` both emit `td_auc`, so results
+  from the two entry points can be joined on `Metric`. Previously one said
+  `Time Dependent AUC` and the other `Time Dependent Auc`.
+* **#16, #26** -- the four spellings of the pseudo R-squared family
+  (`Pesudo_R`, `Pseudo_R_square`, `Psuedo.R`, `Pseudo_R2_point`) collapse to two
+  canonical names. `pseudo_r2` and `pseudo_r2_point` remain **distinct**: they
+  are an integrated measure and a point-in-time estimate and differ numerically
+  on identical data (0.3868 vs 0.1429 on the standard competing-risks fixture).
+* **#30** -- `R_sph` and `R_E` both map to `r_e`, following the audit that showed
+  them to be one metric.
+
+Metric **values** are unchanged. Every `snap_num(...$Value)` snapshot passed
+untouched through this change; only the `Metric` label snapshots moved.
+

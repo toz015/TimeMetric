@@ -5,9 +5,9 @@
 #' measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
 #' @param model A fitted survival model object used by certain metrics:
 #'   \itemize{
-#'     \item For \code{"R_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
+#'     \item For \code{"r_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
 #'           (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
-#'     \item For \code{"R_E"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
+#'     \item For \code{"r_e"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
 #'   }
 #'
 #' @param event_time A numeric vector of observed survival times.
@@ -20,22 +20,22 @@
 #' @param status A numeric vector indicating event occurrence (1 for event, 0 for censoring).
 #' @param covariates A character vector specifying the names of the covariates used in the model.
 #' @param new_data Optional data frame used by metrics that require refitting or
-#'   prediction from \code{model} (e.g., Schemper-Henderson \code{"R_sh"} and
-#'   rank-based \code{"R_E"}). If supplied, it should contain the variables
+#'   prediction from \code{model} (e.g., Schemper-Henderson \code{"r_sh"} and
+#'   rank-based \code{"r_e"}). If supplied, it should contain the variables
 #'   needed by those procedures and columns \code{time} and \code{status}
 #'   coded as above.
 #'   
 #' @param metrics A character vector specifying the evaluation metrics to compute. Options include:
 #'   \itemize{
-#'     \item "Pseudo_R_square" - Pseudo R-squared measure
-#'     \item "R_square" - Explained variation R^2
-#'     \item "L_square" - L-squared measure
+#'     \item "pseudo_r2" - Pseudo R-squared measure
+#'     \item "r_square" - Explained variation R^2
+#'     \item "l_square" - L-squared measure
 #'     \item "Harrell's C" - Harrell's concordance index
 #'     \item "Uno's C" - Uno's concordance index
-#'     \item "R_sh" - Schemper-Henderson explained variation (R_sh)
-#'     \item "R_E" - Rank-based R^2
-#'     \item "Brier Score" - Brier score for calibration
-#'     \item "Time Dependent Auc" - Time-dependent area under the curve (AUC)
+#'     \item "r_sh" - Schemper-Henderson explained variation (R_sh)
+#'     \item "r_e" - Rank-based R^2
+#'     \item "brier_score" - Brier score for calibration
+#'     \item "td_auc" - Time-dependent area under the curve (AUC)
 #'   }
 #'   Default is "all", which computes all available metrics.
 #'   
@@ -76,13 +76,15 @@ tm_survival_eval <- function (model, event_time,
   
   metrics_results <- list()
   
-  valid_metrics <- c("Pseudo_R_square", "R_square", "L_square", 
-                     "Pseudo_R2_point", "R2_point", "L2_point",
-                     "Harrell\u2019s C", "Uno\u2019s C",
-                      "R_E","R_sh", "Brier Score", "Time Dependent Auc")
-  default_metrics <- c("Pseudo_R_square", "Pseudo_R2_point",
-                       "Harrell\u2019s C", "Uno\u2019s C",
-                       "R_E","R_sh", "Brier Score", "Time Dependent Auc")
+  valid_metrics <- c("pseudo_r2", "r_square", "l_square", 
+                     "pseudo_r2_point", "r2_point", "l2_point",
+                     "harrell_c", "uno_c",
+                      "r_e","r_sh", "brier_score", "td_auc")
+  default_metrics <- c("pseudo_r2", "pseudo_r2_point",
+                       "harrell_c", "uno_c",
+                       "r_e","r_sh", "brier_score", "td_auc")
+  
+  metrics <- tm_normalize_metrics(metrics)
   
   if (is.null(metrics)){
     metrics <- default_metrics
@@ -118,25 +120,25 @@ tm_survival_eval <- function (model, event_time,
   t_idx <- which.min(abs(event_time - t_star))
   risk_scores <- 1 - predicted_probability[, t_idx] 
 
-  if("Pseudo_R_square" %in% metrics 
-     || "R_square" %in% metrics 
-     || "L_square" %in% metrics) {
+  if("pseudo_r2" %in% metrics 
+     || "r_square" %in% metrics 
+     || "l_square" %in% metrics) {
     r_l_list <- pam.r2_metrics(predicted_data, event_time, status, tau)
   }
   
-  if ("Pseudo_R_square" %in% metrics) {
-    metrics_results$Pseudo_R_square <- round(r_l_list$Pseudo_R_squared, 4)
+  if ("pseudo_r2" %in% metrics) {
+    metrics_results$pseudo_r2 <- round(r_l_list$Pseudo_R_squared, 4)
   } 
-  if ("R_square" %in% metrics) {
-    metrics_results$R_square <- round(r_l_list$R_squared,4)
+  if ("r_square" %in% metrics) {
+    metrics_results$r_square <- round(r_l_list$R_squared,4)
   }
-  if ("L_square" %in% metrics) {
-    metrics_results$L_square <- round(r_l_list$L_square, 4)
+  if ("l_square" %in% metrics) {
+    metrics_results$l_square <- round(r_l_list$L_square, 4)
   }
   
-  if("Pseudo_R2_point" %in% metrics ||
-     "R2_point" %in% metrics || 
-     "L2_point" %in% metrics) {
+  if("pseudo_r2_point" %in% metrics ||
+     "r2_point" %in% metrics || 
+     "l2_point" %in% metrics) {
     i.obs <- ifelse(event_time < t_star & status == 1, 1, 0)
     i.predict <- predicted_probability[, t_idx]
     restricted <- restricted_data_gen(event_time, status, t_star)
@@ -146,36 +148,36 @@ tm_survival_eval <- function (model, event_time,
                               y = event_time.R2.point, delta = status.R2.point)
   }
 
-  if ("Pseudo_R2_point" %in% metrics) {
-    metrics_results$Pseudo_R2_point <- round(as.numeric(r_l_p$R.squared) * 
+  if ("pseudo_r2_point" %in% metrics) {
+    metrics_results$pseudo_r2_point <- round(as.numeric(r_l_p$R.squared) * 
                                                as.numeric(r_l_p$L.square), 4)
   } 
-  if ("R2_point" %in% metrics) {
-    metrics_results$R2_point <- round(as.numeric(r_l_p$R.squared),4)
+  if ("r2_point" %in% metrics) {
+    metrics_results$r2_point <- round(as.numeric(r_l_p$R.squared),4)
   }
-  if ("L2_point" %in% metrics) {
-    metrics_results$L2_point <- round(as.numeric(r_l_p$L.square), 4)
+  if ("l2_point" %in% metrics) {
+    metrics_results$l2_point <- round(as.numeric(r_l_p$L.square), 4)
   }
   
-  if ("Harrell\u2019s C" %in% metrics) {
-    metrics_results$"Harrell\u2019s C" <- round(
+  if ("harrell_c" %in% metrics) {
+    metrics_results$"harrell_c" <- round(
       concordancefit(y = Surv(event_time, status), 
                      x = predicted_data, 
                      reverse = FALSE)$concordance, 4)
   }
   
-  if ("Uno\u2019s C" %in% metrics) {
-    metrics_results$"Uno\u2019s C" <- round(
+  if ("uno_c" %in% metrics) {
+    metrics_results$"uno_c" <- round(
       concordancefit(y = Surv(event_time, status), 
                      x = predicted_data, ymax = tau,
                      reverse = FALSE, 
                      timewt = "n/G2")$concordance, 4)
   }
   
-  if ("R_sh" %in% metrics) {
+  if ("r_sh" %in% metrics) {
     if (!inherits(model, "coxph")) {
       message("R_sh is only defined for Cox PH models (coxph). Returning NA.")
-      metrics_results$R_sh <- NA
+      metrics_results$r_sh <- NA
     } else {
       message("Note: 'R_sh' metric is only valid for Cox model.")
       
@@ -193,7 +195,7 @@ tm_survival_eval <- function (model, event_time,
         return(FALSE)
       }
       if (check_factors(new_data)) {
-        metrics_results$"R_sh" <- NA
+        metrics_results$"r_sh" <- NA
       } else {
         train_data <- data.frame(
           time   = model$y[, 1],
@@ -209,7 +211,7 @@ tm_survival_eval <- function (model, event_time,
     
         formula <- as.formula(formula_text)
         rms_coxph <- rms::cph(formula, data = train_data, x = TRUE, y = TRUE)
-        metrics_results$"R_sh" <- pam.schemper(
+        metrics_results$"r_sh" <- pam.schemper(
           train.fit = rms_coxph,
           traindata = train_data,
           newdata   = new_data
@@ -217,18 +219,18 @@ tm_survival_eval <- function (model, event_time,
       }
     }
   }
-  if ("R_E" %in% metrics) {
+  if ("r_e" %in% metrics) {
     if (is.null(model)) {
       message("Unrecognized model type for R_E method. Returning NA.")
-      metrics_results$"R_E" <- NA
+      metrics_results$"r_e" <- NA
     }else{
-      #metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
-      metrics_results$"R_E" <- summary.rsph(pam.rsph(model, test_data = new_data),
+      #metrics_results$"r_e" <- pam.rsph(model, test_data = new_data)$Re
+      metrics_results$"r_e" <- summary.rsph(pam.rsph(model, test_data = new_data),
                                                 times = tau)$Rti
     }
   }
   
-  if ("Brier Score" %in% metrics) {
+  if ("brier_score" %in% metrics) {
     t_eval <- event_time[t_idx]
     X <- risk_scores
     brier_result <- suppressMessages(tdROC::tdROC(
@@ -239,11 +241,11 @@ tm_survival_eval <- function (model, event_time,
       method = "both", 
       output = "both"   
     ))
-    metrics_results$"Brier Score" <- round(
+    metrics_results$"brier_score" <- round(
       as.numeric(brier_result$calibration_res[1]), 4)
   }
   
-  if ("Time Dependent Auc" %in% metrics) {
+  if ("td_auc" %in% metrics) {
     t_eval <- event_time[t_idx]
     X <- risk_scores
     AUC_result <- suppressMessages(tdROC::tdROC(
@@ -254,7 +256,7 @@ tm_survival_eval <- function (model, event_time,
       method = "both", 
       output = "both"   
     ))
-    metrics_results$"Time Dependent Auc" <- round(AUC_result$main_res$AUC.empirical, 4)
+    metrics_results$"td_auc" <- round(AUC_result$main_res$AUC.empirical, 4)
   }
 
   result_df <- data.frame(
@@ -360,18 +362,18 @@ tm_summarize <- function(models,
   
   # enforce preferred metric display order
   preferred_order <- c(
-    "Pseudo_R_square",
-    "R_square",
-    "L_square",
-    "Pseudo_R2_point", 
-    "R2_point", 
-    "L2_point",
-    "Harrell\u2019s C",
-    "Uno\u2019s C",
-    "R_sh",
-    "R_E",
-    "Brier Score",
-    "Time Dependent Auc"
+    "pseudo_r2",
+    "r_square",
+    "l_square",
+    "pseudo_r2_point", 
+    "r2_point", 
+    "l2_point",
+    "harrell_c",
+    "uno_c",
+    "r_sh",
+    "r_e",
+    "brier_score",
+    "td_auc"
   )
 
   res_wide$Metric <- factor(res_wide$Metric, levels = preferred_order)

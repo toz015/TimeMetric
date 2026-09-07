@@ -23,15 +23,15 @@ tm_fit_and_eval(
 
 \item{metrics}{A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
 \itemize{
-  \item "R_square": R-squared metric.
-  \item "L_square": L-squared metric.
-  \item "Pesudo_R": Pseudo-R-squared metric.
-  \item "Harrells_C": Harrell's Concordance Index.
-  \item "Unos_C": Uno's Concordance Index.
-  \item "R_sph": Explained variation (R_sph).
-  \item "R_sh": Explained variation (R_sh).
-  \item "Brier_Score": Brier Score.
-  \item "Time_Dependent_Auc": Time-dependent AUC.
+  \item "r_square": R-squared metric.
+  \item "l_square": L-squared metric.
+  \item "pseudo_r2": Pseudo-R-squared metric.
+  \item "harrell_c": Harrell's Concordance Index.
+  \item "uno_c": Uno's Concordance Index.
+  \item "r_e": Explained variation (R_sph).
+  \item "r_sh": Explained variation (R_sh).
+  \item "brier_score": Brier Score.
+  \item "td_auc": Time-dependent AUC.
 }}
 
 \item{predicted_data}{(Optional) A data frame containing validation data. If `NULL`, the function 
@@ -67,7 +67,7 @@ results2 <- tm_fit_and_eval(
   train_data = dat,
   covariates = covariates,
   models  = c("lognormal", "weibull"),
-  metrics = c("R_square", "L_square", "Brier Score")
+  metrics = c("r_square", "l_square", "brier_score")
 )
 results2
 

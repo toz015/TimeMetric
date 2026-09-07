@@ -99,8 +99,8 @@ test_that("pred_cif is times-by-subjects with time.cif supplied separately", {
 })
 
 test_that("competing-risks default metrics use C_index, not Harrell/Uno", {
-  # default_metrics is c("Pseudo_R_square", "Pseudo_R2_point", "C_index",
-  #                      "Brier Score", "Time Dependent Auc")
+  # default_metrics is c("pseudo_r2", "pseudo_r2_point", "c_index",
+  #                      "brier_score", "td_auc")
   # This differs from the right-censored set and must survive standardization.
   p <- cr_pred()
 
@@ -109,11 +109,11 @@ test_that("competing-risks default metrics use C_index, not Harrell/Uno", {
     time.cif = p$cif_pred[, 1], status = p$status, event_type = 1
   )
 
-  expect_true("C_index" %in% res$Metric)
-  expect_true("Pseudo_R_square" %in% res$Metric)
-  expect_false("R_sh" %in% res$Metric)
-  expect_false("R_E" %in% res$Metric)
-  expect_false("Harrell\u2019s C" %in% res$Metric)
+  expect_true("c_index" %in% res$Metric)
+  expect_true("pseudo_r2" %in% res$Metric)
+  expect_false("r_sh" %in% res$Metric)
+  expect_false("r_e" %in% res$Metric)
+  expect_false("harrell_c" %in% res$Metric)
 })
 
 test_that("tm_survival_eval_cr rejects an unknown metric name", {
@@ -123,7 +123,7 @@ test_that("tm_survival_eval_cr rejects an unknown metric name", {
     tm_survival_eval_cr(
       pred_cif = p$cif_pred[, -1], event_time = p$times,
       time.cif = p$cif_pred[, 1], status = p$status, event_type = 1,
-      metrics = "R_sh"
+      metrics = "r_sh"
     ),
     "Invalid metrics"
   )
