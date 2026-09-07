@@ -37,11 +37,11 @@ tm_metric_aliases <- function() {
     "l2_point"                     = "l2_point",
     # concordance
     "Harrells_C"                   = "harrell_c",
-    "Harrell’s C"             = "harrell_c",
+    "Harrell\u2019s C"             = "harrell_c",
     "Harrell's C"                  = "harrell_c",
     "harrell_c"                    = "harrell_c",
     "Unos_C"                       = "uno_c",
-    "Uno’s C"                 = "uno_c",
+    "Uno\u2019s C"                 = "uno_c",
     "Uno's C"                      = "uno_c",
     "uno_c"                        = "uno_c",
     "C_index"                      = "c_index",
@@ -87,7 +87,7 @@ tm_normalize_metrics <- function(metrics, warn = TRUE) {
 
   # case-insensitive, and treat _ / space / straight or curly apostrophe alike
   flatten <- function(x) {
-    x <- gsub("’", "'", x)
+    x <- gsub("\u2019", "'", x)
     tolower(gsub("[ _]", "", x))
   }
   lookup <- stats::setNames(unname(aliases), flatten(names(aliases)))
