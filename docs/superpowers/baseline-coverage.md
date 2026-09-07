@@ -1,20 +1,47 @@
-# Baseline Coverage - after Cluster B removal
+# Coverage - after Cluster C removal
 
-Measured 2026-09-03 on the package **as committed** -- unlike the first baseline,
-which had to be taken on a patched copy because findings.md #6 made the real
-package impossible to install.
+Measured 2026-09-06 on the package as committed.
 
-Coverage rose from 63.09% to 75.38%. The package gained no tests in between; the
-increase comes from deleting the 408 lines of unreachable Cluster B code that
-were dragging the denominator down.
+| stage | total |
+|---|---|
+| characterization baseline (on a patched copy; the package would not install) | 63.09% |
+| after Cluster B removal | 75.38% |
+| after Cluster C removal | **74.62%** |
 
-This is the floor for any further removal: deleting Cluster C or Cluster A must
-not reduce coverage of a function that survives.
+The small decrease is arithmetic, not a regression. `pam.Brier_metric`,
+`pam.rsh_metric` and `pam.rsph_metric` were each at 100% coverage from their
+characterization tests, so deleting them removed covered lines from the
+numerator. No surviving file lost coverage.
 
-The two clean-subprocess reproductions and the Rd-reading test skip under covr,
-which installs an instrumented copy to a temporary library where a child-process
-pkgload::load_all() fails and man/ does not exist. They run normally under
-testthat::test_local() and in CI.
+The three files still at 0% are Cluster A -- `pam.coxph`, `pam.nlm` and
+`pam.survreg` -- unreachable code deliberately left in place, outside the scope
+of the Cluster B and Cluster C decisions.
 
 ```
+TOTAL: 74.62%
+
+cc_weights.R                                  100.0%
+ncc_weights.R                                 100.0%
+pam.concordance.R                             100.0%
+pam.schemper.R                                 97.8%
+pam.predicted_survial_eval_two_phase.R         94.5%
+pam.r2_metrics.R                               92.7%
+pam.predicted_survival_eval_cr.R               90.0%
+pam.predicted_survial_eval.R                   90.0%
+plot.R                                         89.6%
+pam.coxph_restricted.R                         89.4%
+pam.survial_eval.R                             87.0%
+pam.surverg_restricted.R                       86.2%
+pam.Ct.R                                       78.4%
+simulateTwoCauseFineGrayModel.R                76.5%
+pam.weighted_param.R                           75.6%
+pam.Brier.R                                    69.2%
+pam.sim_data.R                                 66.3%
+pam.predict_cr.R                               64.5%
+pam.predictSurvProb2survreg.R                  63.2%
+pam.rsph.R                                     60.2%
+pam.survivalROC.R                              51.6%
+pam.coxph.R                                     0.0%
+pam.nlm.R                                       0.0%
+pam.survreg.R                                   0.0%
 ```

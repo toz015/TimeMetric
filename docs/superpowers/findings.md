@@ -63,3 +63,22 @@ Cluster C is deliberately retained until the two-phase equivalence gate of spec
 section 5 is resolved -- it may be the better foundation for
 `tm_evaluate_two_phase` than the current model-coupled path.
 
+## Cluster C resolution (2026-09-06)
+
+The equivalence gate and the `R_E` audit resolved all three Cluster C functions.
+All are **deleted**.
+
+| Function | Decision | Evidence |
+|---|---|---|
+| `pam.Brier_metric` | deleted | Equivalence *demonstrated*: matches the two-phase Brier under unit weights across five datasets to within the two-phase's own 4-decimal rounding. No weight argument, so it cannot express case-cohort or NCC estimation. Superseded by `yardstick::brier_survival`. |
+| `pam.rsh_metric` | deleted | Order-dependent: `R_sh` moves from 0.1049 to 0.0264 on identical data with rows permuted. Does not match the working `R_sh` path, with a gap that changes sign across datasets. |
+| `pam.rsph_metric` | deleted | A second implementation of `R_E`, wrong by 1.3-5.3%. Root cause: plain ranks instead of inverse-censoring-weighted ranks. `pam.rsph` reproduces the authors' reference exactly (0.00e+00 difference, five datasets). |
+
+Findings #1, #7, #13, #28 and #29 are all closed by these deletions -- each
+described a defect in code that no longer exists. Finding #13's framing was
+wrong and is superseded by #30: `R_sph` and `R_E` were one metric implemented
+twice, not two quantities.
+
+`R_E` now has exactly one implementation, pinned against the authors' reference
+by `tests/testthat/test-r-e-reference.R` with locally stored expected values.
+

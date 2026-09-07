@@ -12,12 +12,21 @@ test_that("package exports the functions this suite characterizes", {
   ) %in% exports))
 })
 
+test_that("the deleted Cluster C duplicates are gone", {
+  # pam.Brier_metric, pam.rsh_metric and pam.rsph_metric were removed after the
+  # equivalence gate and the R_E audit. See docs/superpowers/ for the evidence.
+  ns <- asNamespace("TimeMetric")
+
+  expect_false(exists("pam.Brier_metric", envir = ns, inherits = FALSE))
+  expect_false(exists("pam.rsh_metric", envir = ns, inherits = FALSE))
+  expect_false(exists("pam.rsph_metric", envir = ns, inherits = FALSE))
+})
+
 test_that("functions this suite reaches with ::: are genuinely internal", {
   exports <- getNamespaceExports("TimeMetric")
 
   expect_false(any(c(
-    "Gt", "pam.Brier", "pam.rsh_metric", "pam.rsph_metric",
-    "pam.Brier_metric", "pam.rsph", "m_cif",
+    "Gt", "pam.Brier", "pam.rsph", "m_cif",
     "pam.predicted_survial_eval_two_phase"
   ) %in% exports))
 })

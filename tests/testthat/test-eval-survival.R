@@ -110,19 +110,26 @@ test_that("a clean session without survival attached now succeeds (FINDING 11)",
   expect_match(out, "NO ERROR")   # sentinel printed only on success
 })
 
-test_that("R_E and pam.rsph_metric's r2 are NOT the same number (FINDING 7)", {
-  # Bears directly on the spec's open question of whether R_sph equals R_E.
-  # If these were the same quantity the two names could be merged; they are not.
+test_that("R_E comes from the canonical pam.rsph path", {
+  # Findings 7 and 13 recorded a gap between R_E and pam.rsph_metric$r2 and
+  # framed them as distinct quantities. The R_E audit superseded that: they were
+  # one metric implemented twice, and pam.rsph_metric was the wrong one. It has
+  # been deleted. R_E now has a single implementation, verified against the
+  # authors reference in test-r-e-reference.R.
   d <- fx_surv()
-  risk <- as.numeric(predict(fx_cox(), newdata = d, type = "lp"))
+  res <- ev_result()
+  r_e <- res$Value[res$Metric == "R_E"]
 
-  r_e <- ev_result()
-  r_e_val <- r_e$Value[r_e$Metric == "R_E"]
-  rsph_r2 <- TimeMetric:::pam.rsph_metric(d$time, d$status, risk)$r2
-
-  expect_length(r_e_val, 1L)
-  expect_false(isTRUE(all.equal(r_e_val, rsph_r2, tolerance = 1e-3)))
-  expect_snapshot_value(snap_num(c(r_e_val, rsph_r2)), style = "serialize")
+  expect_length(r_e, 1L)
+  expect_true(is.finite(r_e))
+  # identical to calling the canonical path directly. The reported R_E is
+  # pam.summary.rsph(..., times = tau)$Rti, not pam.rsph(...)$Re -- see
+  # R/pam.predicted_survial_eval.R:225-226.
+  direct <- TimeMetric:::pam.summary.rsph(
+    TimeMetric:::pam.rsph(fx_cox(), test_data = d),
+    times = 10e10
+  )$Rti
+  expect_equal(r_e, direct, tolerance = 1e-8)
 })
 
 test_that("pam.summary pivots one model into a Metric column table", {

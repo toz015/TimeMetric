@@ -10,10 +10,6 @@
     WAoAAAACAAQFAwACAwAAAAAOAAAACD/OXJHRTjvNP7dzGPxQSBc/5S5I6Kcd5z/k/SH/Lkjp
     v5rdFfAsTWY/0/WlMyrPtz/Ktq59Vmz0P+ddzGPxQSA=
 
-# R_E and pam.rsph_metric's r2 are NOT the same number (FINDING 7)
-
-    WAoAAAACAAQFAwACAwAAAAAOAAAAAj/T9aUzKs+3P9SJP69CeEs=
-
 # pam.summary pivots one model into a Metric column table
 
     WAoAAAACAAQFAwACAwAAAAAQAAAACAAEAAkAAAAPUHNldWRvX1Jfc3F1YXJlAAQACQAAAA9Q
