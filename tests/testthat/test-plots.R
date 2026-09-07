@@ -1,23 +1,23 @@
 plot_input <- function() {
-  pam.coxph_restricted(model = fx_cox(), covs = fx_covs(),
+  tm_predict_coxph(model = fx_cox(), covs = fx_covs(),
                        new_data = fx_surv(), tau = 10e10)
 }
 
-test_that("plot_pred requires linear.pred, pred, times and status", {
+test_that("tm_plot_pred requires linear.pred, pred, times and status", {
   pred <- plot_input()
 
   expect_true(all(c("linear.pred", "pred", "times", "status") %in% names(pred)))
   expect_error(
-    plot_pred(pred[c("pred", "times", "status")]),
+    tm_plot_pred(pred[c("pred", "times", "status")]),
     "Input data must contain columns: linear.pred, pred, times, status"
   )
 })
 
-test_that("plot_pred with the default sample_index draws every subject (FINDING 18 fixed)", {
+test_that("tm_plot_pred with the default sample_index draws every subject (FINDING 18 fixed)", {
   # sample_index defaults to NULL, which previously reached x_var[NULL] and
   # produced a zero-length data frame -- a silently blank chart on the
   # documented default call. NULL now means "plot every subject".
-  p <- plot_pred(plot_input())
+  p <- tm_plot_pred(plot_input())
   built <- ggplot2::ggplot_build(p)
 
   expect_s3_class(p, "ggplot")
@@ -26,17 +26,17 @@ test_that("plot_pred with the default sample_index draws every subject (FINDING 
   expect_identical(nrow(built$data[[2]]), 200L)
 })
 
-test_that("plot_pred sample_index thins the plot to the chosen subjects", {
-  built <- ggplot2::ggplot_build(plot_pred(plot_input(), sample_index = 1:50))
+test_that("tm_plot_pred sample_index thins the plot to the chosen subjects", {
+  built <- ggplot2::ggplot_build(tm_plot_pred(plot_input(), sample_index = 1:50))
 
   expect_identical(nrow(built$data[[1]]), 50L)
 })
 
-test_that("plot_pred documents the arguments it actually has (FINDING 20)", {
+test_that("tm_plot_pred documents the arguments it actually has (FINDING 20)", {
   # man/plot_pred.Rd previously documented a sample_size argument that did not
   # exist, while the real sample_index -- whose NULL default blanked the plot --
   # was undocumented.
-  rd <- paste(readLines(skip_without_rd("plot_pred.Rd"), warn = FALSE),
+  rd <- paste(readLines(skip_without_rd("tm_plot_pred.Rd"), warn = FALSE),
               collapse = "\n")
 
   expect_true(grepl("item{sample_index}", rd, fixed = TRUE))
@@ -44,8 +44,8 @@ test_that("plot_pred documents the arguments it actually has (FINDING 20)", {
   expect_false(grepl("sample_size", rd, fixed = TRUE))
 })
 
-test_that("plot_pred builds exactly two layers", {
-  p <- plot_pred(plot_input())
+test_that("tm_plot_pred builds exactly two layers", {
+  p <- tm_plot_pred(plot_input())
   built <- ggplot2::ggplot_build(p)
 
   expect_identical(length(p$layers), 2L)
@@ -54,43 +54,43 @@ test_that("plot_pred builds exactly two layers", {
   )
 })
 
-test_that("plot_pred uses the supplied labels", {
-  p <- plot_pred(plot_input(), title = "characterization", xlab = "RS", ylab = "Days")
+test_that("tm_plot_pred uses the supplied labels", {
+  p <- tm_plot_pred(plot_input(), title = "characterization", xlab = "RS", ylab = "Days")
 
   expect_identical(p$labels$title, "characterization")
   expect_identical(p$labels$x, "RS")
   expect_identical(p$labels$y, "Days")
 })
 
-test_that("plot_pred defaults xlab to Risk Score and ylab to Days", {
-  p <- plot_pred(plot_input())
+test_that("tm_plot_pred defaults xlab to Risk Score and ylab to Days", {
+  p <- tm_plot_pred(plot_input())
 
   expect_identical(p$labels$x, "Risk Score")
   expect_identical(p$labels$y, "Days")
 })
 
-test_that("plot_pred restrict_time caps the plotted times", {
+test_that("tm_plot_pred restrict_time caps the plotted times", {
   cap <- 1
-  p <- plot_pred(plot_input(), restrict_time = cap)
+  p <- tm_plot_pred(plot_input(), restrict_time = cap)
 
   expect_true(all(p$data$times <= cap))
   expect_gt(sum(p$data$times == cap), 0)
 })
 
-test_that("summary_pred_plot combines one panel per input", {
+test_that("tm_plot_summary combines one panel per input", {
   pred <- plot_input()
 
-  p <- summary_pred_plot(list(a = pred, b = pred), ncol = 2)
+  p <- tm_plot_summary(list(a = pred, b = pred), ncol = 2)
 
   expect_s3_class(p, "patchwork")
   expect_identical(length(p$patches$plots) + 1L, 2L)
   expect_no_error(suppressWarnings(print(p)))
 })
 
-test_that("summary_pred_plot accepts explicit panel titles", {
+test_that("tm_plot_summary accepts explicit panel titles", {
   pred <- plot_input()
 
-  p <- summary_pred_plot(list(a = pred, b = pred),
+  p <- tm_plot_summary(list(a = pred, b = pred),
                          titles = c("first", "second"), ncol = 2)
 
   expect_s3_class(p, "patchwork")

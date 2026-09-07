@@ -1,15 +1,17 @@
-test_that("package exports the functions this suite characterizes", {
+test_that("package exports the tm_ API", {
   exports <- getNamespaceExports("TimeMetric")
 
-  expect_type(exports, "character")
   expect_true(all(c(
-    "pam.survival_eval", "pam.predicted_survial_eval",
-    "pam.predicted_survial_eval_cr", "pam.coxph_restricted",
-    "pam.surverg_restricted", "pam.predict_cr", "pam.summary",
-    "pam.summary_cr", "pam.sample_design", "cc_weights", "ncc_weights",
-    "plot_pred", "summary_pred_plot", "sim_cox_weibull_censored",
-    "simulateTwoCauseFineGrayModel"
+    "tm_survival_eval", "tm_survival_eval_cr", "tm_evaluate_two_phase",
+    "tm_fit_and_eval", "tm_predict_coxph", "tm_predict_survreg",
+    "tm_predict_cif", "tm_summarize", "tm_summarize_cr", "tm_sample_design",
+    "tm_case_cohort_weights", "tm_nested_case_control_weights",
+    "tm_plot_pred", "tm_plot_summary", "tm_sim_cox_weibull",
+    "tm_simulate_fine_gray"
   ) %in% exports))
+  # every public function carries the prefix, apart from the deprecated aliases
+  new_api <- grep("^tm_", exports, value = TRUE)
+  expect_length(new_api, 16L)
 })
 
 test_that("the deleted Cluster C duplicates are gone", {
@@ -26,7 +28,9 @@ test_that("functions this suite reaches with ::: are genuinely internal", {
   exports <- getNamespaceExports("TimeMetric")
 
   expect_false(any(c(
-    "Gt", "pam.Brier", "pam.rsph", "m_cif",
-    "pam.predicted_survial_eval_two_phase"
+    "Gt", "pam.Brier", "pam.rsph", "m_cif", "my.survfit"
   ) %in% exports))
+  # tm_evaluate_two_phase was promoted from internal to public, so the
+  # case-cohort and NCC functionality the paper advertises is now reachable
+  expect_true("tm_evaluate_two_phase" %in% exports)
 })

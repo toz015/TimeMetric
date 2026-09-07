@@ -42,13 +42,13 @@
 #' m.wei <- survival::survreg(survival::Surv(time, status) ~ .,
 #'                            data = train_data, dist = "weibull",
 #'                            x = TRUE, y = TRUE)
-#' wei_pred <- pam.surverg_restricted(model = m.wei, covs = covs,
+#' wei_pred <- tm_predict_survreg(model = m.wei, covs = covs,
 #'                                    new_data = test_data)
 #' str(wei_pred$pred)
 #'
 #' @export
 
-pam.surverg_restricted <- function(model, covs, tau = 10e10,  new_data = NULL, predict = T) 
+tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predict = T) 
 {
   
   # Check inputs

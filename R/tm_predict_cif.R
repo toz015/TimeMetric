@@ -41,7 +41,7 @@
 #'                         log_bili + log_protime + edema,
 #'                       data = dat, x = TRUE, y = TRUE)
 #'
-#' pred <- pam.predict_cr(model1 = m1, model2 = m2, newdata = dat,
+#' pred <- tm_predict_cif(model1 = m1, model2 = m2, newdata = dat,
 #'                        covs = covariates, event.type = 1,
 #'                        tau = max(dat$time))
 #' str(pred$pred)
@@ -51,7 +51,7 @@
 #'   fg <- cmprsk::crr(ftime = dat$time, fstatus = dat$status,
 #'                     cov1 = as.matrix(dat[, covariates]),
 #'                     failcode = 1, cencode = 0)
-#'   pred_fg <- pam.predict_cr(fg_model = fg, newdata = dat,
+#'   pred_fg <- tm_predict_cif(fg_model = fg, newdata = dat,
 #'                             covs = covariates, event.type = 1,
 #'                             tau = max(dat$time))
 #'   str(pred_fg$pred)
@@ -60,7 +60,7 @@
 #' @export
 
 
-pam.predict_cr <- function(model1 = NULL, model2 = NULL,
+tm_predict_cif <- function(model1 = NULL, model2 = NULL,
                                     fg_model = NULL, cr_model = NULL,
                                     tau = NULL, newdata, 
                                     event.type = 1, covs) {

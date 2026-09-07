@@ -1,4 +1,4 @@
-# pam.predicted_survial_eval returns a Metric/Value data frame
+# tm_survival_eval returns a Metric/Value data frame
 
     WAoAAAACAAQFAwACAwAAAAAQAAAACAAEAAkAAAAPUHNldWRvX1Jfc3F1YXJlAAQACQAAAA9Q
     c2V1ZG9fUjJfcG9pbnQAAIAJAAAADUhhcnJlbGzigJlzIEMAAIAJAAAACVVub+KAmXMgQwAE
@@ -10,7 +10,7 @@
     WAoAAAACAAQFAwACAwAAAAAOAAAACD/OXJHRTjvNP7dzGPxQSBc/5S5I6Kcd5z/k/SH/Lkjp
     v5rdFfAsTWY/0/WlMyrPtz/Ktq59Vmz0P+ddzGPxQSA=
 
-# pam.summary pivots one model into a Metric column table
+# tm_summarize pivots one model into a Metric column table
 
     WAoAAAACAAQFAwACAwAAAAAQAAAACAAEAAkAAAAPUHNldWRvX1Jfc3F1YXJlAAQACQAAAA9Q
     c2V1ZG9fUjJfcG9pbnQAAIAJAAAADUhhcnJlbGzigJlzIEMAAIAJAAAACVVub+KAmXMgQwAE
@@ -22,7 +22,7 @@
     WAoAAAACAAQFAwACAwAAAAAOAAAACD/OuFHrhR64P7cKPXCj1wo/5R64UeuFHz/lHrhR64Uf
     v564UeuFHrg/09cKPXCj1z/K4UeuFHrhP+dcKPXCj1w=
 
-# pam.summary puts one column per model and rounds to digits
+# tm_summarize puts one column per model and rounds to digits
 
     WAoAAAACAAQFAwACAwAAAAAOAAAACD/OuFHrhR64P7cKPXCj1wo/5R64UeuFHz/lHrhR64Uf
     v564UeuFHrg/09cKPXCj1z/K4UeuFHrhP+dcKPXCj1w=
@@ -32,7 +32,7 @@
     WAoAAAACAAQFAwACAwAAAAAOAAAACD/K4UeuFHrhP7cKPXCj1wo/5R64UeuFHz/lHrhR64Uf
     f/AAAAAAB6I/09cKPXCj1z/K4UeuFHrhP+dcKPXCj1w=
 
-# pam.survival_eval fits and evaluates from raw data (FINDING 12 fixed)
+# tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)
 
     WAoAAAACAAQFAwACAwAAAAAQAAAACgAEAAkAAAALQnJpZXIgU2NvcmUAAIAJAAAADUhhcnJl
     bGzigJlzIEMABAAJAAAACExfc3F1YXJlAAQACQAAAAVNb2RlbAAEAAkAAAAPUHNldWRvX1Jf

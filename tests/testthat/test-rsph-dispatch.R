@@ -38,7 +38,7 @@ test_that("a clean session can now dispatch pam.rsph (FINDING 17 fixed)", {
 
   script <- sprintf('
     suppressWarnings(pkgload::load_all(%s, quiet = TRUE, attach_testthat = FALSE))
-    d <- sim_cox_weibull_censored(n = 50, pi_c = 0.3, v = 2,
+    d <- tm_sim_cox_weibull(n = 50, pi_c = 0.3, v = 2,
                                   beta = c(0.5, -0.5), seed = 1001)
     d <- d[, c("time", "status", "x1", "x2")]
     m <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
@@ -64,7 +64,7 @@ test_that("pam.rsph.coxph works when called directly", {
   res <- rsph_method("coxph")(fx_cox(), test_data = d)
 
   expect_type(res, "list")
-  # components pam.summary.rsph consumes
+  # components summary.rsph consumes
   expect_true(all(c("meanr", "ranks", "perfr", "Re", "times") %in% names(res)))
   expect_true(all(is.finite(res$ranks)))
   expect_snapshot_value(sort(names(res)), style = "serialize")
@@ -91,11 +91,11 @@ test_that("the coxph and survreg methods are genuinely different code paths", {
   expect_false(isTRUE(all.equal(cox_res$ranks, reg_res$ranks, tolerance = 1e-6)))
 })
 
-test_that("pam.summary.rsph converts an rsph object into R_E over time", {
+test_that("summary.rsph converts an rsph object into R_E over time", {
   d <- fx_surv()
   obj <- rsph_method("coxph")(fx_cox(), test_data = d)
 
-  res <- TimeMetric:::pam.summary.rsph(obj, times = stats::median(d$time))
+  res <- TimeMetric:::summary.rsph(obj, times = stats::median(d$time))
 
   expect_s3_class(res, "data.frame")
   expect_identical(names(res), c("times", "Rti", "dRti"))

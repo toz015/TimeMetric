@@ -12,7 +12,7 @@
 #' @param m Integer, number of controls per case (required).
 #' @return Numeric vector of weights.
 #' @export
-ncc_weights <- function(time, status, strata = NULL, m = NULL) {
+tm_nested_case_control_weights <- function(time, status, strata = NULL, m = NULL) {
   if (is.null(m)) stop("`m` must be provided for NCC weights.")
   design <- if (is.null(strata)) "ncc" else "matched_ncc"
   weighted_param(time = time, status = status, design = design,

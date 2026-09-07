@@ -11,6 +11,8 @@
 #' @param n The number of observations.
 #' @return A numeric value representing the difference between the observed censoring
 #' proportion and the desired censoring proportion. This is used for root-finding.
+#' @keywords internal
+#' @noRd
 find_mu_c <- function(c_mu, censor, cens.times, event.times, f.event, n) {
   # Shift censoring times by the provided mu_c value
   cens.times <- cens.times + c_mu
@@ -64,19 +66,19 @@ find_mu_c <- function(c_mu, censor, cens.times, event.times, f.event, n) {
 #'
 #' @examples
 #' # Simulate a dataset with 100 subjects
-#' sim_data <- simulateTwoCauseFineGrayModel(
+#' sim_data <- tm_simulate_fine_gray(
 #'   n = 100, v = 1, beta1 = c(0.5, -0.2), beta2 = c(-0.3, 0.4)
 #' )
 #' head(sim_data)
 #'
 #' # Simulate with a specific censoring proportion and report parameters
-#' params_summary <- simulateTwoCauseFineGrayModel(
+#' params_summary <- tm_simulate_fine_gray(
 #'   n = 1000, v = 1, beta1 = c(0.5, -0.2), beta2 = c(-0.3, 0.4),
 #'   censor = 0.2, report.mu_and_sd = TRUE
 #' )
 #' params_summary
 #' @export
-simulateTwoCauseFineGrayModel <- function (n, v, beta1, beta2, lambda1 = 1,
+tm_simulate_fine_gray <- function (n, v, beta1, beta2, lambda1 = 1,
                                            X = NULL, mu = 0, p = 0.7,
                                            c_scale = 1, censor = 0,
                                            sd.time = NULL, mu.c.time = NULL,

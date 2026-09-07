@@ -1,4 +1,4 @@
-# Integration tests for pam.predict_cr's two optional prediction backends.
+# Integration tests for tm_predict_cif's two optional prediction backends.
 # Both live in Suggests, so each test skips when its package is absent -- a
 # visible skip, not a silent gap. The full-dependency CI job installs both, so
 # these run for real there.
@@ -50,7 +50,7 @@ test_that("fg_model backend computes CIF predictions via cmprsk", {
   fg <- cmprsk::crr(ftime = dd$time, fstatus = dd$status, cov1 = X,
                     failcode = 1, cencode = 0)
 
-  res <- pam.predict_cr(fg_model = fg, newdata = dd, covs = ob_covs(),
+  res <- tm_predict_cif(fg_model = fg, newdata = dd, covs = ob_covs(),
                         event.type = 1, tau = max(dd$time))
 
   expect_type(res, "list")
@@ -64,16 +64,16 @@ test_that("fg_model backend computes CIF predictions via cmprsk", {
   expect_snapshot_value(snap_num(head(res$pred, 10)), style = "serialize")
 })
 
-test_that("fg_model output feeds pam.summary_cr like the coxph path", {
+test_that("fg_model output feeds tm_summarize_cr like the coxph path", {
   skip_if_not_installed("cmprsk")
   dd <- ob_data()
   X <- as.matrix(dd[, ob_covs(), drop = FALSE])
   fg <- cmprsk::crr(ftime = dd$time, fstatus = dd$status, cov1 = X,
                     failcode = 1, cencode = 0)
 
-  pred <- pam.predict_cr(fg_model = fg, newdata = dd, covs = ob_covs(),
+  pred <- tm_predict_cif(fg_model = fg, newdata = dd, covs = ob_covs(),
                          event.type = 1, tau = max(dd$time))
-  res <- pam.summary_cr(list(fg = pred), event_type = 1)
+  res <- tm_summarize_cr(list(fg = pred), event_type = 1)
 
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "fg"))
@@ -90,7 +90,7 @@ test_that("cr_model backend computes CIF predictions via randomForestSRC", {
     Surv(time, status) ~ X1 + X2, data = dd, ntree = 50, seed = -1003
   )
 
-  res <- pam.predict_cr(cr_model = rf, newdata = dd, covs = ob_covs(),
+  res <- tm_predict_cif(cr_model = rf, newdata = dd, covs = ob_covs(),
                         event.type = 1, tau = max(dd$time))
 
   expect_type(res, "list")
@@ -111,7 +111,7 @@ test_that("fg_model errors informatively when cmprsk is unavailable", {
   )
 
   expect_error(
-    pam.predict_cr(fg_model = structure(list(), class = "crr"),
+    tm_predict_cif(fg_model = structure(list(), class = "crr"),
                    newdata = dd, covs = ob_covs(), event.type = 1),
     "requires the 'cmprsk' package"
   )
@@ -127,7 +127,7 @@ test_that("cr_model errors informatively when randomForestSRC is unavailable", {
   )
 
   expect_error(
-    pam.predict_cr(cr_model = structure(list(), class = "rfsrc"),
+    tm_predict_cif(cr_model = structure(list(), class = "rfsrc"),
                    newdata = dd, covs = ob_covs(), event.type = 1),
     "requires the 'randomForestSRC' package"
   )

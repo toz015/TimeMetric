@@ -12,7 +12,7 @@
 #' @param strata Optional factor/character for strata (stratified cc).
 #' @return Numeric vector of weights.
 #' @export
-cc_weights <- function(time, status, subcohort = NULL, strata = NULL) {
+tm_case_cohort_weights <- function(time, status, subcohort = NULL, strata = NULL) {
   design <- if (is.null(strata)) "casecohort" else "strat_casecohort"
   weighted_param(time = time, status = status, design = design,
                  subcohort = subcohort, strata = strata, m = NULL)

@@ -42,7 +42,7 @@
 #' 
 #' 
 #' @export
-pam.predicted_survial_eval_cr <- function (pred_cif, event_time, time.cif, status,
+tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
                                            metrics = NULL,  t_star = NULL, 
                                            tau = NULL, event_type = 1) 
   
@@ -411,7 +411,7 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
 #' Summarize multiple competing-risks models into a wide comparison table
 #'
 #' @description
-#' Calls \code{pam.predicted_survial_eval_cr()} for each model in a named list and
+#' Calls \code{tm_survival_eval_cr()} for each model in a named list and
 #' returns a wide table where rows are metrics and columns are model names.
 #'
 #' @param models A **named list**; each element is a list with components:
@@ -422,7 +422,7 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
 #'     \item \code{status}     -- integer vector of event codes (0=censoring; \code{event_type}=target; others=competing)
 #'   }
 #' @param metrics Character vector of metrics to compute (passed through to
-#'   \code{pam.predicted_survial_eval_cr()}); use \code{"all"} for all supported.
+#'   \code{tm_survival_eval_cr()}); use \code{"all"} for all supported.
 #' @param t_star (Optional) evaluation time for Brier score, AUC, and point version R2. Default is median of observation time.
 #' @param tau (Optional) The maximum prediction time horizon for R2 and C index. Default is maximum of observation time.
 #' @param event_type Integer code for the cause of interest (passed through).
@@ -435,7 +435,7 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
 #'   \item cell values = metric values
 #' }
 #' @export
-pam.summary_cr <- function(models,
+tm_summarize_cr <- function(models,
                            metrics = NULL,
                            t_star = NULL,
                            tau = NULL,
@@ -454,7 +454,7 @@ pam.summary_cr <- function(models,
                    name, paste(required, collapse = ", ")))
     }
     
-    res <- pam.predicted_survial_eval_cr(
+    res <- tm_survival_eval_cr(
       pred_cif   = mod$cif_pred[, -1],
       event_time = mod$times,
       time.cif   = mod$cif_pred[, 1],
@@ -466,7 +466,7 @@ pam.summary_cr <- function(models,
     )
     
     if (!all(c("Metric", "Value") %in% names(res)))
-      stop(sprintf("Unexpected result from pam.predicted_survial_eval_cr() for '%s'", name))
+      stop(sprintf("Unexpected result from tm_survival_eval_cr() for '%s'", name))
     
     res$Model <- name
     res[, c("Model", "Metric", "Value")]

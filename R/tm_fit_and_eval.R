@@ -37,11 +37,11 @@
 #' dat <- dat[stats::complete.cases(dat), ]
 #'
 #' # All available models and metrics
-#' results <- pam.survival_eval(train_data = dat, covariates = covariates)
+#' results <- tm_fit_and_eval(train_data = dat, covariates = covariates)
 #' results
 #'
 #' # A specific subset of models and metrics
-#' results2 <- pam.survival_eval(
+#' results2 <- tm_fit_and_eval(
 #'   train_data = dat,
 #'   covariates = covariates,
 #'   models  = c("lognormal", "weibull"),
@@ -51,7 +51,7 @@
 #'
 #' @export
 
-pam.survival_eval <- function (train_data, covariates, models = "coxph", 
+tm_fit_and_eval <- function (train_data, covariates, models = "coxph", 
                                  metrics = "all", predicted_data = NULL, t_star = NULL, tau = NULL) {
   time_var <- "time"
   status_var <- "status"
@@ -103,13 +103,13 @@ pam.survival_eval <- function (train_data, covariates, models = "coxph",
       tau <- max(event_times)
     }
     if (fit_name == "coxph") {
-      r_l_list <- pam.coxph_restricted(fits[[fit_name]], covs = covariates,
+      r_l_list <- tm_predict_coxph(fits[[fit_name]], covs = covariates,
                                        tau = tau, new_data = test_data,
                                        predict = FALSE) %>%
         Reduce("c", .) %>% as.numeric()
     } 
       else {
-      r_l_list <- pam.surverg_restricted(fits[[fit_name]], covs = covariates,
+      r_l_list <- tm_predict_survreg(fits[[fit_name]], covs = covariates,
                                          tau = tau, new_data = test_data,
                                          predict = FALSE) %>%
         Reduce("c", .) %>% as.numeric()

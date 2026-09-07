@@ -20,7 +20,7 @@
     AAQACQAAAAVwZXJmcgAEAAkAAAAFcmFua3MABAAJAAAAAnNlAAQACQAAAARzZW4wAAQACQAA
     AAV0aW1lcwAEAAkAAAAEdHlwZQAEAAkAAAAHd2VpZ2h0cw==
 
-# pam.summary.rsph converts an rsph object into R_E over time
+# summary.rsph converts an rsph object into R_E over time
 
     WAoAAAACAAQFAwACAwAAAAAOAAAAAz/25XhfjS5RP9cDHOryUcI/35+hGpda+w==
 

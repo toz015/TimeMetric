@@ -1,5 +1,5 @@
-# Competing-risks inputs shared by the pam.predict_cr tests.
-# pam.predict_cr reads newdata$time and newdata$status, so the fx_cr columns
+# Competing-risks inputs shared by the tm_predict_cif tests.
+# tm_predict_cif reads newdata$time and newdata$status, so the fx_cr columns
 # obs.times / obs.event must be aliased before it can be used.
 pc_data <- function() {
   d <- fx_cr()
@@ -18,10 +18,10 @@ pc_cause_model <- function(cause) {
   )
 }
 
-test_that("pam.coxph_restricted returns pred, times, status, surv_prob", {
+test_that("tm_predict_coxph returns pred, times, status, surv_prob", {
   d <- fx_surv()
 
-  res <- pam.coxph_restricted(model = fx_cox(), covs = fx_covs(),
+  res <- tm_predict_coxph(model = fx_cox(), covs = fx_covs(),
                               new_data = d, tau = 10e10)
 
   expect_type(res, "list")
@@ -40,20 +40,20 @@ test_that("pam.coxph_restricted returns pred, times, status, surv_prob", {
   expect_snapshot_value(mat_fingerprint(res$surv_prob), style = "serialize")
 })
 
-test_that("pam.coxph_restricted requires time and status in new_data", {
+test_that("tm_predict_coxph requires time and status in new_data", {
   d <- fx_surv()
 
   expect_error(
-    pam.coxph_restricted(model = fx_cox(), covs = fx_covs(),
+    tm_predict_coxph(model = fx_cox(), covs = fx_covs(),
                          new_data = d[, c("x1", "x2")], tau = 10e10),
     "new_data require time and status columns"
   )
 })
 
-test_that("pam.surverg_restricted returns the same component structure", {
+test_that("tm_predict_survreg returns the same component structure", {
   d <- fx_surv()
 
-  res <- pam.surverg_restricted(model = fx_survreg(), covs = fx_covs(),
+  res <- tm_predict_survreg(model = fx_survreg(), covs = fx_covs(),
                                 new_data = d, tau = 10e10)
 
   expect_type(res, "list")
@@ -66,29 +66,29 @@ test_that("pam.surverg_restricted returns the same component structure", {
   expect_snapshot_value(mat_fingerprint(res$surv_prob), style = "serialize")
 })
 
-test_that("pam.surverg_restricted validates model class and covariates", {
+test_that("tm_predict_survreg validates model class and covariates", {
   d <- fx_surv()
 
   expect_error(
-    pam.surverg_restricted(model = fx_cox(), covs = fx_covs(), new_data = d),
+    tm_predict_survreg(model = fx_cox(), covs = fx_covs(), new_data = d),
     "model must be an object of class 'survreg'"
   )
   expect_error(
-    pam.surverg_restricted(model = fx_survreg(), covs = c("x1", "nope"),
+    tm_predict_survreg(model = fx_survreg(), covs = c("x1", "nope"),
                            new_data = d),
     "All covariates must be present in new_data"
   )
   expect_error(
-    pam.surverg_restricted(model = fx_survreg(), covs = fx_covs(),
+    tm_predict_survreg(model = fx_survreg(), covs = fx_covs(),
                            new_data = d[, c("x1", "x2")]),
     "new_data require time and status columns"
   )
 })
 
-test_that("pam.predict_cr dispatches on a pair of cause-specific coxph fits", {
+test_that("tm_predict_cif dispatches on a pair of cause-specific coxph fits", {
   dd <- pc_data()
 
-  res <- pam.predict_cr(
+  res <- tm_predict_cif(
     model1 = pc_cause_model(1), model2 = pc_cause_model(2),
     newdata = dd, covs = pc_covs(), event.type = 1, tau = max(dd$time)
   )
@@ -111,7 +111,7 @@ test_that("cif_pred is times-by-subjects with the time grid in column 1", {
   # and columns 2..n+1 are subjects.
   dd <- pc_data()
 
-  res <- pam.predict_cr(
+  res <- tm_predict_cif(
     model1 = pc_cause_model(1), model2 = pc_cause_model(2),
     newdata = dd, covs = pc_covs(), event.type = 1, tau = max(dd$time)
   )
@@ -128,7 +128,7 @@ test_that("cif_pred is times-by-subjects with the time grid in column 1", {
   expect_true(all(apply(cif[, -1], 2, function(col) all(diff(col) >= -1e-8))))
 })
 
-test_that("pam.predict_cr dispatches on a survreg model1", {
+test_that("tm_predict_cif dispatches on a survreg model1", {
   # The survreg path routes model2 through get_CIF_aft's aft.other loop, which
   # indexes coefficients as [-1] to drop an intercept. model2 must therefore
   # also be an AFT fit: passing a coxph (no intercept) yields a non-conformable
@@ -143,7 +143,7 @@ test_that("pam.predict_cr dispatches on a survreg model1", {
     x = TRUE, y = TRUE
   )
 
-  res <- pam.predict_cr(
+  res <- tm_predict_cif(
     model1 = m1, model2 = m2,
     newdata = dd, covs = pc_covs(), event.type = 1, tau = max(dd$time)
   )
@@ -154,15 +154,15 @@ test_that("pam.predict_cr dispatches on a survreg model1", {
   expect_snapshot_value(snap_num(head(res$pred, 10)), style = "serialize")
 })
 
-test_that("pam.predict_cr rejects an unrecognised model type", {
+test_that("tm_predict_cif rejects an unrecognised model type", {
   dd <- pc_data()
 
   expect_error(
-    pam.predict_cr(newdata = dd, covs = pc_covs(), event.type = 1),
+    tm_predict_cif(newdata = dd, covs = pc_covs(), event.type = 1),
     "Unknown model type"
   )
   expect_error(
-    pam.predict_cr(model1 = "not a model", newdata = dd, covs = pc_covs()),
+    tm_predict_cif(model1 = "not a model", newdata = dd, covs = pc_covs()),
     "Unknown model type"
   )
 })

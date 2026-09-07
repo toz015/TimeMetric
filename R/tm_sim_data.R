@@ -74,19 +74,19 @@
 #' @examples
 #' # (1) Main effects only
 #' set.seed(1)
-#' d0 <- sim_cox_weibull_censored(500, 0.3, v = 1.2, beta = c(0.4, -0.2))
+#' d0 <- tm_sim_cox_weibull(500, 0.3, v = 1.2, beta = c(0.4, -0.2))
 #'
 #' # (2) Two covariates + their interaction
-#' d1 <- sim_cox_weibull_censored(500, 0.3, v = 1.2, 
+#' d1 <- tm_sim_cox_weibull(500, 0.3, v = 1.2, 
 #'                                beta = c(0.5, -0.3, 0.2), 
 #'                                interact = TRUE)
 #'
 #' # (3) Three covariates + all two-way and three-way interactions
 #' b <- c(0.4, -0.2, 0.1, 0.15, -0.05, 0.08, 0.02)
-#' d2 <- sim_cox_weibull_censored(500, 0.3, v = 1.0, beta = b, interact = TRUE)
+#' d2 <- tm_sim_cox_weibull(500, 0.3, v = 1.0, beta = b, interact = TRUE)
 #'
 #' @export
-sim_cox_weibull_censored <- function(n, pi_c, v, beta, mu = NULL, 
+tm_sim_cox_weibull <- function(n, pi_c, v, beta, mu = NULL, 
                                      sd = NULL, seed = NULL, 
                                      interact = FALSE, nonlinear = FALSE) {
   stopifnot(length(n) == 1L, n > 0, is.finite(n))

@@ -51,7 +51,7 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_shape_manual
 #'   theme_classic xlab ylab ggtitle theme element_text
 #' @export
-plot_pred <- function(data,
+tm_plot_pred <- function(data,
                       title = NULL,
                       xlab = "Risk Score",
                       ylab = "Days",
@@ -115,7 +115,7 @@ plot_pred <- function(data,
 #' Arrange multiple prediction plots with letter tags
 #'
 #' @description
-#' Builds one panel per data frame using \code{plot_fun} (default: \code{plot_pred})
+#' Builds one panel per data frame using \code{plot_fun} (default: \code{tm_plot_pred})
 #' and arranges them with letter tags. The function collects a single shared legend
 #' and applies global styling (titles, axis labels, legend options) across panels.
 #'
@@ -123,7 +123,7 @@ plot_pred <- function(data,
 #'   \code{linear.pred}, \code{pred}, \code{times}, and \code{status}.
 #' @param titles Optional character vector, same length as \code{data_list};
 #'   if \code{NULL}, defaults to "Panel 1", "Panel 2", etc.
-#' @param plot_fun Function that creates a single panel (default = \code{plot_pred}).
+#' @param plot_fun Function that creates a single panel (default = \code{tm_plot_pred}).
 #' @param ncol Number of columns in the panel layout (default = 2).
 #' @param tag_levels Letter style for tags: \code{"a"}, \code{"A"}, \code{"1"}, \code{"i"}, or \code{"I"}.
 #'
@@ -147,7 +147,7 @@ plot_pred <- function(data,
 #'
 #' @examples
 #' \dontrun{
-#' summary_pred_plot(
+#' tm_plot_summary(
 #'   list(df1, df2),
 #'   titles = c("Weibull AFT", "Cox PH"),
 #'   invert_linear = c(TRUE, FALSE),
@@ -159,9 +159,9 @@ plot_pred <- function(data,
 #'   legend_position = "bottom"
 #' )
 #' }
-summary_pred_plot <- function(data_list,
+tm_plot_summary <- function(data_list,
                               titles = NULL,
-                              plot_fun = plot_pred,
+                              plot_fun = tm_plot_pred,
                               ncol = 2,
                               tag_levels = "a",
                               invert_linear = TRUE,

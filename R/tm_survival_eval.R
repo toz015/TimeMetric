@@ -61,7 +61,7 @@
 #'
 #' @export
 
-pam.predicted_survial_eval <- function (model, event_time, 
+tm_survival_eval <- function (model, event_time, 
                                         predicted_probability, 
                                         pred_mean_survival = NULL,
                                         status, covariates, new_data = NULL,
@@ -223,7 +223,7 @@ pam.predicted_survial_eval <- function (model, event_time,
       metrics_results$"R_E" <- NA
     }else{
       #metrics_results$"R_E" <- pam.rsph(model, test_data = new_data)$Re
-      metrics_results$"R_E" <- pam.summary.rsph(pam.rsph(model, test_data = new_data),
+      metrics_results$"R_E" <- summary.rsph(pam.rsph(model, test_data = new_data),
                                                 times = tau)$Rti
     }
   }
@@ -269,7 +269,7 @@ pam.predicted_survial_eval <- function (model, event_time,
 #' Summarize multiple survival models into a wide comparison table
 #'
 #' @description
-#' Calls \code{pam.predicted_survial_eval()} for each model in a named list and
+#' Calls \code{tm_survival_eval()} for each model in a named list and
 #' outputs a wide table: each row corresponds to one metric and each column
 #' corresponds to a model.
 #'
@@ -299,7 +299,7 @@ pam.predicted_survial_eval <- function (model, event_time,
 #'   }
 #'
 #' @export
-pam.summary <- function(models,
+tm_summarize <- function(models,
                         metrics = NULL,
                         t_star = NULL,
                         tau = 10e10,
@@ -319,7 +319,7 @@ pam.summary <- function(models,
                    name, paste(required, collapse = ", ")))
     }
     
-    res <- pam.predicted_survial_eval(
+    res <- tm_survival_eval(
       model = mod$model,
       event_time = mod$times,
       predicted_probability = mod$surv_prob,
@@ -334,7 +334,7 @@ pam.summary <- function(models,
     
     # Ensure expected columns exist and add Model label
     if (!all(c("Metric", "Value") %in% names(res))) {
-      stop(sprintf("Unexpected result structure from pam.predicted_survial_eval() for model '%s'.", name))
+      stop(sprintf("Unexpected result structure from tm_survival_eval() for model '%s'.", name))
     }
     res$Model <- name
     res[, c("Model", "Metric", "Value")]
@@ -407,6 +407,8 @@ pam.summary <- function(models,
 #'
 #' @keywords internal
 
+#' @keywords internal
+#' @noRd
 integrate_survival <- function(predicted_probability, event_time, status, tau = NULL) {
   if (nrow(predicted_probability) != length(event_time)) {
     stop("Number of rows in predicted_probability must equal length of event_time")

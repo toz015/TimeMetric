@@ -47,12 +47,12 @@
 #'
 #' m.cox <- survival::coxph(survival::Surv(time, status) ~ .,
 #'                          data = train_data, x = TRUE, y = TRUE)
-#' cox_pred <- pam.coxph_restricted(model = m.cox, covs = covs,
+#' cox_pred <- tm_predict_coxph(model = m.cox, covs = covs,
 #'                                  new_data = test_data)
 #' str(cox_pred$pred)
 #'
 #' @export
-pam.coxph_restricted <- function(model, covs, tau = 10e10, new_data = NULL, predict = T) 
+tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict = T) 
 {
   if(is.null(new_data)){
       x.matrix.unsorted <- model$x

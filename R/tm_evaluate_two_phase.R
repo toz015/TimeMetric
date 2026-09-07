@@ -17,7 +17,7 @@ km_surv <- function(t, km_cens) {
 #'   - Nested case-control (matched or unmatched)
 #'
 #' @param case_weights Numeric vector of case weights (from `weighted_param()`).
-#' @param pred_results A numeric vector of predicted survival probabilities with (can be calculate by `pam.coxph_restricted()`) :
+#' @param pred_results A numeric vector of predicted survival probabilities with (can be calculate by `tm_predict_coxph()`) :
 #'   - `Prob`: predicted survival probabilities over time.
 #'   - `pred`: predicted risk scores.
 #'   - `time`: time points for `Prob` rows.
@@ -35,11 +35,11 @@ km_surv <- function(t, km_cens) {
 #'   - `Value`: numeric value
 #'
 #'
-#' @keywords internal
+#' @export
 #' @importFrom dplyr mutate case_when
 #' @importFrom tibble tibble
 #' @importFrom purrr map2
-pam.predicted_survial_eval_two_phase <- function(pred_results, 
+tm_evaluate_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 
                                                  metrics = c("Pesudo_R", "Harrell\u2019s C", "Uno\u2019s C", "Brier Score", "Time Dependent Auc")) {
@@ -146,7 +146,7 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
 #'
 #' @description
 #' For a list of models (each providing `time`, `status`, `surv_prob`, `pred`),
-#' calls `pam.predicted_survial_eval_two_phase()` for each and returns a wide
+#' calls `tm_evaluate_two_phase()` for each and returns a wide
 #' comparison table with metrics as rows and model names as columns.
 #'
 #' @param models A **named list** in which each element corresponds to a fitted model.  
@@ -171,7 +171,7 @@ pam.predicted_survial_eval_two_phase <- function(pred_results,
 #'
 #' @return A data.frame: rows = metrics, columns = model names.
 #' @export
-pam.sample_design <- function(models,
+tm_sample_design <- function(models,
                               case_weights,
                               km_cens,
                               metrics = c("Pesudo_R", "Harrell\u2019s C", "Uno\u2019s C",
@@ -200,7 +200,7 @@ pam.sample_design <- function(models,
       pred      = mod$pred
     )
     
-    res <- pam.predicted_survial_eval_two_phase(
+    res <- tm_evaluate_two_phase(
       pred_results = pred_results,
       t_star       = t_star,    # global (NULL allowed)
       tau          = tau,       # global (NULL allowed)
@@ -210,7 +210,7 @@ pam.sample_design <- function(models,
     )
     
     if (!all(c("Metric", "Value") %in% names(res)))
-      stop(sprintf("Unexpected result from pam.predicted_survial_eval_two_phase() for '%s'", name))
+      stop(sprintf("Unexpected result from tm_evaluate_two_phase() for '%s'", name))
     
     # Normalize minor label variant
     res$Metric <- gsub("^Time Dependent AUC$", "Time Dependent Auc", res$Metric)

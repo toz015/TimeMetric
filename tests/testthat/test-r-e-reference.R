@@ -7,7 +7,7 @@
 #   SHA-256  : cf6532068a9a86a61d3763b4cad54aff4bb5000a3ce108f64135debab2b69a92
 #   Computed : re.coxph(fit)$Re, where
 #              fit <- coxph(Surv(time, status) ~ x1 + x2, data = d, x = TRUE, y = TRUE)
-#              d   <- sim_cox_weibull_censored(n = 200, pi_c = 0.3, v = 2,
+#              d   <- tm_sim_cox_weibull(n = 200, pi_c = 0.3, v = 2,
 #                                              beta = c(0.5, -0.5), seed = <seed>)
 #                       [, c("time", "status", "x1", "x2")]
 #
@@ -28,7 +28,7 @@ REF_RE <- c(
 )
 
 ref_fixture <- function(seed) {
-  d <- sim_cox_weibull_censored(n = 200, pi_c = 0.3, v = 2,
+  d <- tm_sim_cox_weibull(n = 200, pi_c = 0.3, v = 2,
                                 beta = c(0.5, -0.5), seed = seed)
   d[, c("time", "status", "x1", "x2")]
 }
@@ -91,11 +91,11 @@ test_that("the third-party reference implementation is not redistributed", {
   expect_false(file.exists(file.path(root, "R", "Re.r")))
 })
 
-test_that("pam.summary.rsph derives R_E over time from the same object", {
+test_that("summary.rsph derives R_E over time from the same object", {
   d <- ref_fixture(1001)
   obj <- TimeMetric:::pam.rsph(ref_fit(1001), test_data = d)
 
-  res <- TimeMetric:::pam.summary.rsph(obj, times = stats::median(d$time))
+  res <- TimeMetric:::summary.rsph(obj, times = stats::median(d$time))
 
   expect_s3_class(res, "data.frame")
   expect_identical(names(res), c("times", "Rti", "dRti"))

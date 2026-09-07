@@ -6,7 +6,7 @@
 
     WAoAAAACAAQFAwACAwAAAAAOAAAAAkBFZmZmZmZmQDxmZmZmZmY=
 
-# pam.predicted_survial_eval_cr returns a Metric/Value table
+# tm_survival_eval_cr returns a Metric/Value table
 
     WAoAAAACAAQFAwACAwAAAAAQAAAABQAEAAkAAAAPUHNldWRvX1Jfc3F1YXJlAAQACQAAAA9Q
     c2V1ZG9fUjJfcG9pbnQABAAJAAAAB0NfaW5kZXgABAAJAAAAC0JyaWVyIFNjb3JlAAQACQAA
@@ -17,7 +17,7 @@
     WAoAAAACAAQFAwACAwAAAAAOAAAABT/YwVTJhfBvP8JKjBVMmF8/5/YraufVZz/EBOpKjBVN
     P+f1WbPQfIU=
 
-# pam.summary_cr consumes pam.predict_cr output directly
+# tm_summarize_cr consumes tm_predict_cif output directly
 
     WAoAAAACAAQFAwACAwAAAAAQAAAABQAEAAkAAAAPUHNldWRvX1Jfc3F1YXJlAAQACQAAAA9Q
     c2V1ZG9fUjJfcG9pbnQABAAJAAAAB0NfaW5kZXgABAAJAAAAC0JyaWVyIFNjb3JlAAQACQAA

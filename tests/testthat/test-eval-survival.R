@@ -1,12 +1,12 @@
 # Shared prediction input for the evaluation tests.
 ev_pred <- function() {
-  pam.coxph_restricted(model = fx_cox(), covs = fx_covs(),
+  tm_predict_coxph(model = fx_cox(), covs = fx_covs(),
                        new_data = fx_surv(), tau = 10e10)
 }
 
 ev_result <- function() {
   pred <- ev_pred()
-  pam.predicted_survial_eval(
+  tm_survival_eval(
     model = fx_cox(),
     event_time = pred$times,
     predicted_probability = pred$surv_prob,
@@ -17,7 +17,7 @@ ev_result <- function() {
   )
 }
 
-test_that("pam.predicted_survial_eval returns a Metric/Value data frame", {
+test_that("tm_survival_eval returns a Metric/Value data frame", {
   res <- ev_result()
 
   expect_metric_table(res)
@@ -46,11 +46,11 @@ test_that("the default metric set includes R_sh and R_E in the Metric column", {
   expect_false("Unos_C" %in% res$Metric)
 })
 
-test_that("pam.predicted_survial_eval rejects an unknown metric name", {
+test_that("tm_survival_eval rejects an unknown metric name", {
   pred <- ev_pred()
 
   expect_error(
-    pam.predicted_survial_eval(
+    tm_survival_eval(
       model = fx_cox(),
       event_time = pred$times,
       predicted_probability = pred$surv_prob,
@@ -84,14 +84,14 @@ test_that("a clean session without survival attached now succeeds (FINDING 11)",
   script <- sprintf('
     suppressWarnings(pkgload::load_all(%s, quiet = TRUE, attach_testthat = FALSE))
     stopifnot(!"package:survival" %%in%% search())
-    d <- sim_cox_weibull_censored(n = 50, pi_c = 0.3, v = 2,
+    d <- tm_sim_cox_weibull(n = 50, pi_c = 0.3, v = 2,
                                   beta = c(0.5, -0.5), seed = 1001)
     d <- d[, c("time", "status", "x1", "x2")]
     m <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
                          data = d, x = TRUE, y = TRUE)
-    p <- pam.coxph_restricted(model = m, covs = c("x1", "x2"),
+    p <- tm_predict_coxph(model = m, covs = c("x1", "x2"),
                               new_data = d, tau = 10e10)
-    r <- try(pam.predicted_survial_eval(
+    r <- try(tm_survival_eval(
       model = m, event_time = p$times, predicted_probability = p$surv_prob,
       status = p$status, covariates = c("x1", "x2"), new_data = d, tau = 10e10
     ), silent = TRUE)
@@ -123,17 +123,17 @@ test_that("R_E comes from the canonical pam.rsph path", {
   expect_length(r_e, 1L)
   expect_true(is.finite(r_e))
   # identical to calling the canonical path directly. The reported R_E is
-  # pam.summary.rsph(..., times = tau)$Rti, not pam.rsph(...)$Re -- see
+  # summary.rsph(..., times = tau)$Rti, not pam.rsph(...)$Re -- see
   # R/pam.predicted_survial_eval.R:225-226.
-  direct <- TimeMetric:::pam.summary.rsph(
+  direct <- TimeMetric:::summary.rsph(
     TimeMetric:::pam.rsph(fx_cox(), test_data = d),
     times = 10e10
   )$Rti
   expect_equal(r_e, direct, tolerance = 1e-8)
 })
 
-test_that("pam.summary pivots one model into a Metric column table", {
-  res <- pam.summary(list(value = ev_pred()), tau = 10e10)
+test_that("tm_summarize pivots one model into a Metric column table", {
+  res <- tm_summarize(list(value = ev_pred()), tau = 10e10)
 
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "value"))
@@ -141,14 +141,14 @@ test_that("pam.summary pivots one model into a Metric column table", {
   expect_snapshot_value(snap_num(res$value), style = "serialize")
 })
 
-test_that("pam.summary puts one column per model and rounds to digits", {
+test_that("tm_summarize puts one column per model and rounds to digits", {
   d <- fx_surv()
-  p_cox <- pam.coxph_restricted(model = fx_cox(), covs = fx_covs(),
+  p_cox <- tm_predict_coxph(model = fx_cox(), covs = fx_covs(),
                                 new_data = d, tau = 10e10)
-  p_reg <- pam.surverg_restricted(model = fx_survreg(), covs = fx_covs(),
+  p_reg <- tm_predict_survreg(model = fx_survreg(), covs = fx_covs(),
                                   new_data = d, tau = 10e10)
 
-  res <- pam.summary(list(cox = p_cox, weibull = p_reg), tau = 10e10)
+  res <- tm_summarize(list(cox = p_cox, weibull = p_reg), tau = 10e10)
 
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "cox", "weibull"))
@@ -162,19 +162,19 @@ test_that("pam.summary puts one column per model and rounds to digits", {
   expect_snapshot_value(snap_num(res$weibull), style = "serialize")
 })
 
-test_that("pam.summary rejects a non-list or empty models argument", {
-  expect_error(pam.summary(list()), "must be a non-empty named list")
-  expect_error(pam.summary("not a list"), "must be a non-empty named list")
+test_that("tm_summarize rejects a non-list or empty models argument", {
+  expect_error(tm_summarize(list()), "must be a non-empty named list")
+  expect_error(tm_summarize("not a list"), "must be a non-empty named list")
 })
 
-test_that("pam.survival_eval fits and evaluates from raw data (FINDING 12 fixed)", {
+test_that("tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)", {
   # R/pam.survial_eval.R:106,112 previously passed covariates=/newdata= to
   # functions taking covs=/new_data=, so every call failed. They now also pass
   # predict = FALSE, which is the branch returning R.squared / L.squared that
   # the caller indexes as r_l_list[1] and [2].
   d <- fx_surv()
 
-  res <- pam.survival_eval(train_data = d, covariates = fx_covs(),
+  res <- tm_fit_and_eval(train_data = d, covariates = fx_covs(),
                            models = "coxph", metrics = "all")
 
   expect_s3_class(res, "data.frame")
@@ -182,7 +182,7 @@ test_that("pam.survival_eval fits and evaluates from raw data (FINDING 12 fixed)
   expect_true("Model" %in% names(res))
   expect_identical(res$Model, "coxph")
   # wide layout: one column per metric, unlike the long Metric/Value frame
-  # returned by pam.predicted_survial_eval
+  # returned by tm_survival_eval
   expect_true(all(c("Pseudo_R_square", "R_square", "L_square",
                     "Brier Score") %in% names(res)))
   # R_sph and R_sh appear as separate columns, consistent with FINDING 13
@@ -192,10 +192,10 @@ test_that("pam.survival_eval fits and evaluates from raw data (FINDING 12 fixed)
   expect_snapshot_value(snap_num(res[["R_square"]]), style = "serialize")
 })
 
-test_that("pam.survival_eval honours an explicit model and metric subset", {
+test_that("tm_fit_and_eval honours an explicit model and metric subset", {
   d <- fx_surv()
 
-  res <- pam.survival_eval(
+  res <- tm_fit_and_eval(
     train_data = d, covariates = fx_covs(),
     models  = c("weibull", "lognormal"),
     metrics = c("R_square", "L_square", "Brier Score")
@@ -207,9 +207,9 @@ test_that("pam.survival_eval honours an explicit model and metric subset", {
   expect_false("Harrell\u2019s C" %in% names(res))
 })
 
-test_that("pam.survival_eval requires train_data and covariates", {
+test_that("tm_fit_and_eval requires train_data and covariates", {
   expect_error(
-    pam.survival_eval(),
+    tm_fit_and_eval(),
     "Please provide 'train_data', 'time_var', 'status_var', and 'covariates'"
   )
 })

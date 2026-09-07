@@ -6,7 +6,7 @@
 #'
 #' @section Optional backends:
 #' Two prediction backends are optional and declared in `Suggests` rather than
-#' `Imports`, because each serves a single branch of [pam.predict_cr()]:
+#' `Imports`, because each serves a single branch of [tm_predict_cif()]:
 #'
 #' * `randomForestSRC` supplies the `cr_model` argument (an `rfsrc` fit).
 #' * `cmprsk` supplies the `fg_model` argument (a Fine-Gray `crr` fit).

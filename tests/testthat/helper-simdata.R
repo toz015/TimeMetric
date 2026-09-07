@@ -11,7 +11,7 @@
 fx_covs <- function() c("x1", "x2")
 
 fx_surv <- function() {
-  d <- sim_cox_weibull_censored(
+  d <- tm_sim_cox_weibull(
     n = 200, pi_c = 0.3, v = 2, beta = c(0.5, -0.5), seed = 1001
   )
   # pi_c > 0 also returns y_true and cens_time; drop them so model
@@ -20,13 +20,13 @@ fx_surv <- function() {
 }
 
 fx_surv_uncensored <- function() {
-  sim_cox_weibull_censored(
+  tm_sim_cox_weibull(
     n = 200, pi_c = 0, v = 2, beta = c(0.5, -0.5), seed = 1002
   )[, c("time", "status", "x1", "x2")]
 }
 
 fx_cr <- function() {
-  simulateTwoCauseFineGrayModel(
+  tm_simulate_fine_gray(
     n = 200, v = 2, beta1 = c(0.5, -0.5), beta2 = c(-0.3, 0.3),
     censor = 0.3, seed = 1003
   )
@@ -40,7 +40,7 @@ fx_cox <- function() {
 }
 
 fx_survreg <- function() {
-  # x = TRUE, y = TRUE is required: pam.surverg_restricted errors without it
+  # x = TRUE, y = TRUE is required: tm_predict_survreg errors without it
   survival::survreg(
     survival::Surv(time, status) ~ x1 + x2,
     data = fx_surv(), dist = "weibull", x = TRUE, y = TRUE
