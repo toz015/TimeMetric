@@ -112,10 +112,17 @@ test_that("pam.rsph.aareg exists as a third method", {
   expect_true(is.function(get("pam.rsph.aareg", envir = ns)))
 })
 
-test_that("no pam.print generic exists, so pam.print.rsph is unreachable", {
-  # Documents FINDING: pam.print.rsph can never be dispatched.
+test_that("print.rsph is a real, dispatchable print method", {
+  # Was pam.print.rsph, which dispatched on a pam.print generic that never
+  # existed, so it was unreachable. The reference implementation names it
+  # print.re; restored here as print.rsph and registered with S3method.
   ns <- asNamespace("TimeMetric")
+  d <- fx_surv()
+  obj <- TimeMetric:::pam.rsph(fx_cox(), test_data = d)
 
-  expect_false(exists("pam.print", envir = ns, inherits = FALSE))
-  expect_true(exists("pam.print.rsph", envir = ns, inherits = FALSE))
+  expect_s3_class(obj, "rsph")
+  expect_false(exists("pam.print.rsph", envir = ns, inherits = FALSE))
+  expect_true(exists("print.rsph", envir = ns, inherits = FALSE))
+  # dispatches through the standard print generic
+  expect_output(print(obj))
 })

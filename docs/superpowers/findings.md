@@ -81,4 +81,6 @@ twice, not two quantities.
 
 `R_E` now has exactly one implementation, pinned against the authors' reference
 by `tests/testthat/test-r-e-reference.R` with locally stored expected values.
+| 31 | `R/pam.rsph.R:390` (was `pam.print.rsph`) | The reference names this `print.re`, an S3 method on `print` for class `"re"`. TimeMetric renamed it `pam.print.rsph`, which dispatches on a `pam.print` generic that does not exist, so the print method was dead. **FIXED**: restored as `print.rsph` with `S3method(print, rsph)`; `print(obj)` on an `rsph` object now works | The rename broke intended functionality rather than merely being cosmetic. Deleting it would have discarded a working feature; restoring it recovers one | Fixed |
+| 32 | `pam.summary` vs `pam.summary.rsph` | `pam.summary` is an exported ordinary function, not a generic, yet `pam.summary.rsph` is named as though it were its S3 method. A user calling `pam.summary()` on an `rsph` object reaches the models-list function and gets an error about a non-empty named list, never the rsph summary | A naming collision that looks like S3 dispatch but is not. Should be resolved during the `tm_` rename -- either make the rsph summary a real `summary.rsph` method or give it a non-colliding name | Open |
 
