@@ -2,8 +2,8 @@ Package: TimeMetric
 Type: Package
 Title: Unified Performance Metrics for Survival Models with Right-Censoring,
     Competing Risks, and Two-Phase Designs
-Version: 0.1.0
-Date: 2026-09-02
+Version: 0.2.0
+Date: 2026-09-07
 Authors@R: c(
     person("Tong", "Zhu", email = "toz015@ucla.edu", role = c("aut", "cre")),
     person("Zian", "Zhuang", role = "aut"),
