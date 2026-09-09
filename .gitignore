@@ -3,7 +3,6 @@ man/.DS_Store
 .Rhistory
 .RData
 .Rproj.user/
-.Rbuildignore
 .Rproj.user
 test.r
 paper*.pdf

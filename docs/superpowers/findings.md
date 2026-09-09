@@ -113,4 +113,6 @@ Findings closed by this change:
 
 Metric **values** are unchanged. Every `snap_num(...$Value)` snapshot passed
 untouched through this change; only the `Metric` label snapshots moved.
+| 33 | `man/tm_predict_cif.Rd` example | Uses `event.type = 1` on `pbc`, where 1 is transplant and 2 is death, so transplant is the event of interest and death the competing risk | A valid competing-risks configuration but an unconventional choice for this dataset; death-as-primary is the usual framing. Deferred as a scientific decision for the authors, not changed unilaterally | Open |
+| 34 | `tm_predict_survreg()` vs `tm_predict_coxph()` | `tm_predict_survreg()` returns a **named** `pred` vector; `tm_predict_coxph()` returns unnamed, for the same quantity | Inconsistent return shape between two functions documented as interchangeable inputs to the evaluators. A one-line `unname()` harmonises them, but it changes a return value, so deferred for approval | Open |
 
