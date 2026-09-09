@@ -229,8 +229,18 @@ demo for cr.R     .Rhistory (MacBook-Air.lan's conflicted copy 2025-11-08)
 1. `brew install git-filter-repo`.
 2. Clone a fresh mirror as a safety copy, kept until the rewrite is confirmed
    good.
-3. Run `git filter-repo --invert-paths --path q --path q.pub` over **all refs**,
-   covering `main` and `joss-revision`.
+3. Run, over **all refs**, covering `main` and `joss-revision`:
+
+   ```
+   git filter-repo --invert-paths --sensitive-data-removal \
+     --path q --path q.pub \
+     --path docs/security/key-exposure-report.md
+   ```
+
+   The third path is included because the detailed security report was moved out
+   of the repository at the maintainer's request and is retained only as a
+   private local record. It remains in commit `7eab69b` and must not reach the
+   published repository.
 4. Verify: no blob named `q` or `q.pub` in any object; the working trees of both
    branches are otherwise unchanged; the suite still passes; `R CMD check` still
    clean.
