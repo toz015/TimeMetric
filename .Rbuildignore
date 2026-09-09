@@ -1,0 +1,14 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
+^docs$
+^paper\.md$
+^paper\.code\.Rmd$
+^LICENSE\.md$
+^\.git$
+^\.gitignore$
+^tests/testthat/_snaps/.*\.new\.md$
+^Screenshot.*$
+^.*\.Rcheck$
+^TimeMetric_.*\.tar\.gz$
+
