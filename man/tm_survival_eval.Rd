@@ -21,7 +21,7 @@ tm_survival_eval(
 \item{model}{A fitted survival model object used by certain metrics:
 \itemize{
   \item For \code{"r_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
-        (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
+        via \code{survival::coxph}.
   \item For \code{"r_e"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
 }}
 

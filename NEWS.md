@@ -15,6 +15,11 @@ defect is listed below.
 * `randomForestSRC` and `cmprsk` moved to `Suggests` as optional backends of
   `tm_predict_cif()`, each guarded with an informative error naming the package
   to install.
+* **`rms` is no longer a dependency.** It was used only to fit a model for the
+  Schemper-Henderson estimator and to extract linear predictors; both are now
+  `survival` calls, verified numerically identical. Because `rms` requires
+  R >= 4.4.0, removing it lowers the declared minimum from R 4.4.0 to
+  **R >= 4.1.0**, the floor set by `survival` and `dplyr`.
 
 ## Renamed API
 
@@ -28,6 +33,30 @@ deprecation warning; see `?"TimeMetric-deprecated"`.
 * `tm_metric_names()` returns the canonical metric identifiers.
 
 ## Bug fixes
+
+* **`r_sh` (Schemper-Henderson) was computed from a degenerate baseline survival
+  curve and its values have changed.** The Cox model feeding the estimator was
+  fitted with `rms::cph()` without `surv = TRUE`, so the fit carried no `$surv`
+  component; `$surv` resolved to `NULL` and `$time` partial-matched the
+  `time.inc` scalar. The interpolation therefore produced a two-valued step
+  function instead of the fitted baseline hazard. The metric could return
+  negative values, which is impossible for an explained-variation measure.
+
+  The baseline now comes from `survival::survfit()` on a `survival::coxph()`
+  fit. Representative changes on the package's own fixtures:
+
+  | scenario | before | after |
+  |---|---|---|
+  | seed 1001, 30% censoring | **-0.0262** | 0.1271 |
+  | seed 2002, 30% censoring | 0.3054 | 0.1677 |
+  | seed 3003, 30% censoring | 0.2784 | 0.2144 |
+  | uncensored | 0.0808 | 0.1562 |
+
+  The corrected implementation is validated against an independent estimator
+  written from the published Schemper-Henderson definition, agreeing to 1e-8 on
+  uncensored data, and satisfies the definitional properties: approximately zero
+  for a null model, strictly increasing in predictor strength, and bounded in
+  [0, 1].
 
 * `tm_fit_and_eval()` (was `pam.survival_eval()`) **never worked**. It passed
   `covariates=`/`newdata=` to functions taking `covs=`/`new_data=`, so every

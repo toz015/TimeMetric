@@ -6,7 +6,7 @@
 #' @param model A fitted survival model object used by certain metrics:
 #'   \itemize{
 #'     \item For \code{"r_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
-#'           (e.g., \code{survival::coxph}) or an \code{rms::cph} model.
+#'           via \code{survival::coxph}.
 #'     \item For \code{"r_e"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
 #'   }
 #'
@@ -210,9 +210,10 @@ tm_survival_eval <- function (model, event_time,
         )
     
         formula <- as.formula(formula_text)
-        rms_coxph <- rms::cph(formula, data = train_data, x = TRUE, y = TRUE)
+        sh_coxph <- survival::coxph(formula, data = train_data,
+                                    x = TRUE, y = TRUE)
         metrics_results$"r_sh" <- pam.schemper(
-          train.fit = rms_coxph,
+          train.fit = sh_coxph,
           traindata = train_data,
           newdata   = new_data
         )$V

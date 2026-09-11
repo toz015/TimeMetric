@@ -44,7 +44,7 @@ tm_summarize(list(cox = pred))
 #> 2 pseudo_r2_point  0.09
 #> 3       harrell_c  0.66
 #> 4           uno_c  0.66
-#> 5            r_sh -0.03
+#> 5            r_sh  0.13
 #> 6             r_e  0.31
 #> 7     brier_score  0.21
 #> 8          td_auc  0.73

@@ -141,7 +141,8 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
     
     if ("r_sh" %in% metrics) {
       if (fit_name == "coxph" ) {
-        rms_coxph <- rms::cph(formula, data = train_data, x = TRUE, y = TRUE)
+        sh_coxph <- survival::coxph(formula, data = train_data,
+                                    x = TRUE, y = TRUE)
         check_factors <- function(data) {
           factors <- sapply(data, is.factor)
           if (any(factors)) {
@@ -158,7 +159,7 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
         if (check_factors(train_data) || check_factors(test_data)) {
           metrics_results[[fit_name]]$r_sh <- NA
         } else {
-          R_sh_coxph <- pam.schemper(rms_coxph, traindata = train_data, 
+          R_sh_coxph <- pam.schemper(sh_coxph, traindata = train_data, 
                                      newdata = test_data)$Dx
           metrics_results[[fit_name]]$r_sh <- R_sh_coxph 
         }
