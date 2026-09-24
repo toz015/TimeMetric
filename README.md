@@ -44,10 +44,8 @@ tm_summarize(list(cox = pred))
 #> 2 pseudo_r2_point  0.09
 #> 3       harrell_c  0.66
 #> 4           uno_c  0.66
-#> 5            r_sh  0.13
-#> 6             r_e  0.31
-#> 7     brier_score  0.21
-#> 8          td_auc  0.73
+#> 5     brier_score  0.21
+#> 6          td_auc  0.73
 ```
 
 ## Metrics
@@ -61,13 +59,11 @@ tm_summarize(list(cox = pred))
 | `r_square`, `l_square`, `r2_point`, `l2_point` | Explained-variation components |
 | `harrell_c`, `uno_c` | Concordance indices (Harrell et al. 1982; Uno et al. 2011) |
 | `c_index` | Concordance for competing risks |
-| `r_sh` | Schemper & Henderson's *R*<sub>sh</sub> (2000) |
-| `r_e` | Stare, Perme & Henderson's *R*<sub>E</sub> (2011) |
 | `brier_score` | Brier score (Brier 1950; Graf et al. 1999) |
 | `td_auc` | Time-dependent AUC (Heagerty, Lumley & Pepe 2000) |
 
-Not every metric applies to every setting: `r_sh` and `r_e` are defined for
-right-censored data, while competing risks use `c_index`.
+Not every metric applies to every setting: competing risks use `c_index` rather
+than the concordance indices defined for right-censored data.
 
 ## Functions
 
@@ -145,7 +141,5 @@ Graf, E., Schmoor, C., Sauerbrei, W. & Schumacher, M. (1999). *Statistics in Med
 Harrell, F. E., Califf, R. M., Pryor, D. B., Lee, K. L. & Rosati, R. A. (1982). *JAMA* 247(18), 2543–2546.
 Heagerty, P. J., Lumley, T. & Pepe, M. S. (2000). *Biometrics* 56(2), 337–344.
 Li, G. & Wang, X. (2019). *JASA* 114(528), 1815–1825.
-Schemper, M. & Henderson, R. (2000). *Biometrics* 56(1), 249–255.
-Stare, J., Perme, M. P. & Henderson, R. (2011). *Biometrics* 67(3), 750–759.
 Uno, H., Cai, T., Pencina, M. J., D'Agostino, R. B. & Wei, L. J. (2011). *Statistics in Medicine* 30(10), 1105–1117.
 Zhuang, Z., Su, W., Kawaguchi, E. & Li, G. (2025). arXiv:2507.15040.

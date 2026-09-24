@@ -45,8 +45,6 @@ than exhaustive.
 | `l2_point` | `L2_point` |
 | `pseudo_r2` | `Pseudo_R_square`, `Pesudo_R`, `Psuedo.R` |
 | `pseudo_r2_point` | `Pseudo_R2_point` |
-| `r_e` | `R_E`, `R_sph` |
-| `r_sh` | `R_sh` |
 | `r_square` | `R_square` |
 | `r2_point` | `R2_point` |
 | `td_auc` | `Time Dependent Auc`, `Time Dependent AUC`, `Time_Dependent_Auc`, `AUC` |
@@ -58,7 +56,7 @@ Defaults by entry point:
 
 | Function | Default metrics |
 |---|---|
-| `tm_survival_eval` | `pseudo_r2`, `pseudo_r2_point`, `harrell_c`, `uno_c`, `r_sh`, `r_e`, `brier_score`, `td_auc` |
+| `tm_survival_eval` | `pseudo_r2`, `pseudo_r2_point`, `harrell_c`, `uno_c`, `brier_score`, `td_auc` |
 | `tm_survival_eval_cr` | `pseudo_r2`, `pseudo_r2_point`, `c_index`, `brier_score`, `td_auc` |
 | `tm_evaluate_two_phase` | `pseudo_r2`, `harrell_c`, `uno_c`, `brier_score`, `td_auc` |
 
@@ -106,3 +104,10 @@ documented.
 
 Neither affects correctness, `R CMD check`, or the test suite. Both are recorded
 so they are not lost.
+
+## Amendment 2026-09-24
+
+`r_sh` and `r_e` were withdrawn before the first CRAN release and removed from
+every table above. Their spellings -- `r_e`, `r_sh`, `R_E`, `R_sh`, `R_sph` --
+now raise an error naming the withdrawal rather than resolving to a canonical
+name. `tm_metric_names()` returns 11 names.

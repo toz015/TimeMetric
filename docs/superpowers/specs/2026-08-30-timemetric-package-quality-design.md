@@ -485,6 +485,18 @@ Every item is a hard gate.
     force-push** — the rewrite is not done until CI has re-run and passed on the
     rewritten history
 
+**Amended 2026-09-24** by `2026-09-24-remove-r-sh-r-e-design.md`:
+
+* Criterion 9's `R_sph`/`R_E` merge is superseded. Both metrics were **removed**
+  rather than merged, before the first CRAN release, on the maintainer's
+  decision that they were not sufficiently validated for that release.
+* Criterion 10 ("Deprecated wrappers verified: `paper.code.Rmd` still runs") is
+  **deferred to Phase 2**. `paper.code.Rmd:288-293` passes an explicit metric
+  vector containing `"R_E"`, so that chunk errors until the document is
+  revised. Both `paper.code.Rmd` and `paper.md` are `.Rbuildignore`d and are
+  never executed by `R CMD check`, so no packaging gate is affected. See
+  `phase-2-followups.md`.
+
 ## Post-baseline priority: three defects blocking any reviewer
 
 The characterization baseline surfaced defects that make the package fail for a
