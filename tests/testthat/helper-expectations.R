@@ -65,3 +65,12 @@ skip_without_rd <- function(name) {
   rd
 }
 
+
+# Printing a ggplot/patchwork object in a non-interactive session with no
+# device open makes R open the default device, which writes an Rplots.pdf into
+# the working directory and leaves it behind. Tests that print a plot call this
+# first: it opens a pdf device pointed at the null file, scoped to the calling
+# test, so rendering is still exercised but nothing is written to disk.
+local_null_device <- function(.local_envir = parent.frame()) {
+  withr::local_pdf(nullfile(), .local_envir = .local_envir)
+}

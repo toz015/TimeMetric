@@ -78,6 +78,7 @@ test_that("tm_plot_pred restrict_time caps the plotted times", {
 })
 
 test_that("tm_plot_summary combines one panel per input", {
+  local_null_device()
   pred <- plot_input()
 
   p <- tm_plot_summary(list(a = pred, b = pred), ncol = 2)
@@ -88,6 +89,7 @@ test_that("tm_plot_summary combines one panel per input", {
 })
 
 test_that("tm_plot_summary accepts explicit panel titles", {
+  local_null_device()
   pred <- plot_input()
 
   p <- tm_plot_summary(list(a = pred, b = pred),

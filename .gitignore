@@ -11,3 +11,8 @@ paper*.csv
 # build artifacts
 *.Rcheck/
 TimeMetric_*.tar.gz
+
+# Generated when a test prints a plot with no device open. The plot tests now
+# open a null device (see local_null_device() in helper-expectations.R), so
+# this should never reappear; the rule is defensive.
+Rplots.pdf
