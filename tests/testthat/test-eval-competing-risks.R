@@ -116,7 +116,7 @@ test_that("competing-risks default metrics use C_index, not Harrell/Uno", {
   expect_false("harrell_c" %in% res$Metric)
 })
 
-test_that("tm_survival_eval_cr rejects an unknown metric name", {
+test_that("tm_survival_eval_cr rejects a withdrawn metric name", {
   p <- cr_pred()
 
   expect_error(
@@ -124,6 +124,19 @@ test_that("tm_survival_eval_cr rejects an unknown metric name", {
       pred_cif = p$cif_pred[, -1], event_time = p$times,
       time.cif = p$cif_pred[, 1], status = p$status, event_type = 1,
       metrics = "r_sh"
+    ),
+    "withdrawn before the first CRAN release"
+  )
+})
+
+test_that("tm_survival_eval_cr rejects an unknown metric name", {
+  p <- cr_pred()
+
+  expect_error(
+    tm_survival_eval_cr(
+      pred_cif = p$cif_pred[, -1], event_time = p$times,
+      time.cif = p$cif_pred[, 1], status = p$status, event_type = 1,
+      metrics = "not_a_metric"
     ),
     "Invalid metrics"
   )

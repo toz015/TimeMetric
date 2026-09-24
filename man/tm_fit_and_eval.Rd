@@ -28,8 +28,6 @@ tm_fit_and_eval(
   \item "pseudo_r2": Pseudo-R-squared metric.
   \item "harrell_c": Harrell's Concordance Index.
   \item "uno_c": Uno's Concordance Index.
-  \item "r_e": Explained variation (R_sph).
-  \item "r_sh": Explained variation (R_sh).
   \item "brier_score": Brier Score.
   \item "td_auc": Time-dependent AUC.
 }}
@@ -45,7 +43,7 @@ uses the same data as `data` for model evaluation.}
 A data frame containing the selected model's performance metrics.
 }
 \description{
-This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, R_sph (distance-based estimator for survival predictive accuracy), R_sh, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
+This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
 }
 \examples{
 data(pbc, package = "survival")

@@ -1,6 +1,6 @@
 #' @title Performance Metrics for Survival Analysis Models
 #'
-#' @description This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, R_sph (distance-based estimator for survival predictive accuracy), R_sh, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
+#' @description This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
 #'
 #' @param train_data A data frame containing the survival data.
 #' @param covariates A character vector of covariate names to include in the model.
@@ -12,8 +12,6 @@
 #'     \item "pseudo_r2": Pseudo-R-squared metric.
 #'     \item "harrell_c": Harrell's Concordance Index.
 #'     \item "uno_c": Uno's Concordance Index.
-#'     \item "r_e": Explained variation (R_sph).
-#'     \item "r_sh": Explained variation (R_sh).
 #'     \item "brier_score": Brier Score.
 #'     \item "td_auc": Time-dependent AUC.
 #'   }
@@ -78,7 +76,7 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
   
   model_types <- if (("all" %in% models)) c("coxph", "exp", "lognormal", "weibull") else models
   metrics <- tm_normalize_metrics(metrics)
-  metrics <- if (("all" %in% metrics))c("pseudo_r2", "r_square", "l_square", "harrell_c", "uno_c", "r_e", "r_sh", "brier_score", "td_auc") else metrics
+  metrics <- if (("all" %in% metrics)) c("pseudo_r2", "r_square", "l_square", "harrell_c", "uno_c", "brier_score", "td_auc") else metrics
   # Define a list to hold metrics
   metrics_results <- list()
   
@@ -132,40 +130,6 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
     
     if ("uno_c" %in% metrics) {
       metrics_results[[fit_name]]$"uno_c" <- pam.concordance(fits[[fit_name]], newdata = test_data, timewt="n/G2")$concordance
-    }
-    
-    if ("r_e" %in% metrics) {
-      metrics_results[[fit_name]]$r_e <- pam.rsph(fits[[fit_name]])$Re
-    }
-    
-    
-    if ("r_sh" %in% metrics) {
-      if (fit_name == "coxph" ) {
-        sh_coxph <- survival::coxph(formula, data = train_data,
-                                    x = TRUE, y = TRUE)
-        check_factors <- function(data) {
-          factors <- sapply(data, is.factor)
-          if (any(factors)) {
-            factor_cols <- names(data)[factors]
-            warning("The following columns are factors: ", 
-                    paste(factor_cols, collapse = ", "),
-                    ". This function to calculate R_sph does not support factor variables. Returning NA.")
-            return(TRUE)
-          }
-          return(FALSE)
-        }
-        
-        # Notify users about factors in both datasets and return NA if any are found
-        if (check_factors(train_data) || check_factors(test_data)) {
-          metrics_results[[fit_name]]$r_sh <- NA
-        } else {
-          R_sh_coxph <- pam.schemper(sh_coxph, traindata = train_data, 
-                                     newdata = test_data)$Dx
-          metrics_results[[fit_name]]$r_sh <- R_sh_coxph 
-        }
-      } else {
-        metrics_results[[fit_name]]$r_sh <- NA
-      }
     }
     
     if ("brier_score" %in% metrics) {

@@ -3,12 +3,8 @@
 #' This function calculates various predictive performance metrics for survival models based on 
 #' predicted survival probabilities and observed survival data. It supports a range of evaluation 
 #' measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
-#' @param model A fitted survival model object used by certain metrics:
-#'   \itemize{
-#'     \item For \code{"r_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
-#'           via \code{survival::coxph}.
-#'     \item For \code{"r_e"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
-#'   }
+#' @param model A fitted survival model object. Optional for the metrics
+#'   computed directly from \code{predicted_probability}.
 #'
 #' @param event_time A numeric vector of observed survival times.
 #' @param pred_mean_survival A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.
@@ -20,8 +16,7 @@
 #' @param status A numeric vector indicating event occurrence (1 for event, 0 for censoring).
 #' @param covariates A character vector specifying the names of the covariates used in the model.
 #' @param new_data Optional data frame used by metrics that require refitting or
-#'   prediction from \code{model} (e.g., Schemper-Henderson \code{"r_sh"} and
-#'   rank-based \code{"r_e"}). If supplied, it should contain the variables
+#'   prediction from \code{model}. If supplied, it should contain the variables
 #'   needed by those procedures and columns \code{time} and \code{status}
 #'   coded as above.
 #'   
@@ -32,8 +27,6 @@
 #'     \item "l_square" - L-squared measure
 #'     \item "Harrell's C" - Harrell's concordance index
 #'     \item "Uno's C" - Uno's concordance index
-#'     \item "r_sh" - Schemper-Henderson explained variation (R_sh)
-#'     \item "r_e" - Rank-based R^2
 #'     \item "brier_score" - Brier score for calibration
 #'     \item "td_auc" - Time-dependent area under the curve (AUC)
 #'   }
@@ -76,13 +69,11 @@ tm_survival_eval <- function (model, event_time,
   
   metrics_results <- list()
   
-  valid_metrics <- c("pseudo_r2", "r_square", "l_square", 
+  valid_metrics <- c("pseudo_r2", "r_square", "l_square",
                      "pseudo_r2_point", "r2_point", "l2_point",
-                     "harrell_c", "uno_c",
-                      "r_e","r_sh", "brier_score", "td_auc")
+                     "harrell_c", "uno_c", "brier_score", "td_auc")
   default_metrics <- c("pseudo_r2", "pseudo_r2_point",
-                       "harrell_c", "uno_c",
-                       "r_e","r_sh", "brier_score", "td_auc")
+                       "harrell_c", "uno_c", "brier_score", "td_auc")
   
   metrics <- tm_normalize_metrics(metrics)
   
@@ -172,63 +163,6 @@ tm_survival_eval <- function (model, event_time,
                      x = predicted_data, ymax = tau,
                      reverse = FALSE, 
                      timewt = "n/G2")$concordance, 4)
-  }
-  
-  if ("r_sh" %in% metrics) {
-    if (!inherits(model, "coxph")) {
-      message("R_sh is only defined for Cox PH models (coxph). Returning NA.")
-      metrics_results$r_sh <- NA
-    } else {
-      message("Note: 'R_sh' metric is only valid for Cox model.")
-      
-      check_factors <- function(data) {
-        factors <- sapply(data, is.factor)
-        if (any(factors)) {
-          factor_cols <- names(data)[factors]
-          message(
-            "The following columns are factors: ",
-            paste(factor_cols, collapse = ", "),
-            ". This function to calculate R_sh does not support factor variables. Returning NA."
-          )
-          return(TRUE)
-        }
-        return(FALSE)
-      }
-      if (check_factors(new_data)) {
-        metrics_results$"r_sh" <- NA
-      } else {
-        train_data <- data.frame(
-          time   = model$y[, 1],
-          status = model$y[, 2],
-          as.data.frame(model$x, check.names = FALSE)
-        )
-        
-        formula_text <- paste(
-          "Surv(", "time", ", ", "status", ") ~ ", 
-          paste(covariates, collapse = " + "), 
-          sep = ""
-        )
-    
-        formula <- as.formula(formula_text)
-        sh_coxph <- survival::coxph(formula, data = train_data,
-                                    x = TRUE, y = TRUE)
-        metrics_results$"r_sh" <- pam.schemper(
-          train.fit = sh_coxph,
-          traindata = train_data,
-          newdata   = new_data
-        )$V
-      }
-    }
-  }
-  if ("r_e" %in% metrics) {
-    if (is.null(model)) {
-      message("Unrecognized model type for R_E method. Returning NA.")
-      metrics_results$"r_e" <- NA
-    }else{
-      #metrics_results$"r_e" <- pam.rsph(model, test_data = new_data)$Re
-      metrics_results$"r_e" <- summary.rsph(pam.rsph(model, test_data = new_data),
-                                                times = tau)$Rti
-    }
   }
   
   if ("brier_score" %in% metrics) {
@@ -371,8 +305,6 @@ tm_summarize <- function(models,
     "l2_point",
     "harrell_c",
     "uno_c",
-    "r_sh",
-    "r_e",
     "brier_score",
     "td_auc"
   )

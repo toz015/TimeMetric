@@ -18,12 +18,8 @@ tm_survival_eval(
 )
 }
 \arguments{
-\item{model}{A fitted survival model object used by certain metrics:
-\itemize{
-  \item For \code{"r_sh"} (Schemper-Henderson), a Cox model fitted with \code{x=TRUE, y=TRUE}
-        via \code{survival::coxph}.
-  \item For \code{"r_e"} (rank-based \(R^2\)), a Cox model compatible with \code{pam.rsph()}.
-}}
+\item{model}{A fitted survival model object. Optional for the metrics
+computed directly from \code{predicted_probability}.}
 
 \item{event_time}{A numeric vector of observed survival times.}
 
@@ -40,8 +36,7 @@ tm_survival_eval(
 \item{covariates}{A character vector specifying the names of the covariates used in the model.}
 
 \item{new_data}{Optional data frame used by metrics that require refitting or
-prediction from \code{model} (e.g., Schemper-Henderson \code{"r_sh"} and
-rank-based \code{"r_e"}). If supplied, it should contain the variables
+prediction from \code{model}. If supplied, it should contain the variables
 needed by those procedures and columns \code{time} and \code{status}
 coded as above.}
 
@@ -52,8 +47,6 @@ coded as above.}
   \item "l_square" - L-squared measure
   \item "Harrell's C" - Harrell's concordance index
   \item "Uno's C" - Uno's concordance index
-  \item "r_sh" - Schemper-Henderson explained variation (R_sh)
-  \item "r_e" - Rank-based R^2
   \item "brier_score" - Brier score for calibration
   \item "td_auc" - Time-dependent area under the curve (AUC)
 }

@@ -63,16 +63,11 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
                      "c_index", "brier_score", "td_auc")
   default_metrics <- c("pseudo_r2", "pseudo_r2_point", "c_index",
                        "brier_score", "td_auc")
-  if ("all" %in% metrics) {
-    metrics <- valid_metrics
-  } else {
-    invalid <- setdiff(metrics, valid_metrics)
-    if (length(invalid) > 0) 
-      stop("Invalid metrics: ", paste(invalid, collapse = ", "))
-  }
-  
-
-
+  # Validation runs AFTER tm_normalize_metrics() only. A duplicate copy of this
+  # block used to run before it, which rejected every legacy spelling
+  # ("Harrells_C", "C_index", "Brier Score") on this path while they worked
+  # everywhere else, and prevented the withdrawal message for r_e / r_sh from
+  # ever being reached.
   metrics <- tm_normalize_metrics(metrics)
   
 

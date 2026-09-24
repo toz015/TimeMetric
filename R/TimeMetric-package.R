@@ -20,8 +20,8 @@
 #'
 #' @importFrom survival Surv survfit concordancefit
 #' @importFrom stats median na.omit pnorm predict uniroot sd runif rnorm
-#' @importFrom stats quantile complete.cases reshape approx
-#' @importFrom stats lm as.formula model.matrix rbinom rweibull
+#' @importFrom stats quantile complete.cases reshape
+#' @importFrom stats lm as.formula rbinom rweibull
 #' @importFrom utils head
 "_PACKAGE"
 

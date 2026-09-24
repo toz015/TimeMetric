@@ -29,7 +29,7 @@ test_that("functions this suite reaches with ::: are genuinely internal", {
   exports <- getNamespaceExports("TimeMetric")
 
   expect_false(any(c(
-    "Gt", "pam.Brier", "pam.rsph", "m_cif", "my.survfit"
+    "Gt", "pam.Brier", "m_cif"
   ) %in% exports))
   # tm_evaluate_two_phase was promoted from internal to public, so the
   # case-cohort and NCC functionality the paper advertises is now reachable

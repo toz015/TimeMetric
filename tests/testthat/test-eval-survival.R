@@ -27,14 +27,12 @@ test_that("tm_survival_eval returns a Metric/Value data frame", {
   expect_snapshot_value(snap_num(res$Value), style = "serialize")
 })
 
-test_that("the default metric set includes R_sh and R_E in the Metric column", {
+test_that("the default metric set appears in the Metric column", {
   # Metric names live in res$Metric; names(res) is c("Metric", "Value").
-  # R_sh reaches rms::cph + pam.schemper; R_E reaches pam.rsph dispatch.
-  # Asserting both here proves those two code paths execute by default.
+  # r_sh and r_e were withdrawn before the first CRAN release; the assertions
+  # that they are absent and rejected live in test-metric-tombstone.R.
   res <- ev_result()
 
-  expect_true("r_sh" %in% res$Metric)
-  expect_true("r_e" %in% res$Metric)
   expect_true("brier_score" %in% res$Metric)
   expect_true("pseudo_r2" %in% res$Metric)
   expect_true("td_auc" %in% res$Metric)
@@ -110,28 +108,6 @@ test_that("a clean session without survival attached now succeeds (FINDING 11)",
   expect_match(out, "NO ERROR")   # sentinel printed only on success
 })
 
-test_that("R_E comes from the canonical pam.rsph path", {
-  # Findings 7 and 13 recorded a gap between R_E and pam.rsph_metric$r2 and
-  # framed them as distinct quantities. The R_E audit superseded that: they were
-  # one metric implemented twice, and pam.rsph_metric was the wrong one. It has
-  # been deleted. R_E now has a single implementation, verified against the
-  # authors reference in test-r-e-reference.R.
-  d <- fx_surv()
-  res <- ev_result()
-  r_e <- res$Value[res$Metric == "r_e"]
-
-  expect_length(r_e, 1L)
-  expect_true(is.finite(r_e))
-  # identical to calling the canonical path directly. The reported R_E is
-  # summary.rsph(..., times = tau)$Rti, not pam.rsph(...)$Re -- see
-  # R/pam.predicted_survial_eval.R:225-226.
-  direct <- TimeMetric:::summary.rsph(
-    TimeMetric:::pam.rsph(fx_cox(), test_data = d),
-    times = 10e10
-  )$Rti
-  expect_equal(r_e, direct, tolerance = 1e-8)
-})
-
 test_that("tm_summarize pivots one model into a Metric column table", {
   res <- tm_summarize(list(value = ev_pred()), tau = 10e10)
 
@@ -154,10 +130,6 @@ test_that("tm_summarize puts one column per model and rounds to digits", {
   expect_identical(names(res), c("Metric", "cox", "weibull"))
   # default digits = 2
   expect_equal(res$cox, round(res$cox, 2), tolerance = 1e-12)
-  # R_sh is Cox-only, so the weibull column carries NA for it
-  expect_true(is.na(res$weibull[res$Metric == "r_sh"]))
-  expect_false(is.na(res$cox[res$Metric == "r_sh"]))
-
   expect_snapshot_value(snap_num(res$cox), style = "serialize")
   expect_snapshot_value(snap_num(res$weibull), style = "serialize")
 })
@@ -185,9 +157,6 @@ test_that("tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)",
   # returned by tm_survival_eval
   expect_true(all(c("pseudo_r2", "r_square", "l_square",
                     "brier_score") %in% names(res)))
-  # R_sph and R_sh appear as separate columns, consistent with FINDING 13
-  expect_true(all(c("r_e", "r_sh") %in% names(res)))
-
   expect_snapshot_value(sort(names(res)), style = "serialize")
   expect_snapshot_value(snap_num(res[["r_square"]]), style = "serialize")
 })

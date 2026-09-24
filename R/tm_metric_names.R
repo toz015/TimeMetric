@@ -9,11 +9,14 @@
 # spellings are still accepted at the argument boundary and resolve with a
 # deprecation warning naming the replacement.
 #
-# R_sph and R_E were shown to be two labels for the same Stare-Perme-Henderson
-# metric (docs/superpowers/r-e-implementation-audit.md), so both map to r_e.
 # Pseudo_R_square and Pseudo_R2_point are genuinely distinct -- an integrated
 # measure and a point-in-time estimate, differing numerically on the same data
 # -- so both survive under distinct names.
+#
+# r_e and r_sh were withdrawn before the first CRAN release. Their spellings
+# are retained in tm_defunct_metric_spellings() so that a request for one
+# reports the withdrawal by name, instead of falling through to a generic
+# unknown-metric error.
 
 #' @keywords internal
 #' @noRd
@@ -46,12 +49,6 @@ tm_metric_aliases <- function() {
     "uno_c"                        = "uno_c",
     "C_index"                      = "c_index",
     "c_index"                      = "c_index",
-    # R-squared type measures
-    "R_sh"                         = "r_sh",
-    "r_sh"                         = "r_sh",
-    "R_E"                          = "r_e",
-    "R_sph"                        = "r_e",
-    "r_e"                          = "r_e",
     # calibration and discrimination over time
     "Brier Score"                  = "brier_score",
     "Brier_Score"                  = "brier_score",
@@ -77,12 +74,34 @@ tm_metric_names <- function() {
   sort(unique(unname(tm_metric_aliases())))
 }
 
+# Metric spellings withdrawn before the first CRAN release. Checked before
+# alias resolution so that both canonical and legacy spellings are reported.
+#' @keywords internal
+#' @noRd
+tm_defunct_metrics <- function() {
+  c("r_e", "r_sh")
+}
+
+#' @keywords internal
+#' @noRd
+tm_defunct_metric_spellings <- function() {
+  c("r_e", "r_sh", "R_E", "R_sh", "R_sph")
+}
+
 # Resolve any accepted spelling to its canonical form. Unknown names are
 # returned unchanged so the caller's own validation can report them.
 #' @keywords internal
 #' @noRd
 tm_normalize_metrics <- function(metrics, warn = TRUE) {
   if (is.null(metrics)) return(NULL)
+
+  defunct_key <- tolower(gsub("[ _]", "", metrics))
+  if (any(defunct_key %in% tolower(gsub("[ _]", "",
+                                        tm_defunct_metric_spellings())))) {
+    stop("r_e and r_sh were withdrawn before the first CRAN release; ",
+         "see NEWS.md.", call. = FALSE)
+  }
+
   aliases <- tm_metric_aliases()
 
   # case-insensitive, and treat _ / space / straight or curly apostrophe alike
