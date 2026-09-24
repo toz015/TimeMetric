@@ -6,7 +6,9 @@
 
 **Architecture:** Work inward-out. First pin the surviving metric values to a committed baseline so any numerical drift is caught immediately. Then add a tombstone at the single shared name-resolution chokepoint (`tm_normalize_metrics()`, called by all four public entry points), strip the metrics from the two evaluators that compute them, and only then delete the implementation files — so the package loads and tests pass at every commit. Documentation, test cleanup and full-package verification follow.
 
-**Tech Stack:** R (>= 4.1.0), testthat edition 3 with `expect_snapshot_value`, roxygen2 8.1.0, `R CMD build` / `R CMD check --as-cran`.
+**Tech Stack:** R 4.5.3, testthat 3.3.2 edition 3 with `expect_snapshot_value`, roxygen2 8.1.0, pkgload 1.5.3, `R CMD build` / `R CMD check --as-cran`.
+
+**Environment note:** `devtools` is NOT installed. Use `testthat::test_local()` for `devtools::test()`, `roxygen2::roxygenise()` for `devtools::document()`, and `pkgload::load_all()` for `devtools::load_all()`. Every command in this plan already reflects that.
 
 **Spec:** `docs/superpowers/specs/2026-09-24-remove-r-sh-r-e-design.md`
 
@@ -121,7 +123,7 @@ test_that("surviving metric values are unchanged by the r_sh / r_e removal", {
 
 - [ ] **Step 3: Run it against the unmodified package to prove the baseline is correct**
 
-Run: `Rscript -e 'devtools::test(filter = "metric-invariance")'`
+Run: `Rscript -e 'testthat::test_local(filter = "metric-invariance")'`
 Expected: **PASS**. A failure here means the baseline generator and the test disagree — fix that now, before any removal.
 
 - [ ] **Step 4: Commit**
@@ -202,7 +204,7 @@ test_that("tm_metric_names() no longer offers the removed metrics", {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `Rscript -e 'devtools::test(filter = "metric-tombstone")'`
+Run: `Rscript -e 'testthat::test_local(filter = "metric-tombstone")'`
 Expected: FAIL — no tombstone exists, so `tm_normalize_metrics("r_e")` returns `"r_e"` silently and `tm_metric_names()` has length 13.
 
 - [ ] **Step 3: Delete the five alias entries**
@@ -285,12 +287,12 @@ requires.
 
 - [ ] **Step 6: Run the test to verify it passes**
 
-Run: `Rscript -e 'devtools::test(filter = "metric-tombstone")'`
+Run: `Rscript -e 'testthat::test_local(filter = "metric-tombstone")'`
 Expected: PASS, all five `test_that` blocks.
 
 - [ ] **Step 7: Confirm nothing else regressed yet**
 
-Run: `Rscript -e 'devtools::test()'`
+Run: `Rscript -e 'testthat::test_local()'`
 Expected: `test-metric-invariance` still PASSES. Some existing tests may now fail where they pass `"r_e"`/`"r_sh"` by name — record which, they are fixed in Task 6. Do not fix them here.
 
 - [ ] **Step 8: Stage only — do NOT commit (atomic group, see Commit Grouping)**
@@ -347,7 +349,7 @@ test_that("tm_survival_eval with metrics = 'all' omits the removed metrics", {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `Rscript -e 'devtools::test(filter = "metric-tombstone")'`
+Run: `Rscript -e 'testthat::test_local(filter = "metric-tombstone")'`
 Expected: FAIL — both metrics are still in `default_metrics` and `valid_metrics`, so they appear in the result.
 
 - [ ] **Step 3: Strip the metric vectors**
@@ -409,8 +411,8 @@ After editing, check the enclosing `\itemize{}` blocks still have at least one `
 - [ ] **Step 7: Regenerate documentation and run the tests**
 
 ```bash
-Rscript -e 'devtools::document()'
-Rscript -e 'devtools::test(filter = "metric-tombstone|metric-invariance")'
+Rscript -e 'roxygen2::roxygenise()'
+Rscript -e 'testthat::test_local(filter = "metric-tombstone|metric-invariance")'
 ```
 
 Expected: both filters PASS. **`test-metric-invariance` passing here is the key signal** — it proves removing the two branches did not perturb any surviving metric.
@@ -460,7 +462,7 @@ test_that("tm_fit_and_eval rejects the removed metrics by name", {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `Rscript -e 'devtools::test(filter = "metric-tombstone")'`
+Run: `Rscript -e 'testthat::test_local(filter = "metric-tombstone")'`
 Expected: FAIL on the first block — `metrics = "all"` still expands to a vector containing both.
 
 - [ ] **Step 3: Strip the `"all"` expansion**
@@ -510,8 +512,8 @@ The next surviving statement is `if ("brier_score" %in% metrics) {`.
 - [ ] **Step 6: Regenerate docs and run the tests**
 
 ```bash
-Rscript -e 'devtools::document()'
-Rscript -e 'devtools::test(filter = "metric-tombstone|metric-invariance")'
+Rscript -e 'roxygen2::roxygenise()'
+Rscript -e 'testthat::test_local(filter = "metric-tombstone|metric-invariance")'
 ```
 
 Expected: PASS.
@@ -562,7 +564,7 @@ test_that("the borrowed implementations are gone from the namespace", {
 
 - [ ] **Step 3: Run it to verify it fails**
 
-Run: `Rscript -e 'devtools::test(filter = "metric-tombstone")'`
+Run: `Rscript -e 'testthat::test_local(filter = "metric-tombstone")'`
 Expected: FAIL — the objects still exist.
 
 - [ ] **Step 4: Delete the files**
@@ -584,7 +586,7 @@ Remove `approx` and `model.matrix` from that list. Leave `uniroot`, `quantile`, 
 - [ ] **Step 6: Regenerate NAMESPACE and confirm the S3 registrations are gone**
 
 ```bash
-Rscript -e 'devtools::document()'
+Rscript -e 'roxygen2::roxygenise()'
 grep -n 'rsph\|schemper\|approx\|model.matrix' NAMESPACE
 ```
 
@@ -593,8 +595,8 @@ Expected: **no output.** The five `S3method()` lines (`pam.rsph,aareg`, `pam.rsp
 - [ ] **Step 7: Verify the package still installs and the invariance gate holds**
 
 ```bash
-Rscript -e 'devtools::load_all("."); cat("LOADED OK\n")'
-Rscript -e 'devtools::test(filter = "metric-tombstone|metric-invariance")'
+Rscript -e 'pkgload::load_all(".", quiet = TRUE); cat("LOADED OK\n")'
+Rscript -e 'testthat::test_local(filter = "metric-tombstone|metric-invariance")'
 ```
 
 Expected: `LOADED OK`, then PASS. A `could not find function` error here means a call site was missed in Task 3 or 4.
@@ -602,7 +604,7 @@ Expected: `LOADED OK`, then PASS. A `could not find function` error here means a
 - [ ] **Step 8: Gate the group — the package must be consistent before committing**
 
 ```bash
-Rscript -e 'devtools::test(filter = "metric-tombstone|metric-invariance")'
+Rscript -e 'testthat::test_local(filter = "metric-tombstone|metric-invariance")'
 ```
 
 Expected: PASS. Tests outside those two filters may still fail here; they are
@@ -754,7 +756,7 @@ Leave lines 114-115 (`expect_false("r_sh" %in% res$Metric)` and the `r_e` equiva
 - [ ] **Step 8: Run the full suite and review every snapshot change before accepting**
 
 ```bash
-Rscript -e 'devtools::test()'
+Rscript -e 'testthat::test_local()'
 ```
 
 Snapshot mismatches in `_snaps/eval-survival.md` are expected: `res$Metric` and `snap_num(res$Value)` both lose two entries. **Before accepting, confirm the surviving values are unchanged** — `test-metric-invariance` passing is that proof. If it fails, stop and investigate; do not accept the snapshot.
@@ -763,7 +765,7 @@ Then:
 
 ```bash
 Rscript -e 'testthat::snapshot_accept()'
-Rscript -e 'devtools::test()'
+Rscript -e 'testthat::test_local()'
 ```
 
 Expected: full suite PASSES, 0 failures, 0 skips outside the documented `skip_if_covr` / `skip_without_source_tree` guards.
@@ -989,7 +991,7 @@ No code changes. This task produces evidence, and its output is what gets report
 - [ ] **Step 1: Run the full test suite**
 
 ```bash
-Rscript -e 'devtools::test()' 2>&1 | tee /tmp/tm-test.log
+Rscript -e 'testthat::test_local()' 2>&1 | tee /tmp/tm-test.log
 ```
 
 Expected: 0 failures, 0 warnings. Record the pass count.
