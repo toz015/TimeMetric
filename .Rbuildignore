@@ -13,3 +13,4 @@
 ^TimeMetric_.*\.tar\.gz$
 
 ^tests/testthat/Rplots\.pdf$
+^CONTRIBUTING\.md$

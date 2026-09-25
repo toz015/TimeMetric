@@ -1,0 +1,16 @@
+citHeader("To cite TimeMetric in publications, please use:")
+
+bibentry(
+  bibtype = "Manual",
+  title   = "{TimeMetric}: Unified Performance Metrics for Survival Models with Right-Censoring, Competing Risks, and Two-Phase Designs",
+  author  = c(
+    person("Tong",   "Zhu"),
+    person("Zian",   "Zhuang"),
+    person("Wen",    "Su"),
+    person("Xiaowu", "Dai"),
+    person("Gang",   "Li")
+  ),
+  year    = "2026",
+  note    = "R package version 0.2.0",
+  url     = "https://github.com/toz015/TimeMetric"
+)
