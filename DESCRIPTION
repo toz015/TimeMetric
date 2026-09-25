@@ -35,8 +35,11 @@ Imports:
     pec,
     survminer,
     expint
+URL: https://github.com/toz015/TimeMetric
+BugReports: https://github.com/toz015/TimeMetric/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-US
 LazyData: true
 Suggests:
     testthat (>= 3.0.0),
