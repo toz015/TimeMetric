@@ -147,10 +147,12 @@ outright, because the borrowed code is no longer distributed:
 A history purge of the borrowed blobs is prepared but **not executed**; see
 `history-purge-plan.md`.
 
-## Finding 41 — `Gt()` interpolation is non-monotone (DEFERRED, pre-CRAN decision)
+## Finding 41 — `Gt()` interpolation is non-monotone (RESOLVED 2026-09-25)
 
-**Status: OPEN. Deferred by maintainer decision on 2026-09-25 as a pre-CRAN
-release decision. Not audited, not modified, and no baseline value changed.**
+**Status: RESOLVED by correction.** Audited in
+`finding-41-impact-audit.md`, then corrected. `Gt()` is now a reverse-
+Kaplan-Meier step-function estimator verified against `pec::ipcw()`. None of the
+57 committed baseline values changed.
 
 `R/pam.Ct.R`, the interpolation branch of `Gt()` — the Kaplan-Meier estimate of
 the censoring distribution G(t) = P(C > t).
@@ -199,3 +201,44 @@ be described as ready for CRAN submission.**
 **Do not** regenerate `tests/testthat/fixtures/metric-baseline.csv` or the `Gt()`
 characterization literals to accommodate a fix without explicit approval; those
 values are the evidence that the removal was behaviour-preserving.
+
+
+### Resolution (2026-09-25)
+
+The audit found **three** independent defects, not one:
+
+1. **Index misalignment.** Interpolation indices came from the sorted summary
+   table; the weights were built from the raw unsorted input vector. G(t) was
+   neither monotone nor invariant to row order.
+2. **Inverted censoring indicator.** `status == min(status)` marks every
+   observation as a censoring event on data with no censoring, so G decayed from
+   1.0 to 0.2 on the uncensored fixture instead of staying at 1.
+3. **Silent zero substitution.** A zero censoring survival was replaced by the
+   smallest positive value, hiding an undefined IPCW weight behind a plausible
+   number.
+
+A fourth deviation was corrected at the same time: linear interpolation between
+Kaplan-Meier jump times is not an estimate of a step function, and is gone.
+
+**The correction**, per maintainer instruction:
+
+* `Gt(object, t)` evaluates the censoring reverse Kaplan-Meier as a **step
+  function**, right-continuous, for the evaluation-time weight;
+* `Gt(object, t, left = TRUE)` returns the left limit G(t-), used for
+  subject-specific event-time weights in `pam.Brier()`;
+* at tied times, censorings are taken to occur after events, so the censoring
+  risk set is `Y(t) - d(t)` -- the reverse-Kaplan-Meier convention that
+  `prodlim(reverse = TRUE)` and hence `pec::ipcw()` use;
+* beyond the last observed time the estimate is **NA**, as `pec::ipcw()` returns;
+* when the censoring distribution reaches zero the function **errors**, naming
+  the time and saying the IPCW weight is undefined. It does not substitute.
+
+Verified against `pec::ipcw()` as an independent implementation: exact agreement
+at every jump time for both `IPCW.times` and `IPCW.subjectTimes`
+(`subjectTimesLag = 1`).
+
+**Impact.** Only `tm_fit_and_eval()`'s `brier_score` is affected, and only when
+the evaluation time falls between jump times. All 57 values in
+`metric-baseline.csv` are unchanged, so that fixture was **not** regenerated.
+The `Gt()` characterization expectations did change and were updated
+deliberately, with old and new values reported side by side beforehand.

@@ -1,115 +1,89 @@
-# Replacement for survminer::surv_summary(), which was the package's only use of
-# survminer -- a heavy dependency for one call. Builds the same eight-column
-# frame directly from a survfit object using public survival functionality.
+# Reverse Kaplan-Meier estimate of the CENSORING distribution G(t) = P(C > t).
 #
-# The upper/lower columns are carried deliberately even though Gt() never reads
-# them: the caller applies na.omit() to the whole frame, so the row that gets
-# dropped is determined by those columns. Returning only time and surv would
-# silently keep a row the previous implementation removed.
+# Two conventions matter and both were wrong before:
+#
+#  1. The censoring "event" is an observation that was censored (status == 0).
+#     The previous coding, ifelse(status == min(status), 1, 0), inverted this
+#     whenever a dataset contained no censoring at all: min(status) was then 1,
+#     so every observation counted as a censoring event and G decayed from 1
+#     instead of staying at 1.
+#
+#  2. At a tied time, censorings are taken to occur AFTER events, so the risk
+#     set for the censoring hazard is Y(t) - d(t): the number at risk less the
+#     events at that same time. A plain survfit(Surv(time, status == 0)) treats
+#     the two symmetrically and yields a systematically larger G. This is the
+#     reverse-Kaplan-Meier convention used by prodlim(reverse = TRUE), and
+#     therefore by pec::ipcw(), which the tests check against.
+#
+# Returns a step function as a list of jump times and the value of G at each.
 #' @keywords internal
 #' @noRd
-gt_surv_summary <- function(fit) {
-  data.frame(
-    time     = fit$time,
-    n.risk   = fit$n.risk,
-    n.event  = fit$n.event,
-    n.censor = fit$n.censor,
-    surv     = fit$surv,
-    std.err  = fit$std.err,
-    upper    = fit$upper,
-    lower    = fit$lower
-  )
+gt_censoring_fit <- function(object) {
+  time   <- object[, 1]
+  status <- object[, 2]
+
+  utime <- sort(unique(time))
+  n     <- length(time)
+
+  n_risk  <- vapply(utime, function(u) sum(time >= u), numeric(1))
+  n_event <- vapply(utime, function(u) sum(time == u & status != 0), numeric(1))
+  n_cens  <- vapply(utime, function(u) sum(time == u & status == 0), numeric(1))
+
+  # risk set for the censoring hazard: events at the same time are removed first
+  at_risk_for_cens <- n_risk - n_event
+  haz <- ifelse(at_risk_for_cens > 0, n_cens / at_risk_for_cens, 0)
+
+  list(time = utime, surv = cumprod(1 - haz), n = n)
 }
 
-#' The Kaplan-Meier Estimate of the Censoring Distribution
-#'
-#' G(t)=P(C>t) denote the Kaplan-Meier estimate of the censoring distribution which is used to adjust for censoring.
-#' Gt is used to calculate G(t) at any timepoint you want.
-#'
-#' @param object object of class \code{Surv} created by Surv function.
-#' @param timepoint any point in time you want to get the Kaplan-Meier estimate of the censoring.
-#'
-#' @return The Kaplan-Meier estimate of the censoring distribution and the value of G(t) is between 0 and 1.
-#'
-#' @references
-#' Graf, Erika, Schmoor, Claudia, Sauerbrei, & Willi, et al. (1999). Assessment and comparison of prognostic classification schemes for survival data. Statist. Med., 18(1718), 2529-2545.
-#'
-#' Kaplan, E. L. , &  Meier, P. . (1958). Nonparametric estimation from incomplete observations. Journal of the American Statistical Association, 53, 457-481.
-#'
-#' @examples
-#' library(survival)
-#' time <- rexp(50)
-#' status <- sample(c(0, 1), 50, replace = TRUE)
-#' pre_sp <- runif(50)
-#' timepoint <- runif(1)
-#' Gt(Surv(time, status), timepoint)
-#'
-#' @importFrom stats na.omit
-#' @importFrom survival Surv
-#' @importFrom survival survfit
-#'
-#' @keywords internal
-#' @noRd
-Gt <- function(object, timepoint) {
+Gt <- function(object, timepoint, left = FALSE) {
   if (!inherits(object, "Surv")) {
     stop("object is not of class Surv")
   }
-  
+
   if (missing(object)) {
     stop("The survival object is missing")
   }
-  
+
   if (missing(timepoint)) {
     stop("The time is missing with no default")
   }
-  
+
   if (any(timepoint <= 0)) {
     stop("The timepoint must be positive")
   }
-  
+
   if (any(is.na(object))) {
     stop("The input vector cannot have NA")
   }
-  
+
   if (length(timepoint) != 1) {
     stop("Gt can only be calculated at a single time point")
   }
-  
+
   if (is.na(timepoint)) {
     stop("Cannot calculate Gt at NA")
   }
-  
-  time <- object[, 1]
-  status <- object[, 2]
-  status0 <- ifelse(status == min(status), 1, 0)
-  fit <- survfit(Surv(time, status0) ~ 1)
-  res.sum <- gt_surv_summary(fit)
-  res.sum <- na.omit(res.sum) # The last point time may have NA
-  
-  # The observed survival times include this timepoint
-  if (timepoint %in% res.sum$time) {
-    Gvalue <- res.sum[which(res.sum$time == timepoint), ]$surv
-  } else {
-    index1 <- ifelse(length(which(res.sum$time < timepoint)),
-                     max(which(res.sum$time < timepoint)), 1
-    )
-    
-    index2 <- ifelse(length(which(res.sum$time > timepoint)),
-                     min(which(res.sum$time > timepoint)), length(res.sum$time)
-    )
-    Gtemp <- res.sum$surv
-    if (index1 == index2) {
-      Gvalue <- Gtemp[index1]
-    } else {
-      Gvalue <-
-        ((time[index2] - timepoint) * Gtemp[index1] + (timepoint - time[index1]) *
-           Gtemp[index2]) / (time[index2] - time[index1])
-    }
+
+  fit <- gt_censoring_fit(object)
+
+  # Beyond the last observed time the censoring distribution is not identified.
+  # pec::ipcw() returns NA there; so do we.
+  if (timepoint > max(fit$time)) {
+    return(NA_real_)
   }
-  # if No dead sample, the denominator is zero
-  # The minimum survival probability is used instead
-  if (is.na(Gvalue) | Gvalue <= 0) {
-    Gvalue <- min(res.sum$surv[res.sum$surv != 0])
+
+  # Step-function evaluation. G(t) is right-continuous, so it takes the value at
+  # the last jump time at or before t; G(t-) takes the value strictly before t.
+  # Before the first jump both are 1.
+  idx <- if (left) which(fit$time < timepoint) else which(fit$time <= timepoint)
+  Gvalue <- if (length(idx) == 0L) 1 else fit$surv[max(idx)]
+
+  if (!is.na(Gvalue) && Gvalue <= 0) {
+    stop("The censoring distribution has reached zero at or before time ",
+         format(timepoint), ", so the inverse-probability-of-censoring weight ",
+         "is undefined. Evaluate at an earlier time.", call. = FALSE)
   }
-  return(Gvalue)
+
+  Gvalue
 }

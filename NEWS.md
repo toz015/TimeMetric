@@ -45,6 +45,30 @@ deprecation warning; see `?"TimeMetric-deprecated"`.
 
 ## Bug fixes
 
+* **The Brier score's censoring weights were wrong, and `brier_score` from
+  `tm_fit_and_eval()` changes on data with tied times.** `Gt()`, the
+  Kaplan-Meier estimate of the censoring distribution behind the
+  inverse-probability-of-censoring weights, had three independent defects: it
+  derived interpolation indices from a sorted table but applied them to the raw
+  unsorted input, so G(t) was neither monotone nor invariant to row order; it
+  identified censoring events as `status == min(status)`, which inverts on data
+  with no censoring and made G decay from 1 instead of staying at 1; and it
+  silently replaced a zero censoring survival with the smallest positive value,
+  concealing an undefined weight.
+
+  `Gt()` is now a reverse-Kaplan-Meier **step function** with no interpolation
+  between jump times, using G(t) for the evaluation-time weight and G(t-) for
+  subject-specific event-time weights, and the reverse-Kaplan-Meier tie
+  convention. It returns `NA` beyond the last observed time and **errors** when
+  the censoring distribution is exhausted, rather than substituting a value.
+  Values agree exactly with `pec::ipcw()`.
+
+  Reported Brier scores on tied data at an evaluation time between jump times
+  were substantially overstated: on one 200-observation fixture the reported
+  value was 0.75 against a correct 0.22. Metrics other than `brier_score` are
+  unaffected, as is `tm_survival_eval()`, which computes the Brier score by a
+  different route.
+
 * `tm_fit_and_eval()` (was `pam.survival_eval()`) **never worked**. It passed
   `covariates=`/`newdata=` to functions taking `covs=`/`new_data=`, so every
   call failed with `unused arguments`.
