@@ -177,12 +177,12 @@ tm_evaluate_two_phase <- function(pred_results,
 #'     \item \code{covs} -- character vector of covariate names used for prediction.
 #'     \item \code{model} -- (optional) the underlying fitted survival model object.
 #'   }
-#'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.
+#'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordance measure.
 #' @param case_weights Numeric vector of Prentice (or other) sampling weights for all subjects.
 #' @param km_cens A Kaplan-Meier fit for censoring (based on training data) used to compute IPCW.
 #' @param metrics Character vector of metrics to compute (default shown below).
 #' @param t_star Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.
-#' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordence measure (default = 10e10).
+#' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordance measure (default = 10e10).
 #' @param digits Integer number of decimal places to round values (default 2).
 #'
 #' @return A data.frame: rows = metrics, columns = model names.

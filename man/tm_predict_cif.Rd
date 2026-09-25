@@ -35,7 +35,7 @@ tm_predict_cif(
 \value{
 A list with two components:
 \describe{
-  \item{times}{umeric vector of observed times from \code{newdata$time}.}
+  \item{times}{Numeric vector of observed times from \code{newdata$time}.}
   \item{status}{Integer vector of event indicators from \code{newdata$status}.}
   \item{cif_pred}{A matrix where the first column is time, and subsequent columns are predicted CIFs for each subject.}
   \item{pred}{Numeric vector of the integral of CIF from \code{0} to \code{tau}.}

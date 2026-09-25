@@ -1,6 +1,6 @@
 # Canonical metric identifiers.
 #
-# Before standardisation the same metric could carry up to five different
+# Before standardization the same metric could carry up to five different
 # spellings depending on which entry point produced it, several of them
 # misspelled ("Pesudo_R", "Psuedo.R") or containing a U+2019 curly apostrophe
 # that users had to reproduce exactly for metric selection to match.

@@ -19,13 +19,13 @@ Each model entry must itself be a list containing:
   \item \code{covs} -- character vector of covariate names used for prediction.
   \item \code{model} -- (optional) the underlying fitted survival model object.
 }
-Note: If \code{pred} is provided, it will be used to calculate R2 and concordence measure.}
+Note: If \code{pred} is provided, it will be used to calculate R2 and concordance measure.}
 
 \item{metrics}{Optional character vector of metrics to compute (passed through).}
 
 \item{t_star}{Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.}
 
-\item{tau}{Optional numeric scalar, specify the max time horizon for R2 measure and concordence measure (default = 10e10).}
+\item{tau}{Optional numeric scalar, specify the max time horizon for R2 measure and concordance measure (default = 10e10).}
 
 \item{digits}{Number of decimal places to round the metric values (default = 2).}
 }

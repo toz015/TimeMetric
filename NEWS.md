@@ -55,10 +55,10 @@ deprecation warning; see `?"TimeMetric-deprecated"`.
   evaluation function failed under `library(TimeMetric)` alone. It worked only
   if the user happened to have attached `survival` separately.
 * **`tm_survival_eval_cr()` rejected every legacy metric spelling.** It carried
-  a duplicate metric-validation block that ran *before* name normalisation, so
+  a duplicate metric-validation block that ran *before* name normalization, so
   `"Harrells_C"`, `"C_index"` and `"Brier Score"` all failed on the
   competing-risks path with `Invalid metrics:` while working on every other
-  entry point. Validation now runs after normalisation, as it does elsewhere,
+  entry point. Validation now runs after normalization, as it does elsewhere,
   and the documented legacy spellings are accepted there too. Genuinely unknown
   names are still rejected.
 * `tm_survival_eval_cr()` returned its `Value` column as **character** while
@@ -67,7 +67,7 @@ deprecation warning; see `?"TimeMetric-deprecated"`.
 
 ## Metric names
 
-Standardised to one ASCII identifier per quantity. Legacy spellings are still
+Standardized to one ASCII identifier per quantity. Legacy spellings are still
 accepted, case-insensitively and tolerant of apostrophe style, with a
 deprecation warning:
 
@@ -75,7 +75,7 @@ deprecation warning:
 `pseudo_r2_point`, `r_square`, `r2_point`, `td_auc`, `uno_c`
 
 * `Harrell's C` and `Uno's C` previously required a U+2019 curly apostrophe to
-  match, which was close to undiscoverable.
+  match, which made them close to impossible to discover.
 * The pseudo R-squared family carried four spellings, one of them the misspelled
   `Pesudo_R`. `pseudo_r2` and `pseudo_r2_point` remain distinct measures.
 * Time-dependent AUC carried different labels in the two-phase evaluator and its

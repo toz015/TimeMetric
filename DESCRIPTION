@@ -41,6 +41,7 @@ Encoding: UTF-8
 Language: en-US
 LazyData: true
 Suggests:
+    spelling,
     testthat (>= 3.0.0),
     withr,
     pkgload,
