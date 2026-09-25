@@ -22,3 +22,14 @@ Numeric vector of weights.
 Computes Prentice-style weights for case-cohort designs. If `strata`
 is provided, stratified case-cohort weights are computed.
 }
+\examples{
+# Case-cohort design: a random subcohort plus all cases. Sampling weights
+# inflate subjects who were not sampled, so the subcohort represents the
+# full cohort.
+d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+                        beta = c(0.5, -0.5), seed = 2025)
+set.seed(2025)
+w <- tm_case_cohort_weights(time = d$time, status = d$status,
+                            subcohort = stats::rbinom(nrow(d), 1, 0.4))
+summary(w)
+}

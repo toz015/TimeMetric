@@ -54,6 +54,30 @@
 #'
 #' @export
 
+#' @examples
+#' # A Cox model evaluated on right-censored data. The simulator is seeded,
+#' # so the reported metric values are reproducible.
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+#'
+#' # the default metric set
+#' tm_survival_eval(
+#'   model = fit, event_time = pred$times,
+#'   predicted_probability = pred$surv_prob, status = pred$status,
+#'   covariates = c("x1", "x2"), new_data = d
+#' )
+#'
+#' # a chosen subset; see tm_metric_names() for the accepted identifiers
+#' tm_survival_eval(
+#'   model = fit, event_time = pred$times,
+#'   predicted_probability = pred$surv_prob, status = pred$status,
+#'   covariates = c("x1", "x2"), new_data = d,
+#'   metrics = c("harrell_c", "brier_score")
+#' )
 tm_survival_eval <- function (model, event_time, 
                                         predicted_probability, 
                                         pred_mean_survival = NULL,
@@ -236,6 +260,16 @@ tm_survival_eval <- function (model, event_time,
 #'   }
 #'
 #' @export
+#' @examples
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+#'
+#' # one column per model, metrics down the rows
+#' tm_summarize(list(cox = pred))
 tm_summarize <- function(models,
                         metrics = NULL,
                         t_star = NULL,

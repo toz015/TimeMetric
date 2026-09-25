@@ -45,3 +45,19 @@ A data.frame with:
 Calls \code{tm_survival_eval_cr()} for each model in a named list and
 returns a wide table where rows are metrics and columns are model names.
 }
+\examples{
+# Competing risks: cause 1 is the event of interest, cause 2 the competing
+# risk. Both cause-specific hazards are modelled.
+cr <- tm_simulate_fine_gray(n = 150, v = 2, beta1 = c(0.5, -0.5),
+                            beta2 = c(-0.3, 0.3), censor = 0.3, seed = 2025)
+cr$time <- cr$obs.times
+cr$status <- cr$obs.event
+m1 <- survival::coxph(survival::Surv(time, status == 1) ~ X1 + X2,
+                      data = cr, x = TRUE, y = TRUE)
+m2 <- survival::coxph(survival::Surv(time, status == 2) ~ X1 + X2,
+                      data = cr, x = TRUE, y = TRUE)
+p <- tm_predict_cif(model1 = m1, model2 = m2, newdata = cr,
+                    covs = c("X1", "X2"), event.type = 1, tau = max(cr$time))
+
+tm_summarize_cr(list(csh = p), event_type = 1)
+}

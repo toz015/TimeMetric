@@ -12,6 +12,13 @@
 #' @param m Integer, number of controls per case (required).
 #' @return Numeric vector of weights.
 #' @export
+#' @examples
+#' # Nested case-control design with m = 2 matched controls per case.
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' set.seed(2025)
+#' w <- tm_nested_case_control_weights(time = d$time, status = d$status, m = 2)
+#' summary(w)
 tm_nested_case_control_weights <- function(time, status, strata = NULL, m = NULL) {
   if (is.null(m)) stop("`m` must be provided for NCC weights.")
   design <- if (is.null(strata)) "ncc" else "matched_ncc"

@@ -49,3 +49,20 @@ For a list of models (each providing `time`, `status`, `surv_prob`, `pred`),
 calls `tm_evaluate_two_phase()` for each and returns a wide
 comparison table with metrics as rows and model names as columns.
 }
+\examples{
+d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+                        beta = c(0.5, -0.5), seed = 2025)
+d <- d[, c("time", "status", "x1", "x2")]
+fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+                       data = d, x = TRUE, y = TRUE)
+pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+
+# case-cohort sampling weights, and the censoring distribution they need
+set.seed(2025)
+w  <- tm_case_cohort_weights(time = d$time, status = d$status,
+                             subcohort = stats::rbinom(nrow(d), 1, 0.4))
+km <- survival::survfit(survival::Surv(d$time, 1 - d$status) ~ 1)
+
+# the wide summary of the same two-phase evaluation
+tm_sample_design(models = list(cc = pred), case_weights = w, km_cens = km)
+}

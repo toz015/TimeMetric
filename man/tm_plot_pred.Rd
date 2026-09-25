@@ -78,3 +78,14 @@ fitted or predicted trend, while the overlaid points (\code{times} vs
 censoring status. For more elaborate visualization (e.g., confidence bands,
 multiple models), use faceting or combine plots with \pkg{patchwork}.
 }
+\examples{
+d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+                        beta = c(0.5, -0.5), seed = 2025)
+d <- d[, c("time", "status", "x1", "x2")]
+fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+                       data = d, x = TRUE, y = TRUE)
+pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+
+# observed time against predicted risk score, shaped by event status
+tm_plot_pred(pred, title = "Cox model")
+}

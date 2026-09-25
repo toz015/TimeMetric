@@ -42,6 +42,24 @@
 #' 
 #' 
 #' @export
+#' @examples
+#' # Competing risks: cause 1 is the event of interest, cause 2 the competing
+#' # risk. Both cause-specific hazards are modelled.
+#' cr <- tm_simulate_fine_gray(n = 150, v = 2, beta1 = c(0.5, -0.5),
+#'                             beta2 = c(-0.3, 0.3), censor = 0.3, seed = 2025)
+#' cr$time <- cr$obs.times
+#' cr$status <- cr$obs.event
+#' m1 <- survival::coxph(survival::Surv(time, status == 1) ~ X1 + X2,
+#'                       data = cr, x = TRUE, y = TRUE)
+#' m2 <- survival::coxph(survival::Surv(time, status == 2) ~ X1 + X2,
+#'                       data = cr, x = TRUE, y = TRUE)
+#' p <- tm_predict_cif(model1 = m1, model2 = m2, newdata = cr,
+#'                     covs = c("X1", "X2"), event.type = 1, tau = max(cr$time))
+#'
+#' tm_survival_eval_cr(
+#'   pred_cif = p$cif_pred[, -1], event_time = p$times,
+#'   time.cif = p$cif_pred[, 1], status = p$status, event_type = 1
+#' )
 tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
                                            metrics = NULL,  t_star = NULL, 
                                            tau = NULL, event_type = 1) 
@@ -434,6 +452,21 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
 #'   \item cell values = metric values
 #' }
 #' @export
+#' @examples
+#' # Competing risks: cause 1 is the event of interest, cause 2 the competing
+#' # risk. Both cause-specific hazards are modelled.
+#' cr <- tm_simulate_fine_gray(n = 150, v = 2, beta1 = c(0.5, -0.5),
+#'                             beta2 = c(-0.3, 0.3), censor = 0.3, seed = 2025)
+#' cr$time <- cr$obs.times
+#' cr$status <- cr$obs.event
+#' m1 <- survival::coxph(survival::Surv(time, status == 1) ~ X1 + X2,
+#'                       data = cr, x = TRUE, y = TRUE)
+#' m2 <- survival::coxph(survival::Surv(time, status == 2) ~ X1 + X2,
+#'                       data = cr, x = TRUE, y = TRUE)
+#' p <- tm_predict_cif(model1 = m1, model2 = m2, newdata = cr,
+#'                     covs = c("X1", "X2"), event.type = 1, tau = max(cr$time))
+#'
+#' tm_summarize_cr(list(csh = p), event_type = 1)
 tm_summarize_cr <- function(models,
                            metrics = NULL,
                            t_star = NULL,

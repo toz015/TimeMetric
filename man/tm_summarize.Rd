@@ -42,3 +42,14 @@ Calls \code{tm_survival_eval()} for each model in a named list and
 outputs a wide table: each row corresponds to one metric and each column
 corresponds to a model.
 }
+\examples{
+d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+                        beta = c(0.5, -0.5), seed = 2025)
+d <- d[, c("time", "status", "x1", "x2")]
+fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+                       data = d, x = TRUE, y = TRUE)
+pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+
+# one column per model, metrics down the rows
+tm_summarize(list(cox = pred))
+}

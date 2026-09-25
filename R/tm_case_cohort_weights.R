@@ -12,6 +12,16 @@
 #' @param strata Optional factor/character for strata (stratified cc).
 #' @return Numeric vector of weights.
 #' @export
+#' @examples
+#' # Case-cohort design: a random subcohort plus all cases. Sampling weights
+#' # inflate subjects who were not sampled, so the subcohort represents the
+#' # full cohort.
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' set.seed(2025)
+#' w <- tm_case_cohort_weights(time = d$time, status = d$status,
+#'                             subcohort = stats::rbinom(nrow(d), 1, 0.4))
+#' summary(w)
 tm_case_cohort_weights <- function(time, status, subcohort = NULL, strata = NULL) {
   design <- if (is.null(strata)) "casecohort" else "strat_casecohort"
   weighted_param(time = time, status = status, design = design,

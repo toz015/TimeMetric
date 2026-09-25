@@ -66,17 +66,22 @@ and arranges them with letter tags. The function collects a single shared legend
 and applies global styling (titles, axis labels, legend options) across panels.
 }
 \examples{
-\dontrun{
+# One panel per model. The previous example referenced undefined objects and
+# so could not be executed; this one runs.
+d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+                        beta = c(0.5, -0.5), seed = 2025)
+d <- d[, c("time", "status", "x1", "x2")]
+cox <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+                       data = d, x = TRUE, y = TRUE)
+wei <- survival::survreg(survival::Surv(time, status) ~ x1 + x2,
+                         data = d, dist = "weibull", x = TRUE, y = TRUE)
+p_cox <- tm_predict_coxph(model = cox, covs = c("x1", "x2"), new_data = d)
+p_wei <- tm_predict_survreg(model = wei, covs = c("x1", "x2"), new_data = d)
+
 tm_plot_summary(
-  list(df1, df2),
-  titles = c("Weibull AFT", "Cox PH"),
-  invert_linear = c(TRUE, FALSE),
-  tag_levels = "a",
-  tag_prefix = "(",
-  tag_suffix = ")",
-  label_name = c("censored", "event"),
-  shape_style = c(1, 19),
-  legend_position = "bottom"
+  list(p_cox, p_wei),
+  titles = c("Cox PH", "Weibull AFT"),
+  ncol = 2,
+  legend_name = "Status"
 )
-}
 }

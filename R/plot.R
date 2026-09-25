@@ -51,6 +51,16 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_shape_manual
 #'   theme_classic xlab ylab ggtitle theme element_text
 #' @export
+#' @examples
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+#'
+#' # observed time against predicted risk score, shaped by event status
+#' tm_plot_pred(pred, title = "Cox model")
 tm_plot_pred <- function(data,
                       title = NULL,
                       xlab = "Risk Score",
@@ -146,19 +156,24 @@ tm_plot_pred <- function(data,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' # One panel per model. The previous example referenced undefined objects and
+#' # so could not be executed; this one runs.
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' cox <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' wei <- survival::survreg(survival::Surv(time, status) ~ x1 + x2,
+#'                          data = d, dist = "weibull", x = TRUE, y = TRUE)
+#' p_cox <- tm_predict_coxph(model = cox, covs = c("x1", "x2"), new_data = d)
+#' p_wei <- tm_predict_survreg(model = wei, covs = c("x1", "x2"), new_data = d)
+#'
 #' tm_plot_summary(
-#'   list(df1, df2),
-#'   titles = c("Weibull AFT", "Cox PH"),
-#'   invert_linear = c(TRUE, FALSE),
-#'   tag_levels = "a",
-#'   tag_prefix = "(",
-#'   tag_suffix = ")",
-#'   label_name = c("censored", "event"),
-#'   shape_style = c(1, 19),
-#'   legend_position = "bottom"
+#'   list(p_cox, p_wei),
+#'   titles = c("Cox PH", "Weibull AFT"),
+#'   ncol = 2,
+#'   legend_name = "Status"
 #' )
-#' }
 tm_plot_summary <- function(data_list,
                               titles = NULL,
                               plot_fun = tm_plot_pred,

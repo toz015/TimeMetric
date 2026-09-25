@@ -38,6 +38,22 @@ km_surv <- function(t, km_cens) {
 #' @export
 #' @importFrom dplyr mutate case_when
 #' @importFrom tibble tibble
+#' @examples
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+#'
+#' # case-cohort sampling weights, and the censoring distribution they need
+#' set.seed(2025)
+#' w  <- tm_case_cohort_weights(time = d$time, status = d$status,
+#'                              subcohort = stats::rbinom(nrow(d), 1, 0.4))
+#' km <- survival::survfit(survival::Surv(d$time, 1 - d$status) ~ 1)
+#'
+#' tm_evaluate_two_phase(pred_results = pred, km_cens_fit = km,
+#'                       case_weights = w)
 tm_evaluate_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 
@@ -171,6 +187,22 @@ tm_evaluate_two_phase <- function(pred_results,
 #'
 #' @return A data.frame: rows = metrics, columns = model names.
 #' @export
+#' @examples
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+#'
+#' # case-cohort sampling weights, and the censoring distribution they need
+#' set.seed(2025)
+#' w  <- tm_case_cohort_weights(time = d$time, status = d$status,
+#'                              subcohort = stats::rbinom(nrow(d), 1, 0.4))
+#' km <- survival::survfit(survival::Surv(d$time, 1 - d$status) ~ 1)
+#'
+#' # the wide summary of the same two-phase evaluation
+#' tm_sample_design(models = list(cc = pred), case_weights = w, km_cens = km)
 tm_sample_design <- function(models,
                               case_weights,
                               km_cens,
