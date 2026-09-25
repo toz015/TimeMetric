@@ -22,6 +22,14 @@ Both branches check availability with `requireNamespace()` and raise an
 informative error naming the package to install.
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/toz015/TimeMetric}
+  \item Report bugs at \url{https://github.com/toz015/TimeMetric/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Tong Zhu \email{toz015@ucla.edu}
 

@@ -28,11 +28,15 @@ test_that("both optional backends are declared in Suggests, not Imports", {
   expect_false("randomForestSRC" %in% imports)
   expect_false("cmprsk" %in% imports)
   # and the newly-required runtime deps really are in Imports
-  expect_true(all(c("survminer", "expint", "pec", "magrittr",
+  expect_true(all(c("expint", "pec", "magrittr",
                     "purrr", "tibble") %in% imports))
   # rms was removed entirely: it served only the Schemper-Henderson estimator
   # and forced R >= 4.4.0 (findings.md #35, #36)
   expect_false("rms" %in% imports)
+  # survminer was removed too: its single use, surv_summary() in Gt(), is now
+  # built from the survfit object directly. Verified bitwise identical.
+  expect_false("survminer" %in% imports)
+  expect_false("survminer" %in% suggests)
 })
 
 test_that("neither optional backend is imported into the namespace", {

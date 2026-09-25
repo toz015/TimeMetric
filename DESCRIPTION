@@ -33,7 +33,6 @@ Imports:
     purrr,
     tibble,
     pec,
-    survminer,
     expint
 URL: https://github.com/toz015/TimeMetric
 BugReports: https://github.com/toz015/TimeMetric/issues

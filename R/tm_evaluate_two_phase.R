@@ -38,7 +38,6 @@ km_surv <- function(t, km_cens) {
 #' @export
 #' @importFrom dplyr mutate case_when
 #' @importFrom tibble tibble
-#' @importFrom purrr map2
 tm_evaluate_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 

@@ -56,7 +56,6 @@ importFrom(patchwork,
   wrap_plots
 )
 importFrom(pec,predictSurvProb)
-importFrom(purrr,map2)
 importFrom(stats,
   as.formula,
   complete.cases,

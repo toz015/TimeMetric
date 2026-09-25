@@ -85,15 +85,11 @@ test_that("the summary frame drops exactly one row, on missing confidence limits
   d   <- fx_surv()
   st0 <- ifelse(d$status == min(d$status), 1, 0)
   f   <- survival::survfit(survival::Surv(d$time, st0) ~ 1)
-  # implementation-agnostic on purpose: this invariant must hold for the
-  # survminer version and its replacement alike, so the test is identical
-  # before and after the swap rather than rewritten across it.
-  sm <- if (exists("gt_surv_summary", envir = asNamespace("TimeMetric"),
-                   inherits = FALSE)) {
-    TimeMetric:::gt_surv_summary(f)
-  } else {
-    survminer::surv_summary(f)
-  }
+  # This invariant held for the survminer implementation and must hold for its
+  # replacement. The survminer fallback that made this test runnable in both
+  # states is gone with the dependency; keeping it would reference a package the
+  # suite no longer declares.
+  sm <- TimeMetric:::gt_surv_summary(f)
 
   expect_identical(
     names(sm),

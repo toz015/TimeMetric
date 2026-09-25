@@ -1,3 +1,26 @@
+# Replacement for survminer::surv_summary(), which was the package's only use of
+# survminer -- a heavy dependency for one call. Builds the same eight-column
+# frame directly from a survfit object using public survival functionality.
+#
+# The upper/lower columns are carried deliberately even though Gt() never reads
+# them: the caller applies na.omit() to the whole frame, so the row that gets
+# dropped is determined by those columns. Returning only time and surv would
+# silently keep a row the previous implementation removed.
+#' @keywords internal
+#' @noRd
+gt_surv_summary <- function(fit) {
+  data.frame(
+    time     = fit$time,
+    n.risk   = fit$n.risk,
+    n.event  = fit$n.event,
+    n.censor = fit$n.censor,
+    surv     = fit$surv,
+    std.err  = fit$std.err,
+    upper    = fit$upper,
+    lower    = fit$lower
+  )
+}
+
 #' The Kaplan-Meier Estimate of the Censoring Distribution
 #'
 #' G(t)=P(C>t) denote the Kaplan-Meier estimate of the censoring distribution which is used to adjust for censoring.
@@ -60,7 +83,7 @@ Gt <- function(object, timepoint) {
   status <- object[, 2]
   status0 <- ifelse(status == min(status), 1, 0)
   fit <- survfit(Surv(time, status0) ~ 1)
-  res.sum <- survminer::surv_summary(fit)
+  res.sum <- gt_surv_summary(fit)
   res.sum <- na.omit(res.sum) # The last point time may have NA
   
   # The observed survival times include this timepoint
