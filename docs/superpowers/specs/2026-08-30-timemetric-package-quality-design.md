@@ -45,14 +45,19 @@ demonstrates both on every push.
 
 ## 1. Repository hygiene
 
-### Committed key pair — assessed, not an incident
+### Committed key pair — assessed
 
 `q` (ed25519 private key, passphrase-protected) and `q.pub` have been committed
-since `c873cb9` (2024-11-03). The maintainer has confirmed this pair was
-generated locally and **never** registered as a GitHub account key, deploy key,
-or in any server's `authorized_keys`. There is no trust relationship to withdraw
-and no key requiring revocation. Removal is repository hygiene, not incident
-response.
+since `c873cb9` (2024-11-03).
+
+Amended 2026-09-24 to state only what was actually inspected.
+
+No active registration of this fingerprint was found in the inspected GitHub
+account keys, repository deploy keys, or other inspected trust locations.
+Therefore, there is no known trust relationship to revoke. Because the private
+key was publicly accessible, it remains classified as **compromised and must not
+be reused**. The history removal is security and repository hygiene. This
+finding may remain closed unless new evidence of registration or use appears.
 
 ### Files to remove from the working tree
 

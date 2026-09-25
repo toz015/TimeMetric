@@ -49,10 +49,14 @@ and `q.pub`. No `.pem`, `.key`, `id_rsa`, or similar exists anywhere in history.
 
 ### Standing assessment
 
-Per the maintainer's determination (findings.md #6 context): this key pair was
-generated locally and never registered as a GitHub account key, deploy key, or
-in any server's `authorized_keys`. There is no trust relationship to withdraw
-and no key requiring revocation. The rewrite is hygiene, not incident response.
+Amended 2026-09-24 to state only what was actually inspected.
+
+No active registration of this fingerprint was found in the inspected GitHub
+account keys, repository deploy keys, or other inspected trust locations.
+Therefore, there is no known trust relationship to revoke. Because the private
+key was publicly accessible, it remains classified as **compromised and must not
+be reused**. The history removal is security and repository hygiene. This
+finding may remain closed unless new evidence of registration or use appears.
 
 ---
 

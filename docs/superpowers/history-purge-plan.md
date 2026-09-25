@@ -50,12 +50,16 @@ benefit, so the sets are combined here and the history is rewritten once.
 | Borrowed docs | `man/pam.rsph_metric.Rd` | 1 |
 | Borrowed docs | `man/pam.schemper.Rd` | 2 |
 
-**On the key material:** the ed25519 pair was assessed and is **not a security
-incident**. The maintainer confirmed it was never registered as a GitHub key, a
-deploy key, or in any `authorized_keys`, so **no revocation is required**.
-Removal is hygiene. Do not re-raise it as an incident.
-`docs/security/key-exposure-report.md` is included because it is the report
-about that material and was already moved out of the repository in `fc6c120`.
+**On the key material.** No active registration of this fingerprint was found in the inspected GitHub
+account keys, repository deploy keys, or other inspected trust locations.
+Therefore, there is no known trust relationship to revoke. Because the private
+key was publicly accessible, it remains classified as **compromised and must not
+be reused**. The history removal is security and repository hygiene. This
+finding may remain closed unless new evidence of registration or use appears.
+
+`docs/security/key-exposure-report.md` is included in the purge because it is
+the report about that material, and it was already moved out of the working
+tree in `fc6c120`.
 
 ### 2.1 How the borrowed-code paths were derived
 
