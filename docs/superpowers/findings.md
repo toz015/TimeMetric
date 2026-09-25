@@ -146,3 +146,56 @@ outright, because the borrowed code is no longer distributed:
 
 A history purge of the borrowed blobs is prepared but **not executed**; see
 `history-purge-plan.md`.
+
+## Finding 41 — `Gt()` interpolation is non-monotone (DEFERRED, pre-CRAN decision)
+
+**Status: OPEN. Deferred by maintainer decision on 2026-09-25 as a pre-CRAN
+release decision. Not audited, not modified, and no baseline value changed.**
+
+`R/pam.Ct.R`, the interpolation branch of `Gt()` — the Kaplan-Meier estimate of
+the censoring distribution G(t) = P(C > t).
+
+When the requested `timepoint` does not coincide with an observed time, the
+function interpolates between neighbouring survival values. `index1` and
+`index2` are computed from `res.sum$time`, the **sorted** summary table, but the
+interpolation weights are then built from `time[index1]` and `time[index2]`,
+where `time` is the **raw, unsorted input vector** `object[, 1]`. The two are
+not aligned, so the weights are taken from arbitrary observations rather than
+from the bracketing times.
+
+**Observed consequence.** G(t) is not monotone non-increasing in `t`, which it
+must be for a survival function. On a fixture of 40 observations at 5 tied times
+with alternating status:
+
+| t | `Gt()` |
+|---|---|
+| 1 | 0.900000 |
+| 2.5 | 0.246094 |
+| 3 | **0.656250** |
+| 4.5 | 0.246094 |
+| 5 | 0.246094 |
+
+G(3) > G(2.5) is impossible for a survival function. Values at exactly observed
+times are unaffected: that branch reads `res.sum$surv` directly and never
+interpolates.
+
+**Scope, from what is already known.** `Gt()` is internal (`@noRd`) and is called
+from `R/pam.Brier.R` at three sites, which is the inverse-probability-of-
+censoring weighting behind the Brier score. Whether, and by how much, any public
+metric value is affected has **not** been determined — doing so requires the
+audit that is explicitly deferred.
+
+**Why it is recorded and not fixed now.** It is pre-existing, inherited, and
+entirely independent of the `survminer` removal. That removal was verified
+bitwise identical over 1,203 timepoints precisely *because* this behaviour was
+preserved rather than silently corrected. Fixing it would change metric values
+and must be a deliberate, separately reviewed change.
+
+**Decision required before CRAN submission:** either correct the interpolation
+and re-baseline the affected metrics, or withdraw any public metric shown to
+depend on it. Until that decision is taken and acted on, **the package must not
+be described as ready for CRAN submission.**
+
+**Do not** regenerate `tests/testthat/fixtures/metric-baseline.csv` or the `Gt()`
+characterization literals to accommodate a fix without explicit approval; those
+values are the evidence that the removal was behaviour-preserving.
