@@ -1,7 +1,10 @@
 # Verification — `r_sh` / `r_e` removal
 
-**Date:** 2026-09-24
-**Commit verified:** `c7aaac36bccd26af41966e4b2f2d0e144e17d5cd`
+**Date:** 2026-09-24, **re-verified 2026-09-26**
+**Commit verified:** originally `c7aaac36bccd26af41966e4b2f2d0e144e17d5cd`;
+re-verified at `8ae6d952caa59ba8e9d619c87784dc2ef509b658` after the finding 41
+correction (see the "Re-verification" section at the end, which supersedes the
+tarball identity and test counts recorded below)
 **Method:** fresh `git clone` of the repository into a scratch directory,
 checked out at that commit, verified there rather than in the working directory.
 **Platform:** R 4.5.3 (2026-03-11), aarch64-apple-darwin25.3.0.
@@ -10,6 +13,9 @@ checked out at that commit, verified there rather than in the working directory.
 
 Three environments, because they legitimately differ. Every number below is
 measured, not expected.
+
+**SUPERSEDED** by the re-verification at the end (562 assertions after the
+finding 41 correction). Retained as the 2026-09-24 record.
 
 | Environment | Pass | Fail | Warn | Skip |
 |---|---|---|---|---|
@@ -39,6 +45,9 @@ guards in `test-optional-backends.R` passed through: 28 assertions, 0 skips
 under `test_local()`.
 
 ## Source tarball
+
+**SUPERSEDED** by the re-verification at the end of this document. Retained as the
+record of what was checked on 2026-09-24.
 
 ```
 filename : TimeMetric_0.2.0.tar.gz
@@ -166,3 +175,70 @@ substitute, and the push has not happened yet.
 No history rewrite, no push, no force-push, no tag, no release, no CRAN
 submission. Task 9 (history purge) remains prepared-only and awaits separate
 maintainer approval.
+
+
+---
+
+# Re-verification — 2026-09-26, commit `8ae6d95`
+
+This section supersedes the tarball identity and test counts above. It was added
+after finding 41 was corrected, so the recorded artifact matches the shipped
+implementation rather than a superseded one.
+
+**Commit:** `8ae6d952caa59ba8e9d619c87784dc2ef509b658`, working tree clean.
+
+## Source tarball, rebuilt
+
+```
+filename : TimeMetric_0.2.0.tar.gz
+size     : 81725 bytes
+sha256   : 3d9405e3b34a378db0ebd7fef58f0a82b23e44fc87d1bb78084c041059a82403
+```
+
+64 lowercase hex characters, matching `^[0-9a-f]{64}$`. Computed with
+`shasum -a 256` over the exact artifact both checks below were run against.
+
+## Checks
+
+| Invocation | Result |
+|---|---|
+| `R CMD check --as-cran` | **0 errors, 0 warnings, 2 notes** |
+| `R CMD check --as-cran --run-donttest` | **0 errors, 0 warnings, 2 notes** |
+
+The two notes are unchanged in content from 2026-09-24: "New submission", and the
+HTML-manual note recording that HTML validation and math rendering were *skipped*
+because the local HTML Tidy is too old and `V8` is absent. The first is expected
+for a first submission; the second is a property of this machine, not of the
+package, and must be confirmed absent on win-builder and CRAN rather than assumed.
+
+`checking examples ... OK`; 17 examples, 2.03s total.
+
+## Tests
+
+| Environment | Tests | Assertions | Fail | Warn | Skip |
+|---|---|---|---|---|---|
+| `testthat::test_local()` | 116 | **562** | 0 | 0 | **0** |
+| inside `R CMD check` | — | 503 | 0 | 0 | 28 |
+
+The 28 in-check skips are structural and unchanged in cause: 26 snapshot
+assertions that testthat skips unless `NOT_CRAN=true`, and 3 guards on tests that
+read `DESCRIPTION`/`NAMESPACE` from the package source. The rise from 498 to 562
+assertions is the finding 41 regression suite.
+
+## Tarball contents, re-verified
+
+Absent: `cran-comments.md`, `CONTRIBUTING.md`, `paper.md`, `paper.code.Rmd`,
+`docs/`, `.git`, `Rplots.pdf`.
+Present: `inst/CITATION`, `inst/WORDLIST`.
+
+`cran-comments.md` is excluded by `.Rbuildignore` line 17, `^cran-comments\.md$`.
+
+## Correctness status
+
+Finding 41 is **resolved**: `Gt()` is a reverse-Kaplan-Meier step-function
+estimator verified against `pec::ipcw()`, and no known correctness defect is
+outstanding. All 57 values in `metric-baseline.csv` were unchanged by the
+correction, so that fixture was not regenerated.
+
+Remaining pre-submission work is platform verification and release coordination,
+not package defects. See `cran-comments.md`.

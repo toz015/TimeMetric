@@ -1,35 +1,46 @@
 # cran-comments.md — DRAFT
 
-**Status: DRAFT. This package is NOT ready for submission.** See "Outstanding
-blockers" below. Nothing in this file may be sent to CRAN until those are
-resolved and the pending checks have actually been run.
+**Status: DRAFT. Not submitted, and not yet ready to submit.** The package passes
+its local checks, but the platform checks listed under "Pending" have not been
+run. Nothing in this file may be sent to CRAN until those are complete.
 
-Every result below was produced locally on 2026-09-25 and is reported as
-measured. Results not yet obtained are listed as pending, not predicted.
+Every result below was measured locally on 2026-09-26 at commit `8ae6d95`.
+Results not yet obtained are listed as pending, never predicted.
+
+## Submission
+
+New submission. This package has never been on CRAN and has no CRAN check
+history.
 
 ## Test environments
 
 **Completed**
 
 * local: macOS (aarch64-apple-darwin25.3.0), R 4.5.3 (2026-03-11)
-  * `R CMD check --as-cran`
-  * `R CMD check --as-cran --run-donttest`
+  * `R CMD check --as-cran` — 0 errors, 0 warnings, 2 notes
+  * `R CMD check --as-cran --run-donttest` — 0 errors, 0 warnings, 2 notes
 
-**Pending — NOT yet run, no result claimed**
+**Pending — not run, no result claimed**
 
-* win-builder (`devel`, `release`, `oldrelease`)
+* win-builder: `devel`, `release`, `oldrelease`
 * macOS builder
-* R-hub: Windows, Linux, R-devel
+* R-hub / R-devel: Windows, Linux, R-devel
 * GitHub Actions matrix, including the full-dependency job with `NOT_CRAN=true`
-* R-devel on any platform
 
-The package has never been submitted to CRAN and has no CRAN check history.
+## Source tarball checked
+
+```
+filename : TimeMetric_0.2.0.tar.gz
+size     : 81725 bytes
+sha256   : 3d9405e3b34a378db0ebd7fef58f0a82b23e44fc87d1bb78084c041059a82403
+commit   : 8ae6d952caa59ba8e9d619c87784dc2ef509b658
+```
 
 ## R CMD check results
 
-Both runs: **0 errors, 0 warnings, 2 notes.**
+Both invocations: **0 errors, 0 warnings, 2 notes.**
 
-### NOTE 1 — package-related, expected
+### NOTE 1 — expected for a first submission
 
 ```
 * checking CRAN incoming feasibility ... NOTE
@@ -38,7 +49,7 @@ Maintainer: 'Tong Zhu <toz015@ucla.edu>'
 New submission
 ```
 
-This is a first submission, so the note is unavoidable and needs no action.
+Unavoidable and needs no action.
 
 ### NOTE 2 — local toolchain, not a package finding
 
@@ -51,61 +62,72 @@ Skipping checking math rendering: package 'V8' unavailable
 ```
 
 This reports that two checks **were skipped** on the check machine, not that
-anything failed. The macOS system HTML Tidy is older than the version R expects,
-and `V8` is not installed locally. It says nothing about the package and is
-expected to disappear on CRAN's machines and on win-builder. It must be
-confirmed absent there before submission, rather than assumed.
+anything failed: the macOS system HTML Tidy is older than R expects and `V8` is
+not installed locally. It says nothing about the package and is expected to be
+absent on CRAN's machines and on win-builder. That must be confirmed there
+rather than assumed.
 
 ## Local results
 
-* Test suite: **525 assertions across 107 tests, 0 failures, 0 warnings,
-  0 skips** under `testthat::test_local()`.
-* Under `R CMD check` the same suite reports 466 passed and 28 skipped. The
-  skips are structural, not gaps: 26 are `expect_snapshot*` assertions, which
-  testthat skips unless `NOT_CRAN=true`, and 3 are guards on tests that read
+* **Tests: 562 assertions across 116 tests, 0 failures, 0 warnings, 0 skips**
+  under `testthat::test_local()`.
+* Under `R CMD check` the same suite reports 503 passed and 28 skipped. The skips
+  are structural, not coverage gaps: 26 are `expect_snapshot*` assertions, which
+  testthat skips unless `NOT_CRAN=true`, and 3 guard tests that read
   `DESCRIPTION`/`NAMESPACE` from the package source, which does not exist when
   tests run against an installed package. Every test runs in at least one
-  environment.
-* Examples: `checking examples ... OK` in both runs. 17 examples, 2.44s total,
-  no `\dontrun{}` anywhere.
+  environment. The `NOT_CRAN=true` CI job is what exercises the 26.
+* Examples: `checking examples ... OK`. 17 examples, 2.03s total, no
+  `\dontrun{}` anywhere.
 * `spelling::spell_check_package()`: zero findings, against a 72-entry
-  `inst/WORDLIST` of technical terms, cited author names, and package
+  `inst/WORDLIST` of technical terms, cited author names and package
   identifiers.
+
+## Notable changes since the last internal build
+
+The inverse-probability-of-censoring weights behind the Brier score were
+corrected. `Gt()`, the Kaplan-Meier estimate of the censoring distribution, is
+now a reverse-Kaplan-Meier step function whose values agree exactly with
+`pec::ipcw()`; it previously interpolated between jump times using misaligned
+indices, inverted the censoring indicator on uncensored data, and substituted a
+positive value for a zero censoring survival. `brier_score` from
+`tm_fit_and_eval()` changes on tied data evaluated between jump times. See
+NEWS.md.
 
 ## Downstream dependencies
 
-None. This is a new package with no reverse dependencies.
+None. New package, no reverse dependencies.
 
-## Outstanding blockers — resolve before submitting
+## Unresolved blockers
 
-1. **Finding 41 — `Gt()` interpolation is non-monotone. UNRESOLVED.**
-   `R/pam.Ct.R` derives interpolation indices from the sorted summary table but
-   builds the weights from the raw, unsorted input vector. G(t) is therefore not
-   monotone non-increasing: on a tied fixture, G(3) = 0.65625 exceeds
-   G(2.5) = 0.246094, which is impossible for a survival function. Values at
-   exactly observed times are unaffected.
+**None at the package level.** No known correctness defect is outstanding, and
+no `R CMD check` finding requires action beyond the two notes above.
 
-   `Gt()` supplies the inverse-probability-of-censoring weighting used by the
-   Brier score. **Whether any reported public metric value is affected has not
-   been determined.** The decision — correct the interpolation and re-baseline,
-   or withdraw any affected public metric — is deliberately deferred and must be
-   made before submission. See `docs/superpowers/findings.md`.
+Remaining work before submission is verification and release coordination, not
+package defects — see the checklist below.
 
-2. **Pending platform checks.** None of win-builder, macOS builder, R-hub,
-   R-devel, or the GitHub Actions matrix has been run. The full-dependency CI
-   job with `NOT_CRAN=true` is the run that exercises the 26 snapshot assertions
-   skipped by a plain check, and must be confirmed green.
+## Pre-submission checklist
 
-3. **History rewrite prepared but not executed.** A combined purge of borrowed
-   third-party implementation blobs and committed key material is written and
-   dry-run verified in `docs/superpowers/history-purge-plan.md`, and has not been
-   run. Nothing has been pushed.
+1. **Platform checks.** Run win-builder (`devel`, `release`, `oldrelease`),
+   macOS builder, and R-hub/R-devel. Confirm in particular that NOTE 2
+   disappears, since it is a property of this machine.
+2. **CI.** Confirm the GitHub Actions matrix is green, including the
+   full-dependency job with `NOT_CRAN=true`, which runs the 26 snapshot
+   assertions a plain `R CMD check` skips.
+3. **Release coordination.** A combined purge of borrowed third-party
+   implementation blobs and committed key material is prepared and dry-run
+   verified in `docs/superpowers/history-purge-plan.md`, and has **not** been
+   run. It rewrites published history and requires a force-push, so it must be
+   sequenced with collaborators before any release. This is a repository
+   coordination task; it is not an `R CMD check` finding and does not affect the
+   tarball, which excludes the development documentation.
+4. **Version and date.** Confirm `Version` and `Date` in DESCRIPTION are what
+   should be released.
 
-4. **Manuscript not updated.** `paper.md` and `paper.code.Rmd` still reference
-   two metrics withdrawn from the package, and `paper.code.Rmd` errors as a
-   result. Both are deliberately out of scope for the package work and are
-   tracked in `docs/superpowers/phase-2-followups.md`.
+## Not part of this submission
 
-Items 3 and 4 do not affect the tarball, which excludes both the manuscript and
-the development documentation. Item 1 is a package-correctness question and is
-the blocking one.
+`paper.md` and `paper.code.Rmd` still describe two metrics that were withdrawn
+from the package, and are tracked in `docs/superpowers/phase-2-followups.md`.
+Both are excluded from the tarball by `.Rbuildignore`, so neither affects the
+CRAN submission. They are a manuscript task for the JOSS resubmission, **not a
+CRAN blocker**.
