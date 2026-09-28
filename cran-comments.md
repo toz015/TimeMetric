@@ -17,8 +17,9 @@ history.
 
 **Completed — all `Status: OK`**
 
-| Environment | Platform | R |
+| Service / environment | Platform | R |
 |---|---|---|
+| **macOS builder** (mac.r-project.org) | `aarch64-apple-darwin23`, macOS 26.6, Apple M1 | 4.6.1 Patched (2026-07-27 r90311) |
 | GitHub Actions | `x86_64-pc-linux-gnu` | release (4.6.1) |
 | GitHub Actions | `x86_64-pc-linux-gnu` | devel |
 | GitHub Actions | `x86_64-pc-linux-gnu` | oldrel-1 (4.5.3) |
@@ -26,34 +27,48 @@ history.
 | GitHub Actions | `aarch64-apple-darwin23` | release (4.6.1) |
 | local | `aarch64-apple-darwin25.3.0` | 4.5.3 |
 
-The CI runs cover both `R CMD check --as-cran` and, in a separate
+The macOS builder reported `Status: OK` with **no notes at all**, and
+`checking tests ... OK`. Result:
+<https://mac.R-project.org/macbuilder/results/1790624251-de440352373c50a3/>
+
+The GitHub Actions runs cover both `R CMD check --as-cran` and, in a separate
 full-dependency job, the test suite with every suggested package installed and
 `NOT_CRAN=true`.
 
-**Not yet run — no result claimed**
+**Submitted, results not yet seen**
 
-* win-builder (`devel`, `release`, `oldrel`)
-* macOS builder
-* R-hub
+* win-builder R-release — uploaded successfully (FTP 226)
+* win-builder R-devel — uploaded successfully (FTP 226)
 
-CI covers Windows, Linux and macOS including R-devel, so these are confirmation
-rather than new coverage, but they have not been run and are not claimed.
+win-builder mails its results to the maintainer address and does not list them
+publicly, so the outcome of these two runs has **not been read and is not
+claimed here**. The maintainer should check the mail sent to
+`toz015@ucla.edu` and record the result before submission.
+
+**Not run**
+
+* R-hub — unavailable in the preparation environment: the `rhub` package cannot
+  be installed because its dependency `gert` requires the system `libgit2`
+  library, which is absent. No R-hub result is claimed.
 
 ## Source tarball checked
 
+The same tarball was used for every check below.
+
 ```
 filename : TimeMetric_0.2.0.tar.gz
-size     : 83751 bytes
-sha256   : 19268afb0ad22a942728dfe8427d3cafe17525e49217d7cfc9be45b776319549
-commit   : 951812bec949c5ffe183704853a8848f581e8a66
+size     : 83756 bytes
+sha256   : 0a2adf3abbddf0d9ad532c9958f17300321fe9c57ed6890c0a638863b65974f0
+commit   : 8a6c879a04d6638db7bc7ede07df2cc4f7de5db0
 ```
 
 ## R CMD check results
 
-**0 errors, 0 warnings.** All five CI platforms report `Status: OK`.
+**0 errors, 0 warnings** on every environment checked. All five CI platforms and
+the macOS builder report `Status: OK`; the macOS builder reports no notes at all.
 
-Locally the check reports **2 notes**, neither of which appeared on any CI
-platform:
+Locally the check reports **2 notes**, neither of which appeared on the macOS
+builder or on any CI platform:
 
 ### NOTE 1 — expected for a first submission
 
@@ -75,9 +90,9 @@ Skipping checking math rendering: package 'V8' unavailable
 ```
 
 This reports that two checks **were skipped** on the local machine — an old
-system HTML Tidy and no `V8` — not that anything failed. It is absent from every
-CI platform, which confirms it is a property of that machine and not of the
-package.
+system HTML Tidy and no `V8` — not that anything failed. It is absent from the
+macOS builder and from every CI platform, which confirms it is a property of
+that machine and not of the package.
 
 ## Test results
 
@@ -127,8 +142,9 @@ None. New package, no reverse dependencies.
 No known correctness defect is outstanding, and no `R CMD check` finding
 requires action beyond the two notes above.
 
-1. **Confirmation builds.** Run win-builder, the macOS builder and R-hub. CI
-   already covers the same platforms, so this is corroboration.
+1. **Read the win-builder results.** Both flavours were submitted successfully;
+   their results were mailed to the maintainer and have not been read. R-hub was
+   not run (see Test environments).
 2. **Release coordination.** The remediation work is on `joss-revision` and is
    open as draft PR #1 against `main`. It is not merged. Decide whether to merge
    before submitting, since the CRAN tarball should be built from the intended
