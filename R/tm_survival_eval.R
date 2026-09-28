@@ -132,7 +132,7 @@ tm_survival_eval <- function (model, event_time,
   
   #print(predicted_data)
   if (is.null(t_star)) t_star <- quantile(event_time, 0.5)
-  t_idx <- which.min(abs(event_time - t_star))
+  t_idx <- tm_nearest_time_index(event_time, t_star)
   risk_scores <- 1 - predicted_probability[, t_idx] 
 
   if("pseudo_r2" %in% metrics 

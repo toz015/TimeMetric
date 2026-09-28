@@ -45,6 +45,21 @@ deprecation warning; see `?"TimeMetric-deprecated"`.
 
 ## Bug fixes
 
+* **Point-in-time metrics could differ between platforms, and their values have
+  changed.** The evaluation time was chosen with
+  `which.min(abs(event_time - t_star))`. When `t_star` is the median of an
+  even-length vector the two middle observed times are mathematically
+  equidistant from it, so the winner was decided by a rounding
+  difference in the last bit of the result -- which falls differently on platforms with 80-bit `long double`
+  (x86_64 Linux and Windows) than on those where it is plain double (arm64
+  macOS). The same data therefore produced different `pseudo_r2_point`,
+  `r2_point`, `l2_point`, `brier_score` and `td_auc` on different machines.
+
+  The rule is now nearest observed time with ties broken toward the **earlier**
+  event time, which is also independent of input row order. All metrics now
+  agree bit-for-bit across arm64 macOS, x86_64 Linux and x86_64 Windows.
+  Integrated and concordance metrics were never affected.
+
 * **The Brier score's censoring weights were wrong, and `brier_score` from
   `tm_fit_and_eval()` changes on data with tied times.** `Gt()`, the
   Kaplan-Meier estimate of the censoring distribution behind the

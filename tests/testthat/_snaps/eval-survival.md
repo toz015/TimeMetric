@@ -6,8 +6,8 @@
 
 ---
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAABj/OXJHRTjvNP7dzGPxQSBc/5S5I6Kcd5z/k/SH/Lkjp
-    P8q2rn1WbPQ/513MY/FBIA==
+    WAoAAAACAAQFAwACAwAAAAAOAAAABj/OXJHRTjvNP7dfb9If8uU/5S5I6Kcd5z/k/SH/Lkjp
+    P8pKjBVMmF8/57SiM5wOvw==
 
 # tm_summarize pivots one model into a Metric column table
 
@@ -18,17 +18,17 @@
 ---
 
     WAoAAAACAAQFAwACAwAAAAAOAAAABj/OuFHrhR64P7cKPXCj1wo/5R64UeuFHz/lHrhR64Uf
-    P8rhR64UeuE/51wo9cKPXA==
+    P8rhR64UeuE/564UeuFHrg==
 
 # tm_summarize puts one column per model and rounds to digits
 
     WAoAAAACAAQFAwACAwAAAAAOAAAABj/OuFHrhR64P7cKPXCj1wo/5R64UeuFHz/lHrhR64Uf
-    P8rhR64UeuE/51wo9cKPXA==
+    P8rhR64UeuE/564UeuFHrg==
 
 ---
 
     WAoAAAACAAQFAwACAwAAAAAOAAAABj/K4UeuFHrhP7cKPXCj1wo/5R64UeuFHz/lHrhR64Uf
-    P8rhR64UeuE/51wo9cKPXA==
+    P8rhR64UeuE/564UeuFHrg==
 
 # tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)
 

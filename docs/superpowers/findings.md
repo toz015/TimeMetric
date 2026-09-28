@@ -242,3 +242,70 @@ the evaluation time falls between jump times. All 57 values in
 `metric-baseline.csv` are unchanged, so that fixture was **not** regenerated.
 The `Gt()` characterization expectations did change and were updated
 deliberately, with old and new values reported side by side beforehand.
+
+## Finding 42 — evaluation-time index chosen by an unstable tie-break (RESOLVED 2026-09-28)
+
+**Status: RESOLVED by correction.** Found by CI on PR #1, where macOS passed and
+x86_64 Linux and Windows failed the same six assertions.
+
+`R/tm_survival_eval.R` selected the evaluation time with
+`which.min(abs(event_time - t_star))`. `t_star` defaults to
+`quantile(event_time, 0.5)`; for an even-length vector that is the average of
+the two middle order statistics, so **both are mathematically equidistant from
+it**. On the standard fixture the two distances differ by exactly one ulp
+(2.2204460492503131e-16), and which one wins is decided by rounding in
+`(a + b) / 2`.
+
+That rounding differs by platform: `long double` is 80-bit on x86_64 Linux and
+Windows (`longdouble.digits = 64`) and plain double on arm64 macOS. So the same
+data selected index 101 on arm64 and index 100 on x86_64 -- a **discrete index
+jump**, not numerical drift.
+
+**The BLAS hypothesis was wrong.** Windows uses reference BLAS and Linux uses
+OpenBLAS; they agreed with each other and both differed from macOS. Decisive
+evidence: a direct `tdROC` call returned 0.74094298183563234 on macOS and
+0.74094298183563279 on Linux -- agreeing to 4.5e-16 -- while the *reported*
+`td_auc` differed by 0.011. `pam.Brier()` was bit-identical on both. The
+computations agreed; only the selected evaluation time differed.
+
+Only metrics evaluated **at** `t_star` moved (`pseudo_r2_point`, `r2_point`,
+`l2_point`, `brier_score`, `td_auc`); integrated and concordance metrics were
+untouched. That asymmetry is the signature of an index flip.
+
+**The rule is now** `tm_nearest_time_index()`: nearest observed time, with
+candidates within a few ulp of the minimum treated as tied and the tie broken
+toward the **earlier event time**. Breaking toward the earlier time rather than
+the first matching position also makes the result independent of input row
+order. Verified across the matrix: every platform detects exactly two tied
+candidates, selects the same index, and all ten metrics then agree
+**bit-for-bit at 17 significant digits** on arm64 macOS, x86_64 Linux and
+x86_64 Windows.
+
+**No test tolerance was loosened.** The 1e-6 baseline gate is unchanged, so the
+regression protection that caught findings 35-41 is intact.
+
+**Audit of related patterns.** `tm_survival_eval.R:135` was the only
+nearest-time selection. `pam.Ct.R`, `tm_survival_eval_cr.R` and
+`tm_evaluate_two_phase.R` use threshold selections (`max(which(t <= t_star))`)
+on vectors the prediction functions return **sorted**, which was confirmed
+empirically; those are deterministic and were not changed.
+
+**Values changed** (arm64 macOS; x86_64 was already producing these):
+
+| Scenario | Metric | before | after |
+|---|---|---|---|
+| eval_default | `pseudo_r2_point` | 0.0916 | 0.0913 |
+| eval_default | `brier_score` | 0.2087 | 0.2054 |
+| eval_default | `td_auc` | 0.7302 | 0.7408 |
+| eval_all | `pseudo_r2_point` | 0.0916 | 0.0913 |
+| eval_all | `r2_point` | 0.1640 | 0.1637 |
+| eval_all | `l2_point` | 0.5585 | 0.5575 |
+| eval_all | `brier_score` | 0.2087 | 0.2054 |
+| eval_all | `td_auc` | 0.7302 | 0.7408 |
+
+8 of 57 baseline rows and 4 of 8 snapshot blocks. The remaining 49 rows,
+including every competing-risks and two-phase scenario, are unchanged.
+
+A CI failure log reporting `actual: 0.741` was `waldo`'s three-significant-digit
+**display** rounding of 0.7408, not a distinct value; likewise `0.730` displayed
+for 0.7302.

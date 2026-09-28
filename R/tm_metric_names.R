@@ -74,6 +74,30 @@ tm_metric_names <- function() {
   sort(unique(unname(tm_metric_aliases())))
 }
 
+# Index of the observed time nearest to `t_star`, with a deterministic tie-break.
+#
+# `which.min(abs(event_time - t_star))` is unsafe here. When `t_star` is the
+# median of an even-length vector, the two middle order statistics are
+# MATHEMATICALLY equidistant from it, so the winner was decided by a one-ulp
+# rounding difference in `(a + b) / 2`. That rounding differs between platforms
+# whose `long double` is 80-bit (x86_64 Linux and Windows) and those where it is
+# plain double (arm64 macOS), so the same data produced different point-in-time
+# metrics on different machines -- a discrete index jump, not numerical noise.
+# See finding 42.
+#
+# Candidates within a few ulp of the minimum distance are treated as tied, and
+# the tie is broken toward the EARLIER event time. Breaking toward the earlier
+# time -- rather than the first matching position -- also makes the result
+# independent of the order of the input rows.
+#' @keywords internal
+#' @noRd
+tm_nearest_time_index <- function(event_time, t_star) {
+  d <- abs(event_time - t_star)
+  tol <- 8 * .Machine$double.eps * max(1, abs(t_star))
+  cand <- which(d <= min(d) + tol)
+  cand[which.min(event_time[cand])]
+}
+
 # Metric spellings withdrawn before the first CRAN release. Checked before
 # alias resolution so that both canonical and legacy spellings are reported.
 #' @keywords internal
