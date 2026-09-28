@@ -3,7 +3,7 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/toz015/TimeMetric/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/toz015/TimeMetric/actions/workflows/R-CMD-check.yaml)
 [![test-coverage](https://github.com/toz015/TimeMetric/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/toz015/TimeMetric/actions/workflows/test-coverage.yaml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://www.r-project.org/Licenses/MIT)
 <!-- badges: end -->
 
 `TimeMetric` evaluates the predictive performance of survival models under a

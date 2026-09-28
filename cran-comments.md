@@ -35,15 +35,16 @@ The GitHub Actions runs cover both `R CMD check --as-cran` and, in a separate
 full-dependency job, the test suite with every suggested package installed and
 `NOT_CRAN=true`.
 
-**Submitted, results not yet seen**
+**win-builder**
 
-* win-builder R-release — uploaded successfully (FTP 226)
-* win-builder R-devel — uploaded successfully (FTP 226)
-
-win-builder mails its results to the maintainer address and does not list them
-publicly, so the outcome of these two runs has **not been read and is not
-claimed here**. The maintainer should check the mail sent to
-`toz015@ucla.edu` and record the result before submission.
+* **R-devel — 0 errors, 0 warnings, 1 note.** Reported by the maintainer from the
+  emailed log; win-builder does not list results publicly. The note is discussed
+  under "R CMD check results" below. The two items it raised beyond
+  "New submission" -- an invalid `LICENSE.md` link in `README.md`, and three
+  possible misspellings -- are addressed there; the link is fixed and the terms
+  are explained.
+* **R-release — result not yet read.** Uploaded successfully (FTP 226). To be
+  checked separately from the mail sent to `toz015@ucla.edu`.
 
 **Not run**
 
@@ -70,7 +71,7 @@ the macOS builder report `Status: OK`; the macOS builder reports no notes at all
 Locally the check reports **2 notes**, neither of which appeared on the macOS
 builder or on any CI platform:
 
-### NOTE 1 — expected for a first submission
+### NOTE 1 — CRAN incoming feasibility
 
 ```
 * checking CRAN incoming feasibility ... NOTE
@@ -78,6 +79,30 @@ Maintainer: 'Tong Zhu <toz015@ucla.edu>'
 
 New submission
 ```
+
+Expected for a first submission.
+
+On win-builder this note also carried two further items. Both are addressed:
+
+**Possible misspellings in DESCRIPTION.** All three are intentional and correct:
+
+* **Brier** — a surname. The Brier score is named after Glenn W. Brier, who
+  introduced it in Brier (1950), *Verification of forecasts expressed in terms
+  of probability*, Monthly Weather Review 78(1), 1-3. It is the standard name of
+  the metric throughout the survival literature.
+* **PAmeasure** — the name of the predecessor R package that this package
+  extends and generalises. It is cited in the Description field for exactly that
+  reason.
+* **TimeMetric** — the name of this package.
+
+**Invalid `LICENSE.md` link in `README.md`.** Real and now fixed. The MIT badge
+in `README.md` linked to `LICENSE.md` by relative path, but `LICENSE.md` is
+listed in `.Rbuildignore` and so is absent from the built tarball, leaving the
+link unresolvable inside the package. The badge now points to
+<https://www.r-project.org/Licenses/MIT>, which was confirmed to return HTTP 200
+and to be the only license reference in the packaged `README.md`. No relative
+links remain in it, and `urlchecker::url_check()` reports all 7 URLs in the
+package correct.
 
 ### NOTE 2 — local toolchain only
 
@@ -142,9 +167,8 @@ None. New package, no reverse dependencies.
 No known correctness defect is outstanding, and no `R CMD check` finding
 requires action beyond the two notes above.
 
-1. **Read the win-builder results.** Both flavours were submitted successfully;
-   their results were mailed to the maintainer and have not been read. R-hub was
-   not run (see Test environments).
+1. **Read the win-builder R-release result.** R-devel has been read and is
+   recorded above; R-release has not. R-hub was not run (see Test environments).
 2. **Release coordination.** The remediation work is on `joss-revision` and is
    open as draft PR #1 against `main`. It is not merged. Decide whether to merge
    before submitting, since the CRAN tarball should be built from the intended
