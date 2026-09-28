@@ -1,11 +1,12 @@
 # cran-comments.md — DRAFT
 
-**Status: DRAFT. Not submitted, and not yet ready to submit.** The package passes
-its local checks, but the platform checks listed under "Pending" have not been
-run. Nothing in this file may be sent to CRAN until those are complete.
+**Status: DRAFT. Not submitted.** The package now passes `R CMD check --as-cran`
+on five platform/version combinations in CI with no errors and no warnings, but
+the release-coordination items in the checklist below are not finished. Nothing
+in this file may be sent to CRAN until they are.
 
-Every result below was measured locally on 2026-09-26 at commit `8ae6d95`.
-Results not yet obtained are listed as pending, never predicted.
+Every result below was measured on 2026-09-28 at commit `951812b`. Nothing is
+predicted.
 
 ## Submission
 
@@ -14,31 +15,45 @@ history.
 
 ## Test environments
 
-**Completed**
+**Completed — all `Status: OK`**
 
-* local: macOS (aarch64-apple-darwin25.3.0), R 4.5.3 (2026-03-11)
-  * `R CMD check --as-cran` — 0 errors, 0 warnings, 2 notes
-  * `R CMD check --as-cran --run-donttest` — 0 errors, 0 warnings, 2 notes
+| Environment | Platform | R |
+|---|---|---|
+| GitHub Actions | `x86_64-pc-linux-gnu` | release (4.6.1) |
+| GitHub Actions | `x86_64-pc-linux-gnu` | devel |
+| GitHub Actions | `x86_64-pc-linux-gnu` | oldrel-1 (4.5.3) |
+| GitHub Actions | `x86_64-w64-mingw32` | release (4.6.1) |
+| GitHub Actions | `aarch64-apple-darwin23` | release (4.6.1) |
+| local | `aarch64-apple-darwin25.3.0` | 4.5.3 |
 
-**Pending — not run, no result claimed**
+The CI runs cover both `R CMD check --as-cran` and, in a separate
+full-dependency job, the test suite with every suggested package installed and
+`NOT_CRAN=true`.
 
-* win-builder: `devel`, `release`, `oldrelease`
+**Not yet run — no result claimed**
+
+* win-builder (`devel`, `release`, `oldrel`)
 * macOS builder
-* R-hub / R-devel: Windows, Linux, R-devel
-* GitHub Actions matrix, including the full-dependency job with `NOT_CRAN=true`
+* R-hub
+
+CI covers Windows, Linux and macOS including R-devel, so these are confirmation
+rather than new coverage, but they have not been run and are not claimed.
 
 ## Source tarball checked
 
 ```
 filename : TimeMetric_0.2.0.tar.gz
-size     : 81725 bytes
-sha256   : 3d9405e3b34a378db0ebd7fef58f0a82b23e44fc87d1bb78084c041059a82403
-commit   : 8ae6d952caa59ba8e9d619c87784dc2ef509b658
+size     : 83751 bytes
+sha256   : 19268afb0ad22a942728dfe8427d3cafe17525e49217d7cfc9be45b776319549
+commit   : 951812bec949c5ffe183704853a8848f581e8a66
 ```
 
 ## R CMD check results
 
-Both invocations: **0 errors, 0 warnings, 2 notes.**
+**0 errors, 0 warnings.** All five CI platforms report `Status: OK`.
+
+Locally the check reports **2 notes**, neither of which appeared on any CI
+platform:
 
 ### NOTE 1 — expected for a first submission
 
@@ -49,9 +64,7 @@ Maintainer: 'Tong Zhu <toz015@ucla.edu>'
 New submission
 ```
 
-Unavoidable and needs no action.
-
-### NOTE 2 — local toolchain, not a package finding
+### NOTE 2 — local toolchain only
 
 ```
 * checking HTML version of manual ... NOTE
@@ -61,68 +74,71 @@ release or compiling the source code from <https://www.html-tidy.org/>.
 Skipping checking math rendering: package 'V8' unavailable
 ```
 
-This reports that two checks **were skipped** on the check machine, not that
-anything failed: the macOS system HTML Tidy is older than R expects and `V8` is
-not installed locally. It says nothing about the package and is expected to be
-absent on CRAN's machines and on win-builder. That must be confirmed there
-rather than assumed.
+This reports that two checks **were skipped** on the local machine — an old
+system HTML Tidy and no `V8` — not that anything failed. It is absent from every
+CI platform, which confirms it is a property of that machine and not of the
+package.
 
-## Local results
+## Test results
 
-* **Tests: 562 assertions across 116 tests, 0 failures, 0 warnings, 0 skips**
-  under `testthat::test_local()`.
-* Under `R CMD check` the same suite reports 503 passed and 28 skipped. The skips
+* **607 assertions across 124 tests, 0 failures, 0 warnings, 0 skips** under
+  `testthat::test_local()`.
+* The full-dependency CI job installs every suggested package, sets
+  `NOT_CRAN=true`, and **fails if any test skips**. It reports
+  `No tests skipped.` and passes.
+* Inside `R CMD check` the suite reports 548 passed and 28 skipped. Those skips
   are structural, not coverage gaps: 26 are `expect_snapshot*` assertions, which
   testthat skips unless `NOT_CRAN=true`, and 3 guard tests that read
   `DESCRIPTION`/`NAMESPACE` from the package source, which does not exist when
-  tests run against an installed package. Every test runs in at least one
-  environment. The `NOT_CRAN=true` CI job is what exercises the 26.
-* Examples: `checking examples ... OK`. 17 examples, 2.03s total, no
-  `\dontrun{}` anywhere.
-* `spelling::spell_check_package()`: zero findings, against a 72-entry
-  `inst/WORDLIST` of technical terms, cited author names and package
-  identifiers.
+  tests run against an installed package. The full-dependency job above is what
+  exercises all of them.
+* Examples: `checking examples ... OK`; 17 examples in 2.35s; no `\dontrun{}`.
+* `spelling::spell_check_package()`: zero findings.
 
-## Notable changes since the last internal build
+## Notable changes since the previous internal build
 
-The inverse-probability-of-censoring weights behind the Brier score were
-corrected. `Gt()`, the Kaplan-Meier estimate of the censoring distribution, is
-now a reverse-Kaplan-Meier step function whose values agree exactly with
-`pec::ipcw()`; it previously interpolated between jump times using misaligned
-indices, inverted the censoring indicator on uncensored data, and substituted a
-positive value for a zero censoring survival. `brier_score` from
-`tm_fit_and_eval()` changes on tied data evaluated between jump times. See
-NEWS.md.
+Two corrections changed reported metric values, both documented in `NEWS.md`:
+
+* **Inverse-probability-of-censoring weights.** `Gt()` is now a reverse
+  Kaplan-Meier step function whose values agree exactly with `pec::ipcw()`. It
+  previously interpolated between jump times using misaligned indices, inverted
+  the censoring indicator on uncensored data, and substituted a positive value
+  for a zero censoring survival. `brier_score` from `tm_fit_and_eval()` changes
+  on tied data evaluated between jump times.
+* **Evaluation-time selection.** The nearest observed time to `t_star` was
+  chosen with `which.min()`, which is ambiguous when `t_star` is the median of
+  an even-length vector: the two middle times are mathematically equidistant, so
+  the winner was decided by a rounding difference in the last bit — and that
+  falls differently on platforms with 80-bit `long double` than on those where
+  it is plain double. The same data therefore gave different `pseudo_r2_point`,
+  `r2_point`, `l2_point`, `brier_score` and `td_auc` on different machines. Ties
+  are now broken toward the earlier event time, which is also independent of
+  input row order, and all metrics agree bit-for-bit across arm64 macOS, x86_64
+  Linux and x86_64 Windows.
+
+No test tolerance was loosened for either correction.
 
 ## Downstream dependencies
 
 None. New package, no reverse dependencies.
 
-## Unresolved blockers
+## Remaining work before submission
 
-**None at the package level.** No known correctness defect is outstanding, and
-no `R CMD check` finding requires action beyond the two notes above.
+No known correctness defect is outstanding, and no `R CMD check` finding
+requires action beyond the two notes above.
 
-Remaining work before submission is verification and release coordination, not
-package defects — see the checklist below.
-
-## Pre-submission checklist
-
-1. **Platform checks.** Run win-builder (`devel`, `release`, `oldrelease`),
-   macOS builder, and R-hub/R-devel. Confirm in particular that NOTE 2
-   disappears, since it is a property of this machine.
-2. **CI.** Confirm the GitHub Actions matrix is green, including the
-   full-dependency job with `NOT_CRAN=true`, which runs the 26 snapshot
-   assertions a plain `R CMD check` skips.
-3. **Release coordination.** A combined purge of borrowed third-party
-   implementation blobs and committed key material is prepared and dry-run
-   verified in `docs/superpowers/history-purge-plan.md`, and has **not** been
-   run. It rewrites published history and requires a force-push, so it must be
-   sequenced with collaborators before any release. This is a repository
-   coordination task; it is not an `R CMD check` finding and does not affect the
-   tarball, which excludes the development documentation.
-4. **Version and date.** Confirm `Version` and `Date` in DESCRIPTION are what
-   should be released.
+1. **Confirmation builds.** Run win-builder, the macOS builder and R-hub. CI
+   already covers the same platforms, so this is corroboration.
+2. **Release coordination.** The remediation work is on `joss-revision` and is
+   open as draft PR #1 against `main`. It is not merged. Decide whether to merge
+   before submitting, since the CRAN tarball should be built from the intended
+   release commit.
+3. **Version and date.** Confirm `Version: 0.2.0` and `Date:` in DESCRIPTION are
+   what should be released; `Date` currently reads 2026-09-07 and predates this
+   work.
+4. **Workflow registration.** The CI workflows exist only on `joss-revision`.
+   Until that branch reaches the default branch, pushes to `main` trigger no
+   checks and `workflow_dispatch` is unavailable there.
 
 ## Not part of this submission
 

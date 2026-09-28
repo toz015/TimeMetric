@@ -39,13 +39,13 @@ pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
 
 # evaluate
 tm_summarize(list(cox = pred))
-#>            Metric   cox
-#> 1       pseudo_r2  0.24
-#> 2 pseudo_r2_point  0.09
-#> 3       harrell_c  0.66
-#> 4           uno_c  0.66
-#> 5     brier_score  0.21
-#> 6          td_auc  0.73
+#>            Metric  cox
+#> 1       pseudo_r2 0.24
+#> 2 pseudo_r2_point 0.09
+#> 3       harrell_c 0.66
+#> 4           uno_c 0.66
+#> 5     brier_score 0.21
+#> 6          td_auc 0.74
 ```
 
 ## Metrics
