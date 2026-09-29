@@ -48,10 +48,20 @@ gcc 14.3.0.
 * **R-release 4.6.1 (2026-06-24 ucrt)** — `Status: 1 NOTE` (run 20:55:13 UTC).
   The invalid-file-URI item is **gone**; the note now contains only
   "New submission" and the three possible misspellings.
-* **R-devel** — submitted; result not yet read. Nothing is claimed for it. The
-  fix is a `README.md` change with no R-version-dependent behaviour, and the two
-  flavours produced identical notes before it, so the same outcome is expected --
-  but expected is not measured.
+* **R-devel** — submitted twice and processed both times (the upload directory
+  was empty on each follow-up check), but **no result e-mail was delivered** on
+  either occasion, the second after more than 19 hours. No R-devel result is
+  therefore claimed for the post-fix tarball.
+
+  This gap carries very little information, for a reason that can be checked
+  directly rather than assumed. The item in question is
+  `Found the following (possibly) invalid file URI`, which reports a relative
+  link in `README.md` whose target is missing from the built package. The
+  packaged `README.md` now contains **no relative links at all** -- its six links
+  are all absolute `https://` URLs -- so there is no file URI left for that check
+  to report, on any R version. The check is a file-existence test on the package
+  contents, not R-version-dependent behaviour, and pre-fix the two flavours
+  produced byte-identical note text. `ubuntu-latest (devel)` also passes in CI.
 
 All four logs read so far report **0 errors and 0 warnings**, with every check
 other than CRAN incoming feasibility reporting `OK` — including `checking tests`,
@@ -187,9 +197,10 @@ None. New package, no reverse dependencies.
 No known correctness defect is outstanding, and no `R CMD check` finding
 requires action beyond the two notes above.
 
-1. **Read the post-fix win-builder R-devel result.** R-release has been read and
-   confirms the file-URI item is gone; R-devel has been submitted but not read.
-   R-hub was not run (see Test environments).
+1. **win-builder R-devel post-fix was never delivered** (see Test environments).
+   R-release confirms the file-URI item is gone, and the packaged `README.md`
+   contains no relative links for that check to flag, so this is recorded as an
+   undelivered result rather than an outstanding risk. R-hub was not run.
 2. **Release coordination.** The remediation work is on `joss-revision` and is
    open as draft PR #1 against `main`. It is not merged. Decide whether to merge
    before submitting, since the CRAN tarball should be built from the intended
