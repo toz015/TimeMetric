@@ -36,25 +36,31 @@ full-dependency job, the test suite with every suggested package installed and
 `NOT_CRAN=true`.
 
 **win-builder** — `x86_64-w64-mingw32`, Windows Server 2022 x64 (build 20348),
-gcc 14.3.0. Both flavours were run on the tarball built from commit `8a6c879`,
-**before** the `README.md` link fix below:
+gcc 14.3.0.
+
+*Before* the `README.md` link fix, on the tarball from commit `8a6c879`:
 
 * **R-release 4.6.1 (2026-06-24 ucrt)** — `Status: 1 NOTE` (run 19:41:09 UTC)
 * **R-devel (2026-09-25 r90590 ucrt)** — `Status: 1 NOTE` (run 19:51:01 UTC)
 
-The two logs are identical in substance: **0 errors, 0 warnings**, and a single
-`checking CRAN incoming feasibility` note. Every other check reported `OK` on
-both, including `checking tests`, `checking examples`, `checking PDF version of
-manual` and `checking HTML version of manual`.
+*After* the fix, on the tarball from commit `145d488`:
 
-That last one is worth recording: the HTML-manual note seen locally (NOTE 2
-below) does **not** appear on win-builder, on the macOS builder, or on any CI
-platform, which establishes it as a property of the local machine.
+* **R-release 4.6.1 (2026-06-24 ucrt)** — `Status: 1 NOTE` (run 20:55:13 UTC).
+  The invalid-file-URI item is **gone**; the note now contains only
+  "New submission" and the three possible misspellings.
+* **R-devel** — submitted; result not yet read. Nothing is claimed for it. The
+  fix is a `README.md` change with no R-version-dependent behaviour, and the two
+  flavours produced identical notes before it, so the same outcome is expected --
+  but expected is not measured.
 
-A second pair of submissions was made after the link fix, from commit
-`35d6e6e`. **Those results have not been read yet** and nothing is claimed for
-them; the expectation is that the file-URI item disappears and the three
-misspellings remain.
+All four logs read so far report **0 errors and 0 warnings**, with every check
+other than CRAN incoming feasibility reporting `OK` — including `checking tests`,
+`checking examples`, `checking PDF version of manual` and `checking HTML version
+of manual`.
+
+That last one matters: the HTML-manual note seen locally (NOTE 2 below) does
+**not** appear on win-builder, on the macOS builder, or on any CI platform, which
+establishes it as a property of the local machine rather than of the package.
 
 **Not run**
 
@@ -107,8 +113,9 @@ inside the `Description` field. All three words are intentional and correct:
   reason.
 * **TimeMetric** — the name of this package.
 
-**Invalid file URI in `README.md`.** Reported on both flavours as
-`URI: LICENSE.md / From: README.md`. Real, and now fixed. The MIT badge
+**Invalid file URI in `README.md`.** Reported on both pre-fix flavours as
+`URI: LICENSE.md / From: README.md`. Real, and **fixed and confirmed fixed**:
+the item is absent from the post-fix win-builder R-release log. The MIT badge
 in `README.md` linked to `LICENSE.md` by relative path, but `LICENSE.md` is
 listed in `.Rbuildignore` and so is absent from the built tarball, leaving the
 link unresolvable inside the package. The badge now points to
@@ -180,10 +187,9 @@ None. New package, no reverse dependencies.
 No known correctness defect is outstanding, and no `R CMD check` finding
 requires action beyond the two notes above.
 
-1. **Read the post-fix win-builder results.** Both flavours passed with one
-   note on the pre-fix tarball and are recorded above. The submissions made from
-   `35d6e6e`, after the link fix, have not been read; confirm the file-URI item
-   is gone. R-hub was not run (see Test environments).
+1. **Read the post-fix win-builder R-devel result.** R-release has been read and
+   confirms the file-URI item is gone; R-devel has been submitted but not read.
+   R-hub was not run (see Test environments).
 2. **Release coordination.** The remediation work is on `joss-revision` and is
    open as draft PR #1 against `main`. It is not merged. Decide whether to merge
    before submitting, since the CRAN tarball should be built from the intended
