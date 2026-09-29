@@ -5,8 +5,10 @@ on five platform/version combinations in CI with no errors and no warnings, but
 the release-coordination items in the checklist below are not finished. Nothing
 in this file may be sent to CRAN until they are.
 
-Every result below was measured on 2026-09-28 at commit `951812b`. Nothing is
-predicted.
+Every result below was measured on the release commit
+`f54b6f9d130f25b526b7a1680814fb25b70e53ca`, prepared from the merged `main`
+branch on 2026-09-29, or is attributed to the earlier commit it was measured on.
+Nothing is predicted.
 
 ## Submission
 
@@ -80,22 +82,26 @@ establishes it as a property of the local machine rather than of the package.
 
 ## Source tarball checked
 
-The same tarball was used for every check below.
+This is the tarball intended for submission, built from the release commit.
 
 ```
 filename : TimeMetric_0.2.0.tar.gz
-size     : 83756 bytes
-sha256   : 0a2adf3abbddf0d9ad532c9958f17300321fe9c57ed6890c0a638863b65974f0
-commit   : 8a6c879a04d6638db7bc7ede07df2cc4f7de5db0
+size     : 83666 bytes
+sha256   : 0e34791c476efeac6898630ca0d61e43f60086c077ef33a9af8852efd8fe29b4
+commit   : f54b6f9d130f25b526b7a1680814fb25b70e53ca
+Version  : 0.2.0
+Date     : 2026-09-29
 ```
+
+The external checks recorded above were run on the immediately preceding
+content, before `DESCRIPTION`'s `Date` field was updated for the release. The
+only difference between those tarballs and this one is that field, plus the
+build-time `Packaged:` stamp.
 
 ## R CMD check results
 
-**0 errors, 0 warnings** on every environment checked. All five CI platforms and
-the macOS builder report `Status: OK`; the macOS builder reports no notes at all.
-
-Locally the check reports **2 notes**, neither of which appeared on the macOS
-builder or on any CI platform:
+`R CMD check --as-cran` on the tarball above, macOS `aarch64-apple-darwin25.3.0`,
+R 4.5.3: **0 errors, 0 warnings, 2 notes.**
 
 ### NOTE 1 — CRAN incoming feasibility
 
@@ -108,31 +114,28 @@ New submission
 
 Expected for a first submission.
 
-On win-builder this note also carried two further items. Both are addressed:
-
-**Possible misspellings in DESCRIPTION.** Reported as `Brier (16:38)`,
-`PAmeasure (20:9)` and `TimeMetric (13:18, 17:5)` -- all four positions fall
-inside the `Description` field. All three words are intentional and correct:
+On win-builder this note additionally listed three possible misspellings. It
+does not list them locally, and the reason is environmental rather than a
+difference in the package: the spell-check portion of this check needs a system
+spell-checker, and neither `aspell` nor `hunspell` is installed on the machine
+used here (`utils::aspell()` reports "No suitable spell-checker program found").
+The local run therefore omits that portion silently. The words are:
 
 * **Brier** — a surname. The Brier score is named after Glenn W. Brier, who
   introduced it in Brier (1950), *Verification of forecasts expressed in terms
   of probability*, Monthly Weather Review 78(1), 1-3. It is the standard name of
-  the metric throughout the survival literature.
+  the metric in the survival literature.
 * **PAmeasure** — the name of the predecessor R package that this package
-  extends and generalises. It is cited in the Description field for exactly that
-  reason.
+  extends and generalises, cited in the Description field for that reason.
 * **TimeMetric** — the name of this package.
 
-**Invalid file URI in `README.md`.** Reported on both pre-fix flavours as
-`URI: LICENSE.md / From: README.md`. Real, and **fixed and confirmed fixed**:
-the item is absent from the post-fix win-builder R-release log. The MIT badge
-in `README.md` linked to `LICENSE.md` by relative path, but `LICENSE.md` is
-listed in `.Rbuildignore` and so is absent from the built tarball, leaving the
-link unresolvable inside the package. The badge now points to
-<https://www.r-project.org/Licenses/MIT>, which was confirmed to return HTTP 200
-and to be the only license reference in the packaged `README.md`. No relative
-links remain in it, and `urlchecker::url_check()` reports all 7 URLs in the
-package correct.
+All three are intentional and correct. They were reported at positions
+`Brier (16:38)`, `PAmeasure (20:9)` and `TimeMetric (13:18, 17:5)`, all of which
+fall inside the `Description` field.
+
+The `Found the following (possibly) invalid file URI: LICENSE.md` item that
+appeared in the pre-fix win-builder logs is gone; see "Fixed during preparation"
+below.
 
 ### NOTE 2 — local toolchain only
 
@@ -146,24 +149,37 @@ Skipping checking math rendering: package 'V8' unavailable
 
 This reports that two checks **were skipped** on the local machine — an old
 system HTML Tidy and no `V8` — not that anything failed. It is absent from the
-macOS builder and from every CI platform, which confirms it is a property of
-that machine and not of the package.
+macOS builder, from win-builder (where `checking HTML version of manual` reports
+`OK`), and from every CI platform. It is a property of this machine, not of the
+package, and is not expected on CRAN's systems.
+
+### Fixed during preparation
+
+win-builder reported `Found the following (possibly) invalid file URI:
+URI: LICENSE.md / From: README.md` on both flavours. This was real: the MIT badge
+in `README.md` linked to `LICENSE.md` by relative path, but `LICENSE.md` is
+listed in `.Rbuildignore` and so is absent from the built package. The badge now
+points to <https://www.r-project.org/Licenses/MIT>. The packaged `README.md`
+contains no relative links at all, and the item is absent from the post-fix
+win-builder R-release log.
 
 ## Test results
+
+Measured on the release commit.
 
 * **607 assertions across 124 tests, 0 failures, 0 warnings, 0 skips** under
   `testthat::test_local()`.
 * The full-dependency CI job installs every suggested package, sets
-  `NOT_CRAN=true`, and **fails if any test skips**. It reports
-  `No tests skipped.` and passes.
+  `NOT_CRAN=true`, and **fails if any test skips**. On the merged `main` it
+  reports `No tests skipped.` and passes.
 * Inside `R CMD check` the suite reports 548 passed and 28 skipped. Those skips
   are structural, not coverage gaps: 26 are `expect_snapshot*` assertions, which
   testthat skips unless `NOT_CRAN=true`, and 3 guard tests that read
   `DESCRIPTION`/`NAMESPACE` from the package source, which does not exist when
-  tests run against an installed package. The full-dependency job above is what
-  exercises all of them.
-* Examples: `checking examples ... OK`; 17 examples in 2.35s; no `\dontrun{}`.
-* `spelling::spell_check_package()`: zero findings.
+  tests run against an installed package. The full-dependency job exercises all
+  of them.
+* Examples: `checking examples ... OK`; 17 examples in 2.08s; no `\dontrun{}`.
+* `spelling::spell_check_package()`: zero findings against `inst/WORDLIST`.
 
 ## Notable changes since the previous internal build
 
