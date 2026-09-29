@@ -1,10 +1,15 @@
 Package: TimeMetric
 Type: Package
-Title: Unified performance metrics for survival models with right-censoring, competing risks, and designs such as nested case-control and case-cohort
-Version: 0.1.0
-Date: 2025-08-30
-Author: Tong Zhu, Zian Zhuang, Wen Su, Xiaowu Dai, and Gang Li
-Maintainer: Tong Zhu <toz015@ucla.edu>
+Title: Unified Performance Metrics for Survival Models with Right-Censoring,
+    Competing Risks, and Two-Phase Designs
+Version: 0.2.0
+Date: 2026-09-07
+Authors@R: c(
+    person("Tong", "Zhu", email = "toz015@ucla.edu", role = c("aut", "cre")),
+    person("Zian", "Zhuang", role = "aut"),
+    person("Wen", "Su", role = "aut"),
+    person("Xiaowu", "Dai", role = "aut"),
+    person("Gang", "Li", role = "aut"))
 Description: The TimeMetric package provides a comprehensive framework for 
     evaluating prediction performance in survival analysis. It consolidates a 
     wide range of metrics, including pseudo R-squared measures, concordance 
@@ -14,11 +19,35 @@ Description: The TimeMetric package provides a comprehensive framework for
     It extends and generalizes the functionality originally introduced in 
     the PAmeasure package, offering a standardized and extensible interface 
     for researchers and practitioners working with survival models.
-Depends: R (>= 3.1)
-Imports: survival, stats, tdROC, yardstick, ggplot2, patchwork, dplyr
+Depends: R (>= 4.1.0)
+Imports:
+    survival,
+    stats,
+    utils,
+    tdROC,
+    yardstick,
+    ggplot2,
+    patchwork,
+    dplyr,
+    magrittr,
+    purrr,
+    tibble,
+    pec,
+    expint
+URL: https://github.com/toz015/TimeMetric
+BugReports: https://github.com/toz015/TimeMetric/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-US
 LazyData: true
-RoxygenNote: 7.3.3
-Suggests: testthat
+Suggests:
+    spelling,
+    testthat (>= 3.0.0),
+    withr,
+    pkgload,
+    covr,
+    randomForestSRC,
+    cmprsk
+Config/testthat/edition: 3
 NeedsCompilation: no
+Config/roxygen2/version: 8.1.0

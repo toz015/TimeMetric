@@ -32,7 +32,12 @@
 #' @param invert_linear Logical; if \code{TRUE} (default), plots the negative
 #'   of \code{linear.pred} so that higher values correspond to higher risk.
 #'   Set to \code{FALSE} if you want higher values correspond to lower risk.
-#' @param sample_size Number. set it if you want to sample the number of points in your plot
+#' @param sample_index Optional integer vector selecting which subjects to
+#'   plot, e.g. \code{sample(seq_len(n), 200)} to thin a crowded chart. If
+#'   \code{NULL} (default), every subject is plotted.
+#' @param restrict_time Optional numeric. If supplied, observed times above
+#'   this value are capped at it and a dashed horizontal reference line is
+#'   drawn, which keeps a few long follow-up times from compressing the plot.
 #' @details
 #' The function is primarily designed for quick visual diagnostics in survival
 #' model development. The line (\code{pred} vs \code{linear.pred}) shows the
@@ -46,7 +51,17 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_shape_manual
 #'   theme_classic xlab ylab ggtitle theme element_text
 #' @export
-plot_pred <- function(data,
+#' @examples
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' fit <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
+#'
+#' # observed time against predicted risk score, shaped by event status
+#' tm_plot_pred(pred, title = "Cox model")
+tm_plot_pred <- function(data,
                       title = NULL,
                       xlab = "Risk Score",
                       ylab = "Days",
@@ -70,6 +85,11 @@ plot_pred <- function(data,
   
   # optionally invert the linear predictor
   x_var <- if (invert_linear) -data$linear.pred else data$linear.pred
+
+  # NULL means "plot every subject". Without this, x_var[NULL] returns a
+  # zero-length vector and the plot renders empty.
+  if (is.null(sample_index)) sample_index <- seq_along(x_var)
+
   df <- data.frame(
     x_var = x_var[sample_index],
     pred  = data$pred[sample_index],
@@ -105,7 +125,7 @@ plot_pred <- function(data,
 #' Arrange multiple prediction plots with letter tags
 #'
 #' @description
-#' Builds one panel per data frame using \code{plot_fun} (default: \code{plot_pred})
+#' Builds one panel per data frame using \code{plot_fun} (default: \code{tm_plot_pred})
 #' and arranges them with letter tags. The function collects a single shared legend
 #' and applies global styling (titles, axis labels, legend options) across panels.
 #'
@@ -113,11 +133,9 @@ plot_pred <- function(data,
 #'   \code{linear.pred}, \code{pred}, \code{times}, and \code{status}.
 #' @param titles Optional character vector, same length as \code{data_list};
 #'   if \code{NULL}, defaults to "Panel 1", "Panel 2", etc.
-#' @param plot_fun Function that creates a single panel (default = \code{plot_pred}).
+#' @param plot_fun Function that creates a single panel (default = \code{tm_plot_pred}).
 #' @param ncol Number of columns in the panel layout (default = 2).
 #' @param tag_levels Letter style for tags: \code{"a"}, \code{"A"}, \code{"1"}, \code{"i"}, or \code{"I"}.
-#' @param tag_prefix,tag_suffix Strings for wrapping tags, e.g., "(" and ")" for "(a)", "(b)" (default).
-#' @param legend_position Legend position for the combined plot (default = "bottom").
 #'
 #' @param invert_linear Logical or logical vector; if length 1, recycled to all panels.
 #' @param xlab,ylab Axis labels applied to all panels (defaults are "Risk Score" and "Days").
@@ -125,7 +143,12 @@ plot_pred <- function(data,
 #' @param levels Numeric vector for \code{status} level ordering.
 #' @param shape_style Numeric vector of plotting symbols for censoring/event status.
 #' @param legend_name Character string for the legend title (default = "status").
-#' @param sample_size Number. set it if you want to sample the number of points in your plot
+#' @param sample_size Optional integer. If supplied, that many subjects are
+#'   sampled at random for each panel using \code{seed}; otherwise every
+#'   subject is plotted.
+#' @param restrict_time Optional numeric. If supplied, observed times above
+#'   this value are capped at it and a dashed horizontal reference line is
+#'   drawn, which keeps a few long follow-up times from compressing the plot.
 #' @param seed (option) random seed for sampling points. 
 #'
 #' @return A patchwork \code{ggplot} object combining all panels.
@@ -133,22 +156,27 @@ plot_pred <- function(data,
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' summary_pred_plot(
-#'   list(df1, df2),
-#'   titles = c("Weibull AFT", "Cox PH"),
-#'   invert_linear = c(TRUE, FALSE),
-#'   tag_levels = "a",
-#'   tag_prefix = "(",
-#'   tag_suffix = ")",
-#'   label_name = c("censored", "event"),
-#'   shape_style = c(1, 19),
-#'   legend_position = "bottom"
+#' # One panel per model. The previous example referenced undefined objects and
+#' # so could not be executed; this one runs.
+#' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
+#'                         beta = c(0.5, -0.5), seed = 2025)
+#' d <- d[, c("time", "status", "x1", "x2")]
+#' cox <- survival::coxph(survival::Surv(time, status) ~ x1 + x2,
+#'                        data = d, x = TRUE, y = TRUE)
+#' wei <- survival::survreg(survival::Surv(time, status) ~ x1 + x2,
+#'                          data = d, dist = "weibull", x = TRUE, y = TRUE)
+#' p_cox <- tm_predict_coxph(model = cox, covs = c("x1", "x2"), new_data = d)
+#' p_wei <- tm_predict_survreg(model = wei, covs = c("x1", "x2"), new_data = d)
+#'
+#' tm_plot_summary(
+#'   list(p_cox, p_wei),
+#'   titles = c("Cox PH", "Weibull AFT"),
+#'   ncol = 2,
+#'   legend_name = "Status"
 #' )
-#' }
-summary_pred_plot <- function(data_list,
+tm_plot_summary <- function(data_list,
                               titles = NULL,
-                              plot_fun = plot_pred,
+                              plot_fun = tm_plot_pred,
                               ncol = 2,
                               tag_levels = "a",
                               invert_linear = TRUE,

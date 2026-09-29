@@ -15,30 +15,68 @@ export(plot_pred)
 export(sim_cox_weibull_censored)
 export(simulateTwoCauseFineGrayModel)
 export(summary_pred_plot)
-importFrom(dplyr,case_when)
-importFrom(dplyr,mutate)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,element_text)
-importFrom(ggplot2,geom_line)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,ggtitle)
-importFrom(ggplot2,scale_shape_manual)
-importFrom(ggplot2,theme)
-importFrom(ggplot2,theme_classic)
-importFrom(ggplot2,xlab)
-importFrom(ggplot2,ylab)
+export(tm_case_cohort_weights)
+export(tm_evaluate_two_phase)
+export(tm_fit_and_eval)
+export(tm_metric_names)
+export(tm_nested_case_control_weights)
+export(tm_plot_pred)
+export(tm_plot_summary)
+export(tm_predict_cif)
+export(tm_predict_coxph)
+export(tm_predict_survreg)
+export(tm_sample_design)
+export(tm_sim_cox_weibull)
+export(tm_simulate_fine_gray)
+export(tm_summarize)
+export(tm_summarize_cr)
+export(tm_survival_eval)
+export(tm_survival_eval_cr)
+importFrom(dplyr,
+  case_when,
+  mutate
+)
+importFrom(ggplot2,
+  aes,
+  element_text,
+  geom_line,
+  geom_point,
+  ggplot,
+  ggtitle,
+  scale_shape_manual,
+  theme,
+  theme_classic,
+  xlab,
+  ylab
+)
 importFrom(magrittr,"%>%")
-importFrom(patchwork,plot_annotation)
-importFrom(patchwork,plot_layout)
-importFrom(patchwork,wrap_plots)
+importFrom(patchwork,
+  plot_annotation,
+  plot_layout,
+  wrap_plots
+)
 importFrom(pec,predictSurvProb)
-importFrom(purrr,map2)
-importFrom(randomForestSRC,predict.rfsrc)
-importFrom(stats,median)
-importFrom(stats,na.omit)
-importFrom(stats,pnorm)
-importFrom(stats,predict)
-importFrom(survival,Surv)
-importFrom(survival,survfit)
+importFrom(stats,
+  as.formula,
+  complete.cases,
+  lm,
+  median,
+  na.omit,
+  pnorm,
+  predict,
+  quantile,
+  rbinom,
+  reshape,
+  rnorm,
+  runif,
+  rweibull,
+  sd,
+  uniroot
+)
+importFrom(survival,
+  Surv,
+  concordancefit,
+  survfit
+)
 importFrom(tibble,tibble)
+importFrom(utils,head)

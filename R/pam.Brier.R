@@ -11,7 +11,6 @@
 #'
 #' @importFrom survival Surv
 #' @importFrom pec predictSurvProb
-#' @importFrom randomForestSRC predict.rfsrc
 #' @importFrom stats median
 #' @param object An object of class \code{Surv}, created by the \code{Surv} function, or a fitted survival model, such as those produced by \code{coxph}, \code{survreg}, or \code{rfsrc}.
 #' @param pre_sp 
@@ -50,7 +49,7 @@
 #' @noRd
 
 pam.Brier <- function(object, pre_sp, t_star = -1) {
-  # case1、coxph AND testing set
+  # case1, coxph AND testing set
   if (inherits(object, "coxph")) {
     obj <- object
     test_data <- pre_sp
@@ -72,7 +71,7 @@ pam.Brier <- function(object, pre_sp, t_star = -1) {
   }
   
   
-  # case2、RSF AND testing set
+  # case2, RSF AND testing set
   if (inherits(object, c("rfsrc"))) {
     obj <- object
     test_data <- pre_sp
@@ -157,11 +156,15 @@ pam.Brier <- function(object, pre_sp, t_star = -1) {
   sum_before_t <- 0
   sum_after_t <- 0
   
+  # Standard IPCW weighting (Graf et al. 1999): subjects with an event before
+  # t_star are weighted by the LEFT limit G(T_i-), subjects still at risk at
+  # t_star by G(t_star) itself. Both are step-function evaluations of the
+  # censoring Kaplan-Meier; neither interpolates between jump times.
   Gtstar <- Gt(object, t_star)
   for (i in c(1:length(time))) {
     # survival time is less than t_star and sample died
     if (time[i] < t_star & (status[i] == 1)) {
-      Gti <- Gt(Surv(time, status), time[i])
+      Gti <- Gt(object, time[i], left = TRUE)
       if (is.na(Gti)) {
         next
       }
@@ -173,9 +176,7 @@ pam.Brier <- function(object, pre_sp, t_star = -1) {
       if (is.na(Gtstar)) {
         next
       }
-      sum_after_t <-
-        sum_after_t + 1 / Gt(Surv(time, status), t_star) * (1 -
-                                                              pre_sp[i]) ^ 2
+      sum_after_t <- sum_after_t + 1 / Gtstar * (1 - pre_sp[i]) ^ 2
     } # IPCW
   }
   
