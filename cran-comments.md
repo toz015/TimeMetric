@@ -153,6 +153,21 @@ macOS builder, from win-builder (where `checking HTML version of manual` reports
 `OK`), and from every CI platform. It is a property of this machine, not of the
 package, and is not expected on CRAN's systems.
 
+### A third note appeared once, transiently
+
+One run of the check on this tarball reported a third note:
+
+```
+* checking for future file timestamps ... NOTE
+unable to verify current time
+```
+
+This check contacts an external time service to confirm that no file timestamp
+lies in the future. The message means that call did not succeed, not that any
+timestamp is wrong. An immediate re-run of the same check on the same tarball
+reported only the two notes above. It is recorded here because it is network
+dependent and may recur on any machine, including CRAN's.
+
 ### Fixed during preparation
 
 win-builder reported `Found the following (possibly) invalid file URI:
