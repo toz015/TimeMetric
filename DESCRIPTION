@@ -2,29 +2,38 @@ Package: TimeMetric
 Type: Package
 Title: Unified Performance Metrics for Survival Models with Right-Censoring,
     Competing Risks, and Two-Phase Designs
-Version: 0.2.0
-Date: 2026-09-29
+Version: 0.2.1
+Date: 2026-10-17
 Authors@R: c(
     person("Tong", "Zhu", email = "toz015@ucla.edu", role = c("aut", "cre")),
     person("Zian", "Zhuang", role = "aut"),
     person("Wen", "Su", role = "aut"),
     person("Xiaowu", "Dai", role = "aut"),
     person("Gang", "Li", role = "aut"))
-Description: The TimeMetric package provides a comprehensive framework for 
-    evaluating prediction performance in survival analysis. It consolidates a 
-    wide range of metrics, including pseudo R-squared measures, concordance 
-    indices, time-dependent AUC, and Brier Score, into a unified platform. 
-    TimeMetric supports right-censored data, competing risks, and complex 
-    sampling designs such as nested case-control and case-cohort studies. 
-    It extends and generalizes the functionality originally introduced in 
-    the PAmeasure package, offering a standardized and extensible interface 
-    for researchers and practitioners working with survival models.
+Description: Evaluates the predictive performance of survival models in a
+    unified framework. Implements the pseudo R-squared and related explained
+    variation measures of Li and Wang (2019)
+    <doi:10.1080/01621459.2018.1515079>, the concordance indices of Harrell
+    et al. (1982) <doi:10.1001/jama.1982.03320430047030> and Uno et al.
+    (2011) <doi:10.1002/sim.4154>, the time-dependent area under the receiver
+    operating characteristic curve (AUC) of Heagerty, Lumley and Pepe (2000)
+    <doi:10.1111/j.0006-341X.2000.00337.x>, and the Brier score of Graf et
+    al. (1999)
+    <doi:10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529::AID-SIM274%3E3.0.CO;2-5>.
+    Supports right-censored data; competing risks, following Wolbers et al.
+    (2014) <doi:10.1093/biostatistics/kxt059>, Wu and Li (2018)
+    <doi:10.1002/sim.7806> and Zhuang et al. (2025)
+    <doi:10.48550/arXiv.2507.15040>; and two-phase sampling designs such as
+    case-cohort and nested case-control studies, following Lee,
+    Zeleniuch-Jacquotte and Liu (2021) <doi:10.1080/02664763.2020.1861225>.
+    Extends and generalizes the 'PAmeasures' package.
 Depends: R (>= 4.1.0)
 Imports:
     survival,
     stats,
     utils,
     tdROC,
+    survivalROC,
     yardstick,
     ggplot2,
     patchwork,
@@ -47,7 +56,8 @@ Suggests:
     pkgload,
     covr,
     randomForestSRC,
-    cmprsk
+    cmprsk,
+    tidyr
 Config/testthat/edition: 3
 NeedsCompilation: no
 Config/roxygen2/version: 8.1.0

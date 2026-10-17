@@ -126,7 +126,7 @@ needed and absent.
 ## Renamed functions
 
 Every exported function previously used a `pam.` prefix inherited from
-PAmeasure. Those names still work and forward to their replacements with a
+PAmeasures. Those names still work and forward to their replacements with a
 deprecation warning — see `?"TimeMetric-deprecated"` for the full mapping.
 
 ## Contributors

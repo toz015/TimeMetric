@@ -4,7 +4,7 @@
 \alias{tm_predict_survreg}
 \title{Prediction Accuracy Measures for Parametric Survival Regression Models}
 \usage{
-tm_predict_survreg(model, covs, tau = 1e+11, new_data = NULL, predict = T)
+tm_predict_survreg(model, covs, tau = 1e+11, new_data = NULL, predict = TRUE)
 }
 \arguments{
 \item{model}{An object of class survreg representing a fitted parametric survival regression model. The survreg call must include x = TRUE and y = TRUE to ensure the design matrix and response vector are stored in the model object.}

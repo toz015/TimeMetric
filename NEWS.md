@@ -1,3 +1,25 @@
+# TimeMetric 0.2.1
+
+Resubmission addressing the CRAN review of 0.2.0. Metric values are unchanged.
+
+* `DESCRIPTION`: the Description no longer starts with the package name,
+  quotes software names, spells out AUC, and cites the methods it implements
+  with DOIs. The predecessor package is now correctly named 'PAmeasures'.
+* `tm_predict_coxph()` and `tm_predict_survreg()` default to `predict = TRUE`
+  rather than `predict = T`; `T`/`F` are no longer used anywhere in the code.
+* Diagnostics are no longer written with `print()` or `cat()`. A failed model
+  fit inside `tm_predict_cif()` and a failed weighted least-squares fit inside
+  `tm_predict_survreg()` now raise a warning.
+* The time-dependent AUC in `tm_fit_and_eval()` now calls
+  `survivalROC::survivalROC()` directly instead of shipping a copy of that
+  function's GPL-licensed source, and 'survivalROC' is added to Imports.
+* `tm_simulate_fine_gray()` and `tm_plot_summary()` no longer reset the random
+  number generator by default. Their `seed` argument now defaults to `NULL`;
+  pass a seed to get the previous reproducible behavior.
+* 'tidyr' is added to Suggests. `yardstick::roc_auc_survival()`, used by
+  `tm_evaluate_two_phase()`, needs it at run time but declares it only as a
+  suggested package, so `R CMD check --as-cran` could fail without it.
+
 # TimeMetric 0.2.0
 
 Package-quality release preparing resubmission to JOSS. The evaluation
@@ -24,7 +46,7 @@ defect is listed below.
 ## Renamed API
 
 Every exported function now carries a `tm_` prefix, correcting the `survial` and
-`surverg` misspellings and dropping the `pam.` prefix inherited from PAmeasure.
+`surverg` misspellings and dropping the `pam.` prefix inherited from PAmeasures.
 All previous names still work and forward to their replacement with a
 deprecation warning; see `?"TimeMetric-deprecated"`.
 

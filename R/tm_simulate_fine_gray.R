@@ -58,7 +58,9 @@ find_mu_c <- function(c_mu, censor, cens.times, event.times, f.event, n) {
 #' @param independent_c A logical value. If TRUE, censoring times are independent of covariates.
 #' @param report.mu_and_sd A logical value. If TRUE, a summary of censoring parameters
 #'   and event time quantiles is returned instead of the full dataset.
-#' @param seed An integer for the random number generator seed to ensure reproducibility.
+#' @param seed Optional integer. If supplied, the random number generator is
+#'   seeded with it for reproducibility. The default \code{NULL} leaves the
+#'   random number generator state untouched.
 #'
 #' @return A data frame containing the simulated data with columns `obs.times`, `obs.event`, and the covariates `X`.
 #'   Alternatively, if `report.mu_and_sd` is TRUE, it returns a data frame with censoring
@@ -84,8 +86,8 @@ tm_simulate_fine_gray <- function (n, v, beta1, beta2, lambda1 = 1,
                                            sd.time = NULL, mu.c.time = NULL,
                                            independent_c = TRUE,
                                            report.mu_and_sd = FALSE,
-                                           seed = 1234) {
-  set.seed(seed)
+                                           seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
   if (length(beta1) != length(beta2))
     stop("Dimension of beta1 and beta2 should be the same")
   ncovs <- length(beta1)

@@ -48,7 +48,7 @@
 #'
 #' @export
 
-tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predict = T) 
+tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predict = TRUE)
 {
   
   # Check inputs
@@ -91,7 +91,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
   delta <- censor.unsorted[y.order]
   p <- dim(as.matrix(x.matrix.unsorted))[2]
   
-  if(is.null(y.order.new)==F) {
+  if (!is.null(y.order.new)) {
     y.order <- y.order.new
   }
   
@@ -105,7 +105,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
   nsize <- length(y)
   fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)
   
-  if(is.null(y.order.new)==F){
+  if (!is.null(y.order.new)){
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 
@@ -144,7 +144,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
     y.input <- ifelse(tau > y, y, tau)
   }
   
-  if(predict == T){
+  if (predict) {
     time_points <- y
     time_points <- time_points[time_points <= tau] 
     
@@ -164,7 +164,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
   
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
-                           cat("Error in WLS fitting:", e$message, "\n")
+                           warning("Error in WLS fitting: ", conditionMessage(e), call. = FALSE)
                            return(c(NA, NA))
                          })
   calibrate.fitted <- tryCatch(predict(wls.fitted), error = function(e) {

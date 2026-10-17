@@ -125,7 +125,7 @@ tm_predict_cif <- function(model1 = NULL, model2 = NULL,
 }
 
 handle_error <- function(e) {
-  print(e)
+  warning(conditionMessage(e), call. = FALSE)
   return()
 }
 

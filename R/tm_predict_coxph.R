@@ -52,7 +52,7 @@
 #' str(cox_pred$pred)
 #'
 #' @export
-tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict = T) 
+tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict = TRUE)
 {
   if(is.null(new_data)){
       x.matrix.unsorted <- model$x
@@ -78,14 +78,14 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
   y <- y.unsorted[y.order]
   delta <- censor.unsorted[y.order]
   p <- dim(as.matrix(x.matrix.unsorted))[2]
-  if(is.null(y.order.new)==F) y.order <- y.order.new
+  if (!is.null(y.order.new)) y.order <- y.order.new
   if (p == 1) {
     x.matrix <- as.matrix(x.matrix.unsorted[y.order, ])
   } else {
     x.matrix <- as.matrix( x.matrix.unsorted[y.order, ])
   }
   fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)
-  if(is.null(y.order.new)==F){
+  if (!is.null(y.order.new)){
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 

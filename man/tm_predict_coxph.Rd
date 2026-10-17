@@ -4,7 +4,7 @@
 \alias{tm_predict_coxph}
 \title{Prediction Accuracy Measures for Cox Proportional Hazards Model}
 \usage{
-tm_predict_coxph(model, covs, tau = 1e+11, new_data = NULL, predict = T)
+tm_predict_coxph(model, covs, tau = 1e+11, new_data = NULL, predict = TRUE)
 }
 \arguments{
 \item{model}{An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.}

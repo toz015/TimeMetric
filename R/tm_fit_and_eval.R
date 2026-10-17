@@ -148,7 +148,7 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
       } else {
         pred_time <- quantile(test_data[[time_var]], 0.5, na.rm = TRUE)
       }
-      auc <- pam.survivalROC(Stime = test_data[[time_var]], status = test_data[[status_var]], marker = predict(fits[[fit_name]], newdata = test_data, type = "lp"), predict.time = pred_time, method = "KM")$AUC
+      auc <- survivalROC::survivalROC(Stime = test_data[[time_var]], status = test_data[[status_var]], marker = predict(fits[[fit_name]], newdata = test_data, type = "lp"), predict.time = pred_time, method = "KM")$AUC
       auc <- max(auc, 1- auc)
       metrics_results[[fit_name]]$"td_auc" <- auc
     }

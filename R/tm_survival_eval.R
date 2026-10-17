@@ -130,7 +130,6 @@ tm_survival_eval <- function (model, event_time,
   #}
   
   
-  #print(predicted_data)
   if (is.null(t_star)) t_star <- quantile(event_time, 0.5)
   t_idx <- tm_nearest_time_index(event_time, t_star)
   risk_scores <- 1 - predicted_probability[, t_idx] 
@@ -406,6 +405,5 @@ integrate_survival <- function(predicted_probability, event_time, status, tau = 
   delta.t <- t1 - t2       
   
   cumulative_prediction <- colSums(delta.t %*% t(predicted_probability))
-  #print(order_idx)
   return(cumulative_prediction)
 }

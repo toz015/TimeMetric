@@ -1,3 +1,4 @@
+AUC
 Biomedicine
 Biometrics
 CIF
@@ -6,19 +7,22 @@ CMD
 Cai
 Califf
 D'Agostino
+DOIs
 Graf
 Heagerty
 IPCW
 JAMA
 JOSS
+Jacquotte
 Kaplan
 Kawaguchi
+Liu
 Lumley
 Lusa
 Mariani
 Miceli
 NCC
-PAmeasure
+PAmeasures
 Pencina
 Pepe
 Perme
@@ -32,6 +36,9 @@ Schmoor
 Schumacher
 Uno
 Uno's
+Wolbers
+Zeleniuch
+Zhuang
 al
 auc
 cif
@@ -62,6 +69,7 @@ survAUC
 surverg
 survfit
 survial
+survivalROC
 survreg
 td
 tibble

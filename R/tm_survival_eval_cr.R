@@ -354,8 +354,7 @@ pam.censor<-function(y,y.predict,delta){
 }
 
 #' @noRd
-C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
-                 print.value = FALSE) {
+C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1) {
   if (any(is.na(time))) {
     stop("The input vector cannot have NA")
   }
@@ -421,7 +420,6 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1,
   Den_mat <- (A + B) * N_t
   Num <- sum(Num_mat)
   Den <- sum(Den_mat)
-  if(print.value==TRUE) print(c(Num, Den))
   return(Num/Den)
 }
 
