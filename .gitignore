@@ -16,3 +16,12 @@ TimeMetric_*.tar.gz
 # open a null device (see local_null_device() in helper-expectations.R), so
 # this should never reappear; the rule is defensive.
 Rplots.pdf
+
+# Local paper analyses: keep scripts in Git, generated data outside commits.
+results/
+.paper-library/
+
+# Report previews; the documented render command writes under results/report/.
+/paper.code.html
+/paper.code_files/
+/paper.code_cache/

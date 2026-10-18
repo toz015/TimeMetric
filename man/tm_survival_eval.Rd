@@ -52,7 +52,7 @@ coded as above.}
 }
 Default is "all", which computes all available metrics.}
 
-\item{t_star}{(Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
+\item{t_star}{(Optional) A numeric value specifying the evaluation time for point R-squared, Brier Score and time-dependent AUC.
 If NULL, it defaults to the median survival time.}
 
 \item{tau}{(Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
@@ -67,6 +67,11 @@ A data frame with two columns:
 This function calculates various predictive performance metrics for survival models based on 
 predicted survival probabilities and observed survival data. It supports a range of evaluation 
 measures, including explained variation, concordance indices, Brier Score, and time-dependent AUC.
+}
+\details{
+Point R-squared uses the event indicator `I(T <= t_star)` and
+  the predicted event probability `1 - S` at the selected prediction-grid
+  column. Events at the evaluation time are included.
 }
 \examples{
 # A Cox model evaluated on right-censored data. The simulator is seeded,

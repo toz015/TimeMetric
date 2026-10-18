@@ -15,3 +15,11 @@
 ^tests/testthat/Rplots\.pdf$
 ^CONTRIBUTING\.md$
 ^cran-comments\.md$
+^analysis$
+^figures$
+^results$
+^\.paper-library$
+
+^paper\.code\.html$
+^paper\.code_files$
+^paper\.code_cache$

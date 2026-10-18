@@ -13,7 +13,9 @@ tm_predict_coxph(model, covs, tau = 1e+11, new_data = NULL, predict = TRUE)
 
 \item{tau}{(Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.}
 
-\item{new_data}{(Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.}
+\item{new_data}{Optional evaluation data. Its outcomes are returned for metric
+computation and define the evaluation time grid; they never estimate the
+baseline hazard. All prediction parameters come from the training fit.}
 
 \item{predict}{A logical value indicating whether to return individual predictions. Default is TRUE.}
 }
@@ -26,8 +28,10 @@ Each element of the returned list corresponds to one fitted model and contains:
   \item \code{status} -- event indicators (1 = event, 0 = censored).
   \item \code{surv_prob} -- an \eqn{n \times K} matrix of predicted
         subject-specific survival probabilities on a common time grid.
-  \item \code{pred} -- predicted mean survival time  
-        (restricted or unrestricted, depending on the function).
+  \item \code{pred} -- numerical integral of the training-model survival curve
+        on the evaluation grid, up to its maximum time or tau, whichever is
+        smaller. This preserves the legacy integration rule; it is not an
+        identified unrestricted mean. Fix the grid and tau for comparisons.
   \item \code{covs} -- character vector of covariate names used for prediction.
   \item \code{new_data} -- dataset on which the predictions were computed.
 }

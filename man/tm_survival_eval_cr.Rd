@@ -12,7 +12,9 @@ tm_survival_eval_cr(
   metrics = NULL,
   t_star = NULL,
   tau = NULL,
-  event_type = 1
+  event_type = 1,
+  censoring = c("cox", "km"),
+  censor_covariates = NULL
 )
 }
 \arguments{
@@ -48,9 +50,18 @@ Valid options include:
 the Brier Score and Time-Dependent AUC. Defaults to the median of `event_time`.}
 
 \item{tau}{Optional numeric value specifying a restricted time horizon for model evaluation. 
-Defaults to the maximum observed event time plus one.}
+Defaults to the maximum observed follow-up time.}
 
 \item{event_type}{An integer indicating the primary event type of interest (default = `1`).}
+
+\item{censoring}{Censoring estimator for the generalized R-squared metrics:
+`"cox"` (default, optionally conditional on `censor_covariates`) or `"km"`.
+Other metrics retain their own censoring adjustments.}
+
+\item{censor_covariates}{Optional numeric vector, matrix or data frame of
+censoring-model covariates, in the same subject order as `event_time` and
+the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
+Cox censoring model has no covariates.}
 }
 \value{
 A data frame with two columns:
@@ -63,6 +74,22 @@ A data frame with two columns:
 This function evaluates the predictive performance of a survival model in the presence of competing risks.
 It calculates various performance metrics including Pseudo R-squared, R-squared, L-squared, C-index, 
 Brier Score, and Time-Dependent AUC.
+}
+\details{
+The generalized R-squared metrics use event-observation IPCW. Censoring is
+estimated on the original follow-up times, treating any observed event type
+as an observed event. The unnormalized weight is
+\eqn{I(status_i > 0)/\widehat G(Y_i-\mid X_i)}; weights are normalized to sum
+to one. A censored subject has zero weight even if follow-up exceeds `tau`.
+Restricting the working outcome therefore does not limit censoring support
+requirements to `tau`: support at contributing original event times is needed.
+Cox weights require conditional independent censoring and a valid censoring
+model; marginal weights require the corresponding marginal independence.
+Censoring survival probabilities are floored at \eqn{10^{-4}}.
+The interval outcome is the target-event time capped at `tau`, with competing
+events assigned to `tau`. The point outcome is `I(T <= t_star, D = event_type)`,
+including target events at the evaluation time, as in the CIF. Normalized ratio
+estimates are not asserted to be exactly unbiased in finite samples.
 }
 \examples{
 # Competing risks: cause 1 is the event of interest, cause 2 the competing

@@ -1,3 +1,30 @@
+# Paper branch (unreleased)
+
+* Point R-squared now includes target events at the evaluation time (`T <= t`)
+  in both survival and competing-risks evaluation, matching the manuscript.
+  Ordinary survival point R-squared compares the event indicator with `1 - S`
+  rather than `S`; this changes its adequacy and pseudo-R-squared values.
+* Competing-risks generalized R-squared now uses the event-observation IPCW
+  strategy in `PA measure new/pam.survreg.update.R`: original follow-up times
+  estimate censoring and evaluate weights, and only observed events of any
+  cause contribute. Both interval and point versions expose Cox (default,
+  optionally conditional) and KM censoring estimates, with a probability floor
+  of 1e-4. Late censoring remains zero-weight by design. The adapted Cox
+  baseline/predictor centering and tied-time left limits are kept consistent.
+  These changes alter CR R-squared results; saved tables need recomputation.
+* Cox predictions now obtain the baseline hazard exclusively from the training
+  fit. Validation labels cannot change survival probabilities on a fixed grid.
+  Training weights, centering, ties, factors and strata follow `survival`.
+  The legacy evaluation-grid integration remains explicit; this repair does
+  not claim that unrestricted mean survival is identified.
+* Matched NCC weights exclude cases from other matching strata. Each case is
+  a sampling occasion, including tied cases; small risk sets provide all
+  available controls. Documentation now consistently defines `m` as total
+  case-control set size, with `m - 1` controls, and requires full-cohort input.
+* Added independent prediction/inclusion-probability checks and paper analysis
+  scripts. PBC is compared before/after within 0.2.1; full simulation execution
+  is an explicit separate action. See the paper workflow in `README.md`.
+
 # TimeMetric 0.2.1
 
 Resubmission addressing the CRAN review of 0.2.0. Metric values are unchanged.

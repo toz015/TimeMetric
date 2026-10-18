@@ -27,6 +27,13 @@
 # If this test fails, the removal perturbed a metric it should not have
 # touched. Investigate before regenerating the baseline: regenerating it to
 # make the test pass destroys the only evidence that the values held.
+# The paper branch intentionally replaces CR generalized R-squared weighting.
+# Preserve the original CSV: those six CR metrics now use the independent
+# original-time event-IPCW moment reference below. All other comparisons still
+# use the original removal baseline unchanged, except for ordinary point R2:
+# its event-probability direction and inclusive endpoint are now corrected.
+# These three values use independent KM risk sets and weighted moments below;
+# the historical CSV remains untouched.
 
 baseline_rows <- function() {
   path <- testthat::test_path("fixtures", "metric-baseline.csv")
@@ -57,6 +64,32 @@ inv_eval <- function(metrics) {
   inv_named(res$Metric, res$Value)
 }
 
+inv_survival_point_reference <- function(p = inv_surv_pred()) {
+  t_star <- median(p$times)
+  # Reconstruct the restricted outcome's observation mechanism and KM weights
+  # from censor counts/risk sets, without the package's censoring/R2 helpers.
+  time <- pmin(p$times, t_star)
+  observed <- as.numeric(p$status == 1 | p$times > t_star)
+  censor_times <- sort(unique(time[observed == 0]))
+  factors <- vapply(censor_times, function(t)
+    1 - sum(time == t & observed == 0) / sum(time >= t), numeric(1))
+  G <- vapply(time, function(t) prod(factors[censor_times < t]), numeric(1))
+  q <- observed / G
+  w <- q / sum(q)
+  k <- TimeMetric:::tm_nearest_time_index(p$times, t_star)
+  prediction <- 1 - p$surv_prob[, k]
+  y <- as.numeric(p$times <= t_star & p$status == 1)
+  ybar <- sum(w * y)
+  pbar <- sum(w * prediction)
+  vy <- sum(w * (y - ybar)^2)
+  vp <- sum(w * (prediction - pbar)^2)
+  covariance <- sum(w * (y - ybar) * (prediction - pbar))
+  corrected <- ybar + covariance / vp * (prediction - pbar)
+  r <- round(covariance^2 / (vy * vp), 4)
+  l <- round(sum(w * (y - corrected)^2) / sum(w * (y - prediction)^2), 4)
+  c(r2_point = r, l2_point = l, pseudo_r2_point = round(r * l, 4))
+}
+
 inv_cr_pred <- function() {
   dd <- fx_cr()
   dd$time <- dd$obs.times
@@ -77,6 +110,43 @@ inv_eval_cr <- function(metrics) {
     metrics = metrics
   )
   inv_named(res$Metric, res$Value)
+}
+
+inv_cr_event_reference <- function() {
+  p <- inv_cr_pred()
+  time <- p$times
+  status <- p$status
+  censor_times <- sort(unique(time[status == 0]))
+  # No-covariate Cox = exp(-Nelson-Aalen). Construct hazard jumps directly
+  # from original censor counts/risk sets, without the package weight helper.
+  jumps <- vapply(censor_times, function(t) sum(time == t & status == 0) /
+    sum(time >= t), numeric(1))
+  G <- vapply(time, function(t) exp(-sum(jumps[censor_times < t])), numeric(1))
+  q <- as.numeric(status > 0) / pmax(G, 1e-4)
+  w <- q / sum(q)
+  moment <- function(y, prediction) {
+    a <- sum(w * y)
+    b <- sum(w * prediction)
+    vy <- sum(w * (y - a)^2)
+    vp <- sum(w * (prediction - b)^2)
+    covariance <- sum(w * (y - a) * (prediction - b))
+    corrected <- a + covariance / vp * (prediction - b)
+    r <- round(covariance^2 / (vy * vp), 4)
+    l <- round(sum(w * (y - corrected)^2) / sum(w * (y - prediction)^2), 4)
+    c(r = r, l = l, pseudo = round(r * l, 4))
+  }
+  tau <- max(time)
+  grid <- p$cif_pred[, 1]
+  cif <- p$cif_pred[, -1]
+  k <- which(grid <= tau)
+  prediction <- colSums(diff(c(0, grid[k], tau)) * rbind(1, 1 - cif[k, ]))
+  interval <- moment(ifelse(status == 1, pmin(time, tau), tau), prediction)
+  t_star <- median(time)
+  point <- moment(as.numeric(time <= t_star & status == 1),
+    cif[max(which(grid <= t_star)), ])
+  c(pseudo_r2 = unname(interval["pseudo"]), r_square = unname(interval["r"]),
+    l_square = unname(interval["l"]), pseudo_r2_point = unname(point["pseudo"]),
+    r2_point = unname(point["r"]), l2_point = unname(point["l"]))
 }
 
 # Mirrors tp_inputs() in test-two-phase.R. set.seed(2001) is required: both
@@ -140,6 +210,11 @@ for (scenario_name in names(inv_builders)) {
       expect_gt(nrow(expected), 0)
 
       observed <- inv_builders[[scn]]()
+      cr_reference <- if (scn %in% c("cr_default", "cr_all"))
+        inv_cr_event_reference() else numeric()
+      point_reference <- if (scn %in% c("eval_default", "eval_all"))
+        inv_survival_point_reference() else numeric()
+      method_reference <- c(cr_reference, point_reference)
 
       for (i in seq_len(nrow(expected))) {
         m <- expected$Metric[i]
@@ -147,10 +222,9 @@ for (scenario_name in names(inv_builders)) {
           m %in% names(observed),
           info = paste0(scn, ": metric '", m, "' disappeared from the result")
         )
-        expect_equal(
-          unname(observed[[m]]), expected$Value[i], tolerance = 1e-6,
-          info = paste0(scn, ": metric '", m, "' changed value")
-        )
+        reference <- if (m %in% names(method_reference)) method_reference[[m]] else expected$Value[i]
+        expect_equal(unname(observed[[m]]), unname(reference), tolerance = 1e-6,
+          info = paste0(scn, ": metric '", m, "' differs from its reference"))
       }
     })
   })

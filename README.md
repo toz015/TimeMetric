@@ -129,6 +129,71 @@ Every exported function previously used a `pam.` prefix inherited from
 PAmeasures. Those names still work and forward to their replacements with a
 deprecation warning — see `?"TimeMetric-deprecated"` for the full mapping.
 
+## Paper analyses and figures
+
+Run these commands from this checkout. They load its local package code rather
+than an older installed TimeMetric version. The analyses also need `pkgload`,
+`cmprsk`, `randomForestSRC`, and `riskCommunicator` (the Framingham data source).
+
+```sh
+# Recompute all real-data analyses and export their manuscript figures/tables.
+Rscript --vanilla figures/run_real_data.R
+
+# Run or resume the full simulation; this starts substantial computation.
+Rscript --vanilla figures/run_simulations.R --mode=full
+
+# Redraw completed results only, without refitting or rerunning simulations.
+Rscript --vanilla figures/redraw_original.R
+# Optional: --section=real or --section=simulations
+```
+
+The presentation entry points in `figures/` preserve the selected manuscript
+`.updated.pdf` style, including R/L component dots in Simulation 2. The
+lower-level drivers in `analysis/` produce diagnostic plots; use the redraw
+entry afterward if those drivers were run directly. `paper.code.Rmd` displays
+the completed results through the same figure/table outputs; it does not rerun
+models or simulations. With `rmarkdown`, `knitr` and Pandoc available, render it
+with:
+
+```r
+rmarkdown::render("paper.code.Rmd", output_dir = "results/report")
+# Optional: params = list(redraw_figures = TRUE)
+```
+
+Rendering requires all four full simulation parts and all three real-data
+exports; smoke or incomplete results are rejected. See
+[the current development record](docs/development-2026-10-18.md) for method
+changes and validation. Earlier development/audit records are preserved under
+`docs/superpowers/`.
+
+Local outputs, excluded from Git:
+
+| Location | Contents |
+|---|---|
+| `results/simulations/full/` | Completed simulation, models, checkpoints, raw and summary metrics, figures |
+| `results/real_data/runs/<run>/` | Real-data models, predictions and diagnostics |
+| `results/real_data/paper/` | Final real-data figures and tables, with their source-run manifest |
+
+The recorded current real-data run is selected through
+`results/real_data/paper/source_manifest.csv`; redraw and FHS horizon commands
+read that record rather than a historical directory. FHS uses examination 3 as
+time zero and a 12-year horizon (4380 days). To re-evaluate its existing training
+fit at a selected horizon (changed source/settings create a separate output):
+
+```sh
+Rscript --vanilla figures/run_fhs_horizon.R --years=12
+```
+
+Keep full simulation models and checkpoints for resumption. Statistical inputs
+in `R/`, `analysis/` and `DESCRIPTION` are fingerprinted; changes require a new
+simulation output directory rather than silently mixing versions. Smoke runs
+are optional, write to a separate directory, and are not manuscript results.
+To run package checks without creating paper results:
+
+```sh
+Rscript --vanilla -e 'testthat::test_local(".", reporter="summary")'
+```
+
 ## Contributors
 
 Developed by **Li's Lab** (UCLA): Tong Zhu, Zian Zhuang, Wen Su, Xiaowu Dai and

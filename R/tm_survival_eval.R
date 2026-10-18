@@ -33,10 +33,14 @@
 #'   Default is "all", which computes all available metrics.
 #'   
 #'   
-#' @param t_star (Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
+#' @param t_star (Optional) A numeric value specifying the evaluation time for point R-squared, Brier Score and time-dependent AUC.
 #'   If NULL, it defaults to the median survival time.
 #' @param tau (Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 #'   If NULL, it defaults to the maximum observed survival time.
+#'
+#' @details Point R-squared uses the event indicator `I(T <= t_star)` and
+#'   the predicted event probability `1 - S` at the selected prediction-grid
+#'   column. Events at the evaluation time are included.
 #'
 #' @return A data frame with two columns:
 #'   \item{Metric}{The name of the computed evaluation metric.}
@@ -153,8 +157,9 @@ tm_survival_eval <- function (model, event_time,
   if("pseudo_r2_point" %in% metrics ||
      "r2_point" %in% metrics || 
      "l2_point" %in% metrics) {
-    i.obs <- ifelse(event_time < t_star & status == 1, 1, 0)
-    i.predict <- predicted_probability[, t_idx]
+    i.obs <- ifelse(event_time <= t_star & status == 1, 1, 0)
+    # The outcome is an event indicator, so its predicted mean is F = 1 - S.
+    i.predict <- 1 - predicted_probability[, t_idx]
     restricted <- restricted_data_gen(event_time, status, t_star)
     event_time.R2.point <- restricted$time
     status.R2.point <- restricted$status
@@ -164,13 +169,13 @@ tm_survival_eval <- function (model, event_time,
 
   if ("pseudo_r2_point" %in% metrics) {
     metrics_results$pseudo_r2_point <- round(as.numeric(r_l_p$R.squared) * 
-                                               as.numeric(r_l_p$L.square), 4)
+                                               as.numeric(r_l_p$L.squared), 4)
   } 
   if ("r2_point" %in% metrics) {
     metrics_results$r2_point <- round(as.numeric(r_l_p$R.squared),4)
   }
   if ("l2_point" %in% metrics) {
-    metrics_results$l2_point <- round(as.numeric(r_l_p$L.square), 4)
+    metrics_results$l2_point <- round(as.numeric(r_l_p$L.squared), 4)
   }
   
   if ("harrell_c" %in% metrics) {
