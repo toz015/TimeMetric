@@ -4,7 +4,8 @@
 #'
 #' @param train_data A data frame containing the survival data.
 #' @param covariates A character vector of covariate names to include in the model.
-#' @param models A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.
+#' @param models Character vector of model types: "coxph", "exp", "lognormal",
+#'   or "weibull". The default fits only "coxph"; use "all" to fit all four.
 #' @param metrics A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
 #'   \itemize{
 #'     \item "r_square": R-squared metric.
@@ -21,6 +22,11 @@
 #' @param t_star (Optional) A positive numeric value specifying the time point at which the Brier score and AUC score is calculated.
 #' @param tau (Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.
 #'
+#' @details Rows with missing values in \code{time}, \code{status}, or a
+#'   requested covariate are excluded from training and evaluation with a
+#'   warning. All requested metrics use the same complete evaluation rows.
+#'   The warning can be silenced with \code{suppressWarnings()}.
+#'
 #' @return A data frame containing the selected model's performance metrics.
 #'
 #' @examples
@@ -34,7 +40,7 @@
 #' dat <- pbc[, c("time", "status", covariates)]
 #' dat <- dat[stats::complete.cases(dat), ]
 #'
-#' # All available models and metrics
+#' # Default Cox model and all its available metrics
 #' results <- tm_fit_and_eval(train_data = dat, covariates = covariates)
 #' results
 #'
@@ -57,11 +63,10 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
   if (missing(train_data) || missing(covariates)) {
     stop("Please provide 'train_data', 'time_var', 'status_var', and 'covariates' arguments.")
   }
-  if (!is.null(predicted_data)) {
-      test_data <- predicted_data
-      } else {
-      test_data <- train_data
-      }
+  required <- c(time_var, status_var, covariates)
+  train_data <- tm_complete_survival_rows(train_data, required, "train_data")
+  test_data <- if (is.null(predicted_data)) train_data else
+    tm_complete_survival_rows(predicted_data, required, "predicted_data")
   
   # Fit models based on user input
   fits <- list()
@@ -74,9 +79,20 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
   )
   formula <- as.formula(formula_text)
   
-  model_types <- if (("all" %in% models)) c("coxph", "exp", "lognormal", "weibull") else models
+  valid_models <- c("coxph", "exp", "lognormal", "weibull")
+  invalid_models <- setdiff(models, c("all", valid_models))
+  if (length(invalid_models) > 0 || length(models) == 0) {
+    stop("Invalid models: ", paste(invalid_models, collapse = ", "))
+  }
+  model_types <- if ("all" %in% models) valid_models else models
   metrics <- tm_normalize_metrics(metrics)
-  metrics <- if (("all" %in% metrics)) c("pseudo_r2", "r_square", "l_square", "harrell_c", "uno_c", "brier_score", "td_auc") else metrics
+  valid_metrics <- c("pseudo_r2", "r_square", "l_square", "harrell_c",
+                     "uno_c", "brier_score", "td_auc")
+  invalid_metrics <- setdiff(metrics, c("all", valid_metrics))
+  if (length(invalid_metrics) > 0 || length(metrics) == 0) {
+    stop("Invalid metrics: ", paste(invalid_metrics, collapse = ", "))
+  }
+  metrics <- if ("all" %in% metrics) valid_metrics else unique(metrics)
   # Define a list to hold metrics
   metrics_results <- list()
   
@@ -115,7 +131,7 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
     }
     # Extract metrics if requested
     if ( "pseudo_r2" %in% metrics ){
-      metrics_results[[fit_name]]$Pesudo_R <- round(r_l_list[1] * r_l_list[2], 2)
+      metrics_results[[fit_name]]$pseudo_r2 <- round(r_l_list[1] * r_l_list[2], 2)
     }
     if ("r_square" %in% metrics) {
       metrics_results[[fit_name]]$r_square <- round(r_l_list[1], 2)
@@ -148,8 +164,15 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
       } else {
         pred_time <- quantile(test_data[[time_var]], 0.5, na.rm = TRUE)
       }
-      auc <- survivalROC::survivalROC(Stime = test_data[[time_var]], status = test_data[[status_var]], marker = predict(fits[[fit_name]], newdata = test_data, type = "lp"), predict.time = pred_time, method = "KM")$AUC
-      auc <- max(auc, 1- auc)
+      marker <- predict(fits[[fit_name]], newdata = test_data, type = "lp")
+      # Cox scores increase with risk; AFT location scores increase with time.
+      # Do not choose orientation using validation outcomes: an AUC below 0.5
+      # is evidence of poor discrimination and must not be folded above 0.5.
+      if (fit_name != "coxph") marker <- -marker
+      auc <- survivalROC::survivalROC(
+        Stime = test_data[[time_var]], status = test_data[[status_var]],
+        marker = marker, predict.time = pred_time, method = "KM"
+      )$AUC
       metrics_results[[fit_name]]$"td_auc" <- auc
     }
   }
@@ -158,11 +181,29 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
   metrics_df <- do.call(rbind, lapply(names(metrics_results), function(models) {
     model_metrics <- metrics_results[[models]]
     
-    row_data <- c(Model = models, unlist(model_metrics))
+    row_data <- c(Model = models, unlist(model_metrics[metrics]))
     
     as.data.frame(t(row_data), stringsAsFactors = FALSE)
   }))
   metrics_df[-1] <- lapply(metrics_df[-1], function(x) round(as.numeric(x), 2))
   colnames(metrics_df) <- c("Model", metrics)
   return(metrics_df)
+}
+
+# Keep model fitting and every metric on the same rows. In particular, do not
+# let survivalROC drop missing rows itself: it reports that through cat().
+tm_complete_survival_rows <- function(data, columns, label) {
+  if (!is.data.frame(data) || !all(columns %in% names(data))) {
+    stop("'", label, "' must be a data frame containing: ",
+         paste(columns, collapse = ", "), call. = FALSE)
+  }
+  keep <- stats::complete.cases(data[, columns, drop = FALSE])
+  if (!any(keep)) {
+    stop("No complete rows remain in '", label, "'.", call. = FALSE)
+  }
+  if (any(!keep)) {
+    warning("Dropped ", sum(!keep), " incomplete row(s) from '", label,
+            "'.", call. = FALSE)
+  }
+  data[keep, , drop = FALSE]
 }

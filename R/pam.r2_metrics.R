@@ -33,6 +33,8 @@ pam.r2_metrics <- function(predicted_data, survival_time, status,
   y.order <- order(survival_time)
   y <- survival_time[y.order]
   delta <- status[y.order]
+  predicted_data <- predicted_data[y.order]
+  if (!is.null(case_weight)) case_weight <- case_weight[y.order]
   
   # Calculate inverse probability of censoring weights (IPCW)
   fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)

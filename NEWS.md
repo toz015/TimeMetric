@@ -1,6 +1,8 @@
 # TimeMetric 0.2.1
 
-Resubmission addressing the CRAN review of 0.2.0. Metric values are unchanged.
+Resubmission addressing the CRAN review of 0.2.0 and correcting numerical
+errors found during independent validation. Several metric values change;
+analyses using previous versions should be rerun.
 
 * `DESCRIPTION`: the Description no longer starts with the package name,
   quotes software names, spells out AUC, and cites the methods it implements
@@ -16,9 +18,42 @@ Resubmission addressing the CRAN review of 0.2.0. Metric values are unchanged.
 * `tm_simulate_fine_gray()` and `tm_plot_summary()` no longer reset the random
   number generator by default. Their `seed` argument now defaults to `NULL`;
   pass a seed to get the previous reproducible behavior.
-* 'tidyr' is added to Suggests. `yardstick::roc_auc_survival()`, used by
-  `tm_evaluate_two_phase()`, needs it at run time but declares it only as a
-  suggested package, so `R CMD check --as-cran` could fail without it.
+* 'tidyr' is required in Imports because the default two-phase AUC uses it
+  through 'yardstick'. A CI job tests the default metrics using only required
+  dependencies. The unused 'expint' dependency has been removed.
+* `tm_fit_and_eval()` excludes incomplete training/evaluation rows with a
+  suppressible warning before invoking any metric backend. This also prevents
+  unsuppressible missing-value output from 'survivalROC'.
+
+## Numerical and API corrections
+
+* Competing-risk `td_auc` can now be requested without also requesting
+  `brier_score`.
+* `tm_fit_and_eval()` matches values to metric names when a subset is supplied
+  in a different order. Previously it could silently label a Brier score as
+  concordance (or vice versa). Unsupported models and metrics now give clear
+  errors.
+* `tm_predict_survreg()` retains the covariate column when predicting from a
+  data frame containing a single predictor.
+* Cox survival probabilities now come from the fitted training model through
+  `survival::survfit()`. Previously the baseline was re-estimated using
+  validation outcomes, leaking information and ignoring fitted case weights.
+* Finite-horizon Weibull and lognormal AFT means now compute the integral of
+  survival, including the probability mass beyond the restriction time.
+  Prediction objects retain original follow-up times and event labels.
+* Explained-variation calculations reorder predictions and sampling weights
+  together with observed times.
+* Point pseudo R-squared now compares event indicators with event probabilities
+  (`1 - survival`), including events at the evaluation horizon. Point
+  calibration-component and pseudo R-squared values consequently change.
+* `tm_fit_and_eval()` orients AFT scores by their model meaning and retains
+  AUC values below 0.5. Previously `max(AUC, 1 - AUC)` could make reversed
+  held-out predictions appear highly discriminative.
+* NCC weights interpret `m` as the documented number of controls per case.
+  Sampling opportunities are restricted to cases in the matching stratum;
+  tied failures and censoring follow the documented risk-set convention.
+  NCC metric values and finite-horizon AFT results change as a consequence.
+  Previously reported manuscript results need to be regenerated.
 
 # TimeMetric 0.2.0
 

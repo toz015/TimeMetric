@@ -19,7 +19,8 @@ tm_fit_and_eval(
 
 \item{covariates}{A character vector of covariate names to include in the model.}
 
-\item{models}{A character string or vector specifying the model types to fit (e.g., "coxph", "exp", "lognormal", "weibull"). Default is "coxph" to fit all models.}
+\item{models}{Character vector of model types: "coxph", "exp", "lognormal",
+or "weibull". The default fits only "coxph"; use "all" to fit all four.}
 
 \item{metrics}{A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
 \itemize{
@@ -45,6 +46,12 @@ A data frame containing the selected model's performance metrics.
 \description{
 This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
 }
+\details{
+Rows with missing values in \code{time}, \code{status}, or a
+  requested covariate are excluded from training and evaluation with a
+  warning. All requested metrics use the same complete evaluation rows.
+  The warning can be silenced with \code{suppressWarnings()}.
+}
 \examples{
 data(pbc, package = "survival")
 pbc <- pbc[!is.na(pbc$trt), ]
@@ -56,7 +63,7 @@ covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
 dat <- pbc[, c("time", "status", covariates)]
 dat <- dat[stats::complete.cases(dat), ]
 
-# All available models and metrics
+# Default Cox model and all its available metrics
 results <- tm_fit_and_eval(train_data = dat, covariates = covariates)
 results
 

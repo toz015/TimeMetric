@@ -1,6 +1,6 @@
 "Scenario","Metric","Value"
 "eval_default","pseudo_r2",0.2372
-"eval_default","pseudo_r2_point",0.0913
+"eval_default","pseudo_r2_point",0.1632
 "eval_default","harrell_c",0.6619
 "eval_default","uno_c",0.6559
 "eval_default","brier_score",0.2054
@@ -8,9 +8,9 @@
 "eval_all","pseudo_r2",0.2372
 "eval_all","r_square",0.2375
 "eval_all","l_square",0.9986
-"eval_all","pseudo_r2_point",0.0913
+"eval_all","pseudo_r2_point",0.1632
 "eval_all","r2_point",0.1637
-"eval_all","l2_point",0.5575
+"eval_all","l2_point",0.997
 "eval_all","harrell_c",0.6619
 "eval_all","uno_c",0.6559
 "eval_all","brier_score",0.2054
@@ -42,10 +42,10 @@
 "two_phase_cc","brier_score",0.2068
 "two_phase_cc","td_auc",0.7398
 "two_phase_ncc","pseudo_r2",0.26
-"two_phase_ncc","harrell_c",0.6138
-"two_phase_ncc","uno_c",0.6343
-"two_phase_ncc","brier_score",0.1811
-"two_phase_ncc","td_auc",0.7646
+"two_phase_ncc","harrell_c",0.635
+"two_phase_ncc","uno_c",0.6415
+"two_phase_ncc","brier_score",0.1894
+"two_phase_ncc","td_auc",0.7536
 "two_phase_unit","pseudo_r2",0.24
 "two_phase_unit","harrell_c",0.6619
 "two_phase_unit","uno_c",0.6559

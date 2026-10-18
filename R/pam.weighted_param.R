@@ -68,6 +68,8 @@ weighted_param <- function(time, status,
     
     if (is.null(m))
       stop("Number of controls per case `m` must be specified for NCC designs")
+    if (length(m) != 1L || !is.finite(m) || m < 1 || m != as.integer(m))
+      stop("`m` must be a positive integer number of controls per case.")
     
     if (design == "matched_ncc" && is.null(strata))
       stop("`strata` must be supplied for *matched* NCC")
@@ -82,13 +84,21 @@ weighted_param <- function(time, status,
       prod_term <- 1
       for (j in seq_along(evt_times)) {
         tj <- evt_times[j]
-        if (time[k] > tj) {                    # still at risk at t_j
+        if (time[k] >= tj) {                   # events precede censoring at ties
           if (design == "matched_ncc") {
+            if (!any(time == tj & status == 1 & strata == strata[k])) next
             Rj <- sum(time >= tj & strata == strata[k])
+            failures <- sum(time == tj & status == 1 & strata == strata[k])
           } else {
             Rj <- riskset_sizes[j]
+            failures <- sum(time == tj & status == 1)
           }
-          prod_term <- prod_term * (1 - (m - 1) / (Rj - 1))
+          # m is the number of CONTROLS, not the matched-set size.
+          # For tied failures, each case draws independently from eligible
+          # non-cases, without replacement within its control sample.
+          eligible <- Rj - failures
+          selection_prob <- min(1, m / eligible)
+          prod_term <- prod_term * (1 - selection_prob)^failures
         }
       }
       prod_term                                # product over event times
