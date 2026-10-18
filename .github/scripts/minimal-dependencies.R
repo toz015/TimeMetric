@@ -1,13 +1,17 @@
 # Run in a fresh R session after installing the source package and hard deps.
-# Restrict library discovery to the declared Depends/Imports/LinkingTo closure,
+# Restrict library discovery to the declared Depends/Imports closure,
 # so an incidental suggested package in a runner cache cannot hide a defect.
+# LinkingTo supplies build-time headers, which binary installations need not
+# retain; those packages are not required to run an already installed package.
 db <- installed.packages()
 db <- db[!duplicated(db[, "Package"]), , drop = FALSE]
 required <- unique(c("TimeMetric", unlist(tools::package_dependencies(
-  "TimeMetric", db = db, which = c("Depends", "Imports", "LinkingTo"),
+  "TimeMetric", db = db, which = c("Depends", "Imports"),
   recursive = TRUE))))
 required <- setdiff(required, "R")
-stopifnot(all(required %in% db[, "Package"]), "tidyr" %in% required)
+missing <- setdiff(required, db[, "Package"])
+if (length(missing)) stop("Missing runtime dependencies: ", paste(missing, collapse = ", "))
+stopifnot("tidyr" %in% required)
 lib <- tempfile("timemetric-hard-deps-")
 dir.create(lib)
 check <- function() {
