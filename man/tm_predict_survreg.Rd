@@ -36,6 +36,12 @@ Each element of the returned list corresponds to one fitted model and contains:
 This function computes Calculates a set of measures, $R^2$ and $L^2$, $Pseudo-R^2$ for evaluating the predictive accuracy of parametric survival regression models. 
 R-squared quantifies the proportion of variability in the response that is explained by a corrected prediction function derived from the original model. L-squared measures the proportion of the prediction error from the original model that is explained by the corrected prediction function, effectively capturing the improvement in prediction accuracy. Together, these metrics provide a comprehensive assessment of the predictive performance of a survival regression model.
 }
+\details{
+With `predict = FALSE`, R-squared metrics return missing values
+  with a warning if censoring weights cannot be normalized, for example
+  when the training censoring survival is zero at an observed evaluation
+  event. Individual predictions remain available with `predict = TRUE`.
+}
 \examples{
 data(pbc, package = "survival")
 pbc <- pbc[!is.na(pbc$trt), ]

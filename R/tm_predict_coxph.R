@@ -8,8 +8,16 @@
 #' @param model An object of class `coxph` representing a fitted Cox proportional hazards regression model. The model must be fitted with `x = TRUE` and `y = TRUE` to include the design matrix and response vector.
 #' @param covs A character vector specifying the names of the covariates used in the model.
 #' @param tau (Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.
-#' @param new_data (Optional) A new dataset for validation. If provided, the function calculates metrics on this new dataset instead of the training data.
+#' @param new_data Optional evaluation data. Its outcomes are returned for metric
+#'   computation and define the evaluation time grid; they never estimate the
+#'   baseline hazard. All prediction parameters come from the training fit.
 #' @param predict A logical value indicating whether to return individual predictions. Default is TRUE.
+#' @details Probabilities use the fitted training baseline, including its case
+#'   weights, strata, tie method and offsets. Offset centering follows the
+#'   weighted training mean used by [survival::survfit()].
+#'   With `predict = FALSE`, R-squared metrics return missing values with a
+#'   warning if censoring weights cannot be normalized, for example when the
+#'   training censoring survival is zero at an observed evaluation event.
 #' @return
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
@@ -19,8 +27,10 @@
 #'   \item \code{status} -- event indicators (1 = event, 0 = censored).
 #'   \item \code{surv_prob} -- an \eqn{n \times K} matrix of predicted
 #'         subject-specific survival probabilities on a common time grid.
-#'   \item \code{pred} -- predicted mean survival time  
-#'         (restricted or unrestricted, depending on the function).
+#'   \item \code{pred} -- numerical integral of the training-model survival curve
+#'         on the evaluation grid, up to its maximum time or tau, whichever is
+#'         smaller. This preserves the legacy integration rule; it is not an
+#'         identified unrestricted mean. Fix the grid and tau for comparisons.
 #'   \item \code{covs} -- character vector of covariate names used for prediction.
 #'   \item \code{new_data} -- dataset on which the predictions were computed.
 #' }
@@ -54,65 +64,63 @@
 #' @export
 tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict = TRUE)
 {
-  if(is.null(new_data)){
-      x.matrix.unsorted <- model$x
-      y.unsorted <- model$y[, 1]
-      censor.unsorted <- model$y[, dim(model$y)[2]]
-      y.order.new <- NULL
-  }else{
-    time_var = "time"
-    status_var = "status"
-    if (any(!c(time_var, status_var) %in% colnames(new_data)))  {
-        stop("new_data require time and status columns")
-      }
-    y.unsorted <- model$y[, 1]
-    censor.unsorted <- model$y[, dim(model$y)[2]]
-    x.matrix.unsorted <- new_data[, covs, drop = FALSE]
-    y.unsorted.new <- new_data[[time_var]]
-    censor.unsorted.new <- new_data[[status_var]]
+  if (!inherits(model, "coxph") || inherits(model, "coxphms")) {
+    stop("model must be a right-censored coxph fit.")
+  }
+  if (is.null(model$y) || ncol(model$y) != 2L ||
+      attr(model$y, "type") != "right") {
+    stop("model must include y = TRUE and a right-censored response.")
+  }
+  if (!is.null(tau) && (length(tau) != 1L || !is.finite(tau) || tau <= 0)) {
+    stop("tau must be NULL or a positive finite number.")
+  }
+  y.unsorted <- model$y[, 1]
+  censor.unsorted <- model$y[, 2]
+  if (is.null(new_data)) {
+    prediction_data <- stats::model.frame(model)
+    y.order.new <- NULL
+  } else {
+    if (!all(c("time", "status") %in% names(new_data))) {
+      stop("new_data require time and status columns")
+    }
+    if (!all(covs %in% names(new_data))) {
+      stop("All covariates must be present in new_data.")
+    }
+    if (!nrow(new_data) || any(!is.finite(new_data$time)) ||
+        any(new_data$time < 0) || anyNA(new_data$status) ||
+        any(!new_data$status %in% c(0, 1))) {
+      stop("new_data require finite non-negative time and binary status.")
+    }
+    prediction_data <- new_data
+    y.unsorted.new <- new_data$time
+    censor.unsorted.new <- new_data$status
     y.order.new <- order(y.unsorted.new)
   }
-  my.beta <- model$coeff
   y.order <- order(y.unsorted)
-  nsize <- length(y.unsorted)
   y <- y.unsorted[y.order]
   delta <- censor.unsorted[y.order]
-  p <- dim(as.matrix(x.matrix.unsorted))[2]
-  if (!is.null(y.order.new)) y.order <- y.order.new
-  if (p == 1) {
-    x.matrix <- as.matrix(x.matrix.unsorted[y.order, ])
-  } else {
-    x.matrix <- as.matrix( x.matrix.unsorted[y.order, ])
-  }
   fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)
   if (!is.null(y.order.new)){
+    y.order <- y.order.new
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 
-  sum.km.censoring <- summary(fit.km.censoring, times = y, extend = TRUE)
-  km.censoring <- sum.km.censoring$surv
-  km.censoring.minus <- c(1, km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y)
   ratio.km <- delta/km.censoring.minus
   ratio.km[is.nan(ratio.km)] <- 0
   weight.km <- ratio.km/(sum(ratio.km))
-  if(is.null(new_data)){
-    #temp_rs <- x.matrix %*% my.beta
-    temp_rs <- predict(model, type = "lp")[y.order]
-  }else{
-    temp_rs <- predict(model, new_data[, covs, drop = FALSE], type = "lp")[y.order]
-  }
-  # Predict from the training fit. Re-estimating a baseline from y/delta here
-  # leaks validation outcomes into predictions and discards fitted case weights.
-  prediction_data <- if (is.null(new_data)) {
-    stats::model.frame(model)[y.order, , drop = FALSE]
+  prediction_order <- if (is.null(y.order.new)) order(y.unsorted) else y.order.new
+  prediction_data <- prediction_data[prediction_order, , drop = FALSE]
+  temp_rs <- if (is.null(new_data)) {
+    as.numeric(stats::predict(model, type = "lp", reference = "sample"))[prediction_order]
   } else {
-    new_data[y.order, , drop = FALSE]
+    as.numeric(stats::predict(model, newdata = prediction_data,
+                              type = "lp", reference = "sample"))
   }
-  survival_fit <- survival::survfit(model, newdata = prediction_data,
-                                   se.fit = FALSE)
-  survival_at_times <- summary(survival_fit, times = y, extend = TRUE)$surv
-  S.hat.x <- matrix(survival_at_times, nrow = length(y),
-                    ncol = nrow(prediction_data))
+  # The baseline, including training weights and the fitted tie convention,
+  # comes exclusively from the training fit. Validation outcomes only supply
+  # the evaluation grid and the responses passed to downstream metrics.
+  S.hat.x <- t(tm_cox_survival(model, prediction_data, temp_rs, y))
 
   # Truncate data if tau is provided
   delta.origin <- delta
@@ -147,6 +155,12 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
                           covs = covs
                                      ))}
 
+  if (any(!is.finite(weight.km)) || !any(weight.km > 0)) {
+    warning("R-squared metrics require positive censoring survival at observed ",
+            "evaluation events and at least one observed event.", call. = FALSE)
+    return(list(R.squared = NA_character_, L.squared = NA_character_,
+                Psuedo.R = NA_character_))
+  }
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
                            return(c(NA, NA))
@@ -167,3 +181,88 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
               Psuedo.R = format(SR, nsmall = 4)))
 }
 
+
+# Training-baseline survival on an arbitrary sorted evaluation grid. Chunking
+# avoids allocating a training-times x validation-subjects survfit object.
+tm_cox_survival <- function(model, new_data, linear_predictor, times) {
+  # The predictions below are subject-specific, so survival's warning about the
+  # default curve of an interaction model does not apply.
+  bh <- tryCatch(
+    withCallingHandlers(
+      survival::basehaz(model, centered = TRUE),
+      warning = function(w) {
+        if (grepl("contains interactions", conditionMessage(w))) {
+          invokeRestart("muffleWarning")
+        }
+      }),
+    error = function(e) {
+      if (grepl("strata by covariate interaction", conditionMessage(e))) NULL
+      else stop(e)
+    })
+  if (is.null(bh)) return(tm_cox_survival_by_row(model, new_data, times))
+  if (!nrow(bh)) stop("The training fit has no baseline time grid.")
+  if (length(attr(stats::terms(model), "offset"))) {
+    # survfit/basehaz centers offsets at their weighted training mean. predict's
+    # lp centering differs between in-sample and newdata calls, so construct the
+    # relative risk on the baseline's scale from the fitted design and offsets.
+    training_frame <- stats::model.frame(model)
+    training_offset <- stats::model.offset(training_frame)
+    training_weight <- stats::model.weights(training_frame)
+    offset_center <- if (is.null(training_weight)) mean(training_offset) else
+      stats::weighted.mean(training_offset, training_weight)
+    prediction_frame <- if (!is.null(attr(new_data, "terms"))) new_data else
+      stats::model.frame(stats::delete.response(stats::terms(model)), new_data,
+                        xlev = model$xlevels, na.action = stats::na.pass)
+    design <- stats::model.matrix(model, data = prediction_frame)
+    beta <- stats::coef(model)
+    beta[is.na(beta)] <- 0
+    linear_predictor <- as.numeric(sweep(design, 2, model$means, "-") %*% beta) +
+      stats::model.offset(prediction_frame) - offset_center
+  }
+  if (is.null(bh$strata)) {
+    bh$strata <- "all"
+    subject_strata <- rep("all", nrow(new_data))
+  } else {
+    tt <- stats::delete.response(stats::terms(model))
+    specials <- attr(tt, "specials")$strata
+    term_names <- rownames(attr(tt, "factors"))[specials]
+    mf <- if (all(term_names %in% names(new_data))) new_data else
+      stats::model.frame(tt, new_data, xlev = model$xlevels, na.action = stats::na.pass)
+    # delete.response updates the special indices to the response-free frame.
+    sf <- mf[, term_names, drop = FALSE]
+    subject_strata <- if (ncol(sf) == 1L) as.character(sf[[1L]]) else
+      as.character(survival::strata(sf, shortlabel = TRUE))
+    if (any(!subject_strata %in% as.character(bh$strata))) {
+      stop("New data contain a stratum absent from the training fit.")
+    }
+  }
+  out <- matrix(NA_real_, nrow(new_data), length(times))
+  for (s in unique(subject_strata)) {
+    baseline <- bh[as.character(bh$strata) == s, , drop = FALSE]
+    at <- findInterval(times, baseline$time)
+    h0 <- c(0, baseline$hazard)[at + 1L]
+    rows <- which(subject_strata == s)
+    for (start in seq.int(1L, length(rows), by = 256L)) {
+      block <- rows[start:min(start + 255L, length(rows))]
+      out[block, ] <- exp(-outer(exp(linear_predictor[block]), h0))
+    }
+  }
+  out
+}
+
+# Strata-by-covariate interactions have no shared stratum baseline, so each
+# subject's curve comes from survfit() on the raw covariates.
+#' @noRd
+tm_cox_survival_by_row <- function(model, new_data, times) {
+  if (!is.null(attr(new_data, "terms"))) {
+    stop("Cox models with strata-by-covariate interactions need raw covariates; ",
+         "pass the evaluation data as new_data.", call. = FALSE)
+  }
+  out <- matrix(NA_real_, nrow(new_data), length(times))
+  for (i in seq_len(nrow(new_data))) {
+    fit <- survival::survfit(model, newdata = new_data[i, , drop = FALSE],
+                             se.fit = FALSE)
+    out[i, ] <- c(1, fit$surv)[findInterval(times, fit$time) + 1L]
+  }
+  out
+}

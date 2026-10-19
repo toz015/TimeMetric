@@ -1,5 +1,59 @@
 # TimeMetric 0.2.1
 
+- Correct cause-specific AFT CIF integration near time zero using adaptive quadrature on the target-event probability scale. Fixed-scale Weibull models with scale greater than one no longer lose the initial probability mass.
+- Align the Framingham analysis scripts with the manuscript's 12-year horizon and correct the CIF time-summary documentation.
+
+## Paper integration
+
+* Competing-risks C-index now uses reciprocal censoring-survival products,
+  following Wolbers et al. (2014), equation (3.4). Previously it multiplied
+  comparable pairs by those products. Only contributing pairs are inverted,
+  avoiding undefined weights in unused rows after the evaluation horizon.
+  Existing competing-risks C-index results require reevaluation.
+* Point R-squared now includes target events at the evaluation time (`T <= t`)
+  in both survival and competing-risks evaluation, matching the manuscript.
+  Ordinary survival point R-squared compares the event indicator with `1 - S`
+  rather than `S`; this changes its adequacy and pseudo-R-squared values.
+* Competing-risks generalized R-squared now uses the event-observation IPCW
+  strategy in `PA measure new/pam.survreg.update.R`: original follow-up times
+  estimate censoring and evaluate weights, and only observed events of any
+  cause contribute. Both interval and point versions expose Cox (default,
+  optionally conditional) and KM censoring estimates, with a probability floor
+  of 1e-4. Late censoring remains zero-weight by design. The adapted Cox
+  baseline/predictor centering and tied-time left limits are kept consistent.
+  These changes alter CR R-squared results; saved tables need recomputation.
+* Cox predictions now obtain the baseline hazard exclusively from the training
+  fit. Validation labels cannot change survival probabilities on a fixed grid.
+  Training weights, centering, ties, factors and strata follow `survival`.
+  The legacy evaluation-grid integration remains explicit; this repair does
+  not claim that unrestricted mean survival is identified.
+  Offset models use the same weighted training-offset centering as the baseline;
+  reference tests cover in-sample and validation predictions, case weights,
+  strata, and Efron, Breslow and exact tie methods.
+* Matched NCC weights exclude cases from other matching strata. Each case is
+  a sampling occasion, including tied cases; small risk sets provide all
+  available controls. `m` remains the number of controls per case, with
+  full-cohort input. Simultaneous cases are excluded from control draws and
+  events precede censoring at ties. Paper examples and tests use this convention.
+* IPCW weights for ordinary survival R-squared, point R-squared and the
+  Cox/AFT prediction helpers now use one censoring left limit G(t-) for all
+  rows tied at t. Previously, results with tied times depended on row order,
+  and point R-squared was off when a subject was censored exactly at t*.
+  Data with tied times can give slightly different values.
+* The competing-risks Cox censoring model uses Breslow ties, so the
+  no-covariate model equals exp(-Nelson-Aalen) with tied censoring times.
+* `tm_predict_coxph()` supports strata-by-covariate interactions such as
+  `x * strata(g)` when `new_data` is given, and no longer repeats survival's
+  interaction warning on every call.
+* `tm_fit_and_eval()` computes R-squared only when requested. Cox/AFT
+  R-squared with undefined censoring weights returns missing values with a
+  suppressible diagnostic instead of recycling shorter calibration vectors.
+* Added independent prediction/inclusion-probability checks and paper analysis
+  scripts. PBC is compared before/after within 0.2.1; full simulation execution
+  is an explicit separate action. See the paper workflow in `README.md`.
+
+## CRAN review corrections
+
 Resubmission addressing the CRAN review of 0.2.0 and correcting numerical
 errors found during independent validation. Several metric values change;
 analyses using previous versions should be rerun.

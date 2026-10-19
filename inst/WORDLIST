@@ -1,6 +1,8 @@
 AUC
+Aalen
 Biomedicine
 Biometrics
+Breslow
 CIF
 CIFs
 CMD
@@ -8,6 +10,9 @@ Cai
 Califf
 D'Agostino
 DOIs
+Efron
+FHS
+Framingham
 Graf
 Heagerty
 IPCW
@@ -23,6 +28,8 @@ Mariani
 Miceli
 NCC
 PAmeasures
+PBC
+Pandoc
 Pencina
 Pepe
 Perme
@@ -65,6 +72,7 @@ pre
 pred
 preprint
 randomForestSRC
+recomputation
 requireNamespace
 resubmission
 rfsrc

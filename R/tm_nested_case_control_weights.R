@@ -8,8 +8,9 @@
 #'
 #' @param time Numeric vector of follow-up times.
 #' @param status Numeric \{0,1\}, 1 = event, 0 = censored.
-#' @param strata Optional factor/character for matching sets (matched NCC).
-#' @param m Integer, number of controls per case (required).
+#' @param strata Optional factor/character defining matching strata in the full
+#'   phase-one cohort, not IDs of sampled case-control sets.
+#' @param m Positive integer, number of controls per case (required).
 #' @details
 #' Supply full-cohort follow-up and event information, not only sampled rows.
 #' Controls are sampled without replacement within each case's risk set and
@@ -21,10 +22,10 @@
 #' such a subject cannot belong to the sampled analysis dataset. Subset the
 #' returned weights to the subjects actually sampled and align their order
 #' with the prediction objects before evaluation.
-#' @return Numeric vector of weights.
+#' @return Numeric vector of weights, in full-cohort input order.
 #' @export
 #' @examples
-#' # Nested case-control design with m = 2 matched controls per case.
+#' # Unmatched nested case-control design with m = 2 controls per case.
 #' d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
 #'                         beta = c(0.5, -0.5), seed = 2025)
 #' set.seed(2025)

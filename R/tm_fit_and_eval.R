@@ -117,17 +117,17 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
       }
       tau <- max(event_times)
     }
-    if (fit_name == "coxph") {
-      r_l_list <- tm_predict_coxph(fits[[fit_name]], covs = covariates,
-                                       tau = tau, new_data = test_data,
-                                       predict = FALSE) %>%
-        Reduce("c", .) %>% as.numeric()
-    } 
-      else {
-      r_l_list <- tm_predict_survreg(fits[[fit_name]], covs = covariates,
-                                         tau = tau, new_data = test_data,
-                                         predict = FALSE) %>%
-        Reduce("c", .) %>% as.numeric()
+    if (any(c("pseudo_r2", "r_square", "l_square") %in% metrics)) {
+      if (fit_name == "coxph") {
+        r_l_list <- tm_predict_coxph(fits[[fit_name]], covs = covariates,
+                                   tau = tau, new_data = test_data,
+                                   predict = FALSE)
+      } else {
+        r_l_list <- tm_predict_survreg(fits[[fit_name]], covs = covariates,
+                                     tau = tau, new_data = test_data,
+                                     predict = FALSE)
+      }
+      r_l_list <- as.numeric(unlist(r_l_list))
     }
     # Extract metrics if requested
     if ( "pseudo_r2" %in% metrics ){

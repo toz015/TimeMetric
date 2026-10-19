@@ -31,35 +31,82 @@ case and matching strata. Metric-subset labels and standalone competing-risk
 AUC are also corrected. NEWS.md describes the changed results and tests.
 The obsolete 'expint' dependency has been removed.
 
-## Local validation
+The integrated paper revision also documents and tests observed-event
+inverse-probability-of-censoring weights for competing-risk R-squared, with
+Cox or Kaplan-Meier censoring estimation. Cox prediction now handles training
+offset centering with case weights and strata. Nested case-control `m` remains
+the number of controls per case. Independent reference tests cover these
+changes and retain the earlier numerical regression checks.
+
+The final review also corrected censoring weights at tied follow-up times:
+all subjects tied at a time now share the same censoring survival left limit.
+Point R-squared is tested when censoring occurs exactly at the evaluation
+horizon. The competing-risk Cox censoring model explicitly uses Breslow ties,
+matching the documented no-covariate Nelson-Aalen reference. Cox prediction
+supports strata-by-covariate interactions when evaluation data are supplied.
+Independent regression tests reproduce these defects on the previous revision
+and pass after the corrections.
+
+The final API smoke check also found an unused R-squared calculation when
+only Brier score or concordance was requested. Metric subsets now avoid that
+calculation. If R-squared is requested with undefined censoring weights, the
+Cox/AFT helpers return missing values and one suppressible diagnostic rather
+than recycling shorter calibration vectors. Tests cover all four model types;
+individual survival predictions remain available.
+
+A manuscript cross-check additionally found that trapezoidal AFT CIF
+integration incorrectly assumed zero density at time zero. Weibull models
+with scale greater than one lost substantial initial event probability.
+Adaptive quadrature on the target-cause probability scale corrects this;
+closed-form Weibull identities (including scale five), independent time-scale
+integration, grid-invariance tests, and lognormal/loglogistic identities cover
+it. The documented time summary integrates one minus the CIF.
+
+The integrated branch also includes the competing-risk C-index correction:
+comparable pairs use reciprocal censoring-survival products rather than the
+products themselves. Independent pair enumeration covers both pair types,
+observations at the horizon, unused zero-survival rows and public evaluation
+wrappers. Previous competing-risk C-index results require reevaluation.
+
+## Local validation of the integrated corrections
 
 R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
-* Source test suite with NOT_CRAN=true: 661 assertions across 141 tests;
-  0 failures, 0 warnings, 0 skips, including optional prediction backends.
-* Independent numerical checks: 11/11 pass against fitted-model survival
-  predictions, numerical integration, and hand-computable sampling/ranking
-  references.
-* All 17 current exported functions exercised by a public/simulated-data smoke
-  test. Default two-phase metrics also pass with only required dependencies.
+* Source suite: 808 assertions across 175 tests; 0 failures, 0 warnings,
+  0 skips, including optional prediction backends.
+* All nine manuscript R listings execute. PBC and GBSG examples reproduce all
+  35 reported table cells on public data. The competing-risk example uses an
+  explicitly labelled simulated fixture because the public Framingham teaching
+  data are unavailable locally; no claim is made to reproduce its clinical
+  results. These must be regenerated after the AFT correction.
+* Four Cox fits agree with independent 'survival::survfit' predictions to
+  1.3e-15. The manuscript's fixed-scale AFT fixture is checked against the
+  analytic competing-risk Weibull CIF at all 87,300 subject/time combinations
+  (maximum absolute error 9.99e-16).
+* The analysis scripts now consistently use the manuscript's 12-year FHS
+  horizon. The real-data runner loads only dependencies of selected datasets.
+  Full manuscript simulation results have not been regenerated.
 
 ## R CMD check results
 
-On the built 0.2.1 source tarball, with network access:
-`R CMD check --as-cran --run-donttest` reports **0 errors, 0 warnings, 2 NOTEs**.
-Examples, tests, incoming URL checks and the PDF manual pass.
+On the integrated 0.2.1 source tarball, the network-enabled
+`R CMD check --as-cran --run-donttest` run on 2026-10-19 reports
+**0 errors, 0 warnings, 3 NOTEs**. Examples, installed-package tests, incoming
+DESCRIPTION/URL checks and the PDF manual pass.
 
 1. CRAN incoming feasibility: "New submission".
-2. HTML manual: the local HTML Tidy is too old, and 'V8' is unavailable, so
-   HTML validation and math-rendering checks are skipped on this machine.
-   These are local toolchain limitations, not claimed successful checks.
+2. Future file timestamps: unable to verify current time using the external
+   clock service, despite network access for the other checks.
+3. HTML manual: local HTML Tidy is too old and 'V8' is unavailable, so
+   HTML validation and math-rendering checks are skipped.
 
 ## Platform checks
 
-Fresh GitHub Actions checks on this PR cover Linux release/devel/oldrel-1,
-Windows release/devel, macOS release, and a separate full-dependency test job.
-The local results and checked tarball identity are recorded in
-`docs/validation/cran-resubmission-2026-10-18.md`.
+Fresh GitHub Actions checks have been requested for the integrated PR #3
+revision containing both the AFT CIF and reciprocal-IPCW concordance fixes.
+The six platform jobs, full-dependency suite, required-dependency smoke test
+and coverage job must pass on the final PR head before merging. Results are
+tracked at <https://github.com/toz015/TimeMetric/pull/3/checks>.
 
 ## Downstream dependencies
 

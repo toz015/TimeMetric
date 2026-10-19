@@ -33,12 +33,12 @@ tm_predict_cif(
 \item{covs}{A character vector specifying the names of the covariates used in the model.}
 }
 \value{
-A list with two components:
+A list with the following components:
 \describe{
   \item{times}{Numeric vector of observed times from \code{newdata$time}.}
   \item{status}{Integer vector of event indicators from \code{newdata$status}.}
   \item{cif_pred}{A matrix where the first column is time, and subsequent columns are predicted CIFs for each subject.}
-  \item{pred}{Numeric vector of the integral of CIF from \code{0} to \code{tau}.}
+  \item{pred}{Numeric vector of the integral of one minus the CIF from \code{0} to \code{tau}.}
   \item{linear.pred}{Numeric vector of subject-specific linear predictors.}
 }
 }
@@ -47,6 +47,12 @@ This function calculates cumulative incidence function (CIF) predictions for ind
 across multiple types of competing risks models. It supports cause-specific Cox models, 
 accelerated failure time (AFT) models (Weibull, Log-normal, Log-logistic), Fine-Gray models, 
 and competing risks random survival forests.
+}
+\details{
+For cause-specific AFT models, CIFs are evaluated by adaptive
+quadrature on the target cause's probability scale. This handles Weibull
+densities that are unbounded at time zero, including fixed scales above 1.
+The time summary integrates one minus the CIF on the returned time grid.
 }
 \examples{
 data(pbc, package = "survival")

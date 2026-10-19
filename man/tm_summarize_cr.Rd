@@ -10,7 +10,9 @@ tm_summarize_cr(
   t_star = NULL,
   tau = NULL,
   event_type = 1,
-  digits = 2
+  digits = 2,
+  censoring = c("cox", "km"),
+  censor_covariates = NULL
 )
 }
 \arguments{
@@ -32,6 +34,13 @@ tm_summarize_cr(
 \item{event_type}{Integer code for the cause of interest (passed through).}
 
 \item{digits}{Number of decimal places to round the metric values (default = 2).}
+
+\item{censoring}{Censoring estimator for generalized R-squared metrics,
+`"cox"` (default) or `"km"`; passed to [tm_survival_eval_cr()].}
+
+\item{censor_covariates}{Optional numeric censoring-model covariates shared
+across models. Rows must match each model's subject order. Passed to
+[tm_survival_eval_cr()]; used only with `censoring = "cox"`.}
 }
 \value{
 A data.frame with:
@@ -44,6 +53,10 @@ A data.frame with:
 \description{
 Calls \code{tm_survival_eval_cr()} for each model in a named list and
 returns a wide table where rows are metrics and columns are model names.
+}
+\details{
+See [tm_survival_eval_cr()] for the event-observation weighting
+  rule, original-time support requirements and probability floor.
 }
 \examples{
 # Competing risks: cause 1 is the event of interest, cause 2 the competing

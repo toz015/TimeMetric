@@ -14,12 +14,16 @@
 #' @param event.type The event type of interest for which CIF is to be predicted.
 #' @param tau The maximum time horizon for prediction.
 #' @param covs A character vector specifying the names of the covariates used in the model.
-#' @return A list with two components:
+#' @details For cause-specific AFT models, CIFs are evaluated by adaptive
+#' quadrature on the target cause's probability scale. This handles Weibull
+#' densities that are unbounded at time zero, including fixed scales above 1.
+#' The time summary integrates one minus the CIF on the returned time grid.
+#' @return A list with the following components:
 #' \describe{
 #'   \item{times}{Numeric vector of observed times from \code{newdata$time}.}
 #'   \item{status}{Integer vector of event indicators from \code{newdata$status}.}
 #'   \item{cif_pred}{A matrix where the first column is time, and subsequent columns are predicted CIFs for each subject.}
-#'   \item{pred}{Numeric vector of the integral of CIF from \code{0} to \code{tau}.}
+#'   \item{pred}{Numeric vector of the integral of one minus the CIF from \code{0} to \code{tau}.}
 #'   \item{linear.pred}{Numeric vector of subject-specific linear predictors.}
 #' }
 #' 
@@ -112,7 +116,7 @@ tm_predict_cif <- function(model1 = NULL, model2 = NULL,
   
   if (inherits(model1, "survreg")) {
     model.info1 <- get_CIF_aft(newdata$time, newdata$status, model1, list(model2),
-                               newX = as.matrix(newdata[, covs, drop = FALSE]))
+                               newX = newdata[, covs, drop = FALSE])
     m_pred <- cbind(model.info1$y, model.info1$CIF)
     
     pred <- apply(m_pred[, -1], 2, m_cif, time.cif = m_pred[, 1], tau = tau)
@@ -161,72 +165,67 @@ get_CIF <- function(cox.focus, cox.other, X){
 #######################################################################
 
 
-get_CIF_aft <- function(ftime, fstatus, aft.focus, aft.other, newX = NULL){
-  if(is.null(newX)) newX <- aft.focus$x[,-1]
-  lambda <- exp(-aft.focus$coefficients[1]/aft.focus$scale)
-  alpha <- 1/aft.focus$scale
-  rs1 <- (-newX %*% aft.focus$coefficients[-1]) %>% exp
-  if(aft.focus$dist %in% c("weibull", "exponential")){
-    hi <- sapply(sort(ftime) %>% unique,
-                 function(x) rs1 * lambda * alpha * (rs1 * x)^(alpha-1)) %>% t
-    Ht <- sapply(sort(ftime) %>% unique,
-                 function(x) lambda * (rs1 * x)^(alpha)) %>% t
-  }else if(aft.focus$dist == "lognormal"){
-    St <- sapply(sort(ftime) %>% unique,
-                 function(x){1 - pnorm((log(x) -
-                                          as.matrix(cbind(1, newX)) %*% 
-                                          aft.focus$coefficients)/
-                                         aft.focus$scale)}) %>% t
-    fx <- sapply(sort(ftime) %>% unique,
-                 function(x){exp(-1/2*((log(x)-
-                                          as.matrix(cbind(1, newX)) %*% 
-                                          aft.focus$coefficients)/
-                                         aft.focus$scale)^2)/
-                     (x*sqrt(2*pi)*aft.focus$scale)}) %>% t
-    hi <- fx / St 
-    Ht <- - log(St)
-  }else if(aft.focus$dist == "loglogistic"){
-    hi <- sapply(sort(ftime) %>% unique,
-                 function(x){(rs1 * lambda * alpha * (rs1 * x)^(alpha-1))/
-                     (1 + lambda *(rs1 * x)^(alpha))}) %>% t
-    Ht <- sapply(sort(ftime) %>% unique,
-                 function(x) -log(1/(1 + lambda * (rs1 * x)^(alpha)))) %>% t
+get_CIF_aft <- function(ftime, fstatus, aft.focus, aft.other, newX = NULL) {
+  grid <- sort(unique(ftime))
+  if (any(!is.finite(grid)) || any(grid < 0))
+    stop("AFT CIF prediction requires finite, non-negative follow-up times.")
+  fits <- c(list(aft.focus), aft.other)
+  params <- lapply(fits, function(fit) {
+    if (!inherits(fit, "survreg") ||
+        !fit$dist %in% c("weibull", "exponential", "lognormal", "loglogistic"))
+      stop("AFT CIF prediction requires Weibull, exponential, lognormal, or loglogistic survreg models.")
+    if (length(fit$scale) != 1L || !is.finite(fit$scale) || fit$scale <= 0)
+      stop("AFT CIF prediction requires a single positive scale per model.")
+    lp <- if (is.null(newX)) stats::predict(fit, type = "lp") else
+      stats::predict(fit, newdata = as.data.frame(newX), type = "lp")
+    if (any(!is.finite(lp))) stop("AFT CIF linear predictors must be finite.")
+    list(dist = fit$dist, scale = fit$scale, lp = as.numeric(lp))
+  })
+  n <- length(params[[1]]$lp)
+  if (any(vapply(params, function(p) length(p$lp), integer(1)) != n))
+    stop("AFT CIF models must predict the same subjects.")
+
+  # F1(t) transforms f1(t) * product(S_other(t)) dt to a bounded
+  # integrand on [0, F1(t)]. In particular, no zero-density assumption
+  # is imposed at t = 0 when the Weibull shape is below 1.
+  cdf <- function(z, dist) switch(dist,
+    weibull = -expm1(-exp(z)), exponential = -expm1(-exp(z)),
+    lognormal = stats::pnorm(z), loglogistic = stats::plogis(z))
+  quantile_log <- function(u, p, i) {
+    z <- switch(p$dist,
+      weibull = log(-log1p(-u)), exponential = log(-log1p(-u)),
+      lognormal = stats::qnorm(u), loglogistic = stats::qlogis(u))
+    p$lp[i] + p$scale * z
   }
-  
-  
-  for(aft.model in aft.other){
-    lambda <- exp(-aft.model$coefficients[1]/aft.model$scale)
-    alpha <- 1/aft.model$scale
-    rs2 <- (-newX %*% aft.model$coefficient[-1]) %>% exp
-    if(aft.model$dist %in% c("weibull", "exponential")){
-      Ht_other <- sapply(sort(ftime) %>% unique,
-                         function(x) lambda * (rs2 * x)^(alpha)) %>% t
-      Ht <- Ht + Ht_other
-    }else if(aft.model$dist == "lognormal"){
-      St <- sapply(sort(ftime) %>% unique,
-                   function(x){1 - pnorm((log(x) -
-                                            as.matrix(cbind(1, newX)) %*% 
-                                            aft.model$coefficient)/
-                                           aft.model$scale)}) %>% t
-      Ht_other <- - log(St)
-      Ht <- Ht + Ht_other
-    }else if(aft.model$dist == "loglogistic"){
-      Ht_other <- sapply(sort(ftime) %>% unique,
-                         function(x) -log(1/(1 + lambda * (rs2 * x)^(alpha)))) %>% t
-      Ht <- Ht + Ht_other
+  log_survival <- function(log_t, p, i) {
+    z <- (log_t - p$lp[i]) / p$scale
+    switch(p$dist,
+      weibull = -exp(z), exponential = -exp(z),
+      lognormal = stats::pnorm(z, lower.tail = FALSE, log.p = TRUE),
+      loglogistic = stats::plogis(z, lower.tail = FALSE, log.p = TRUE))
+  }
+  target <- params[[1]]
+  cif <- matrix(0, nrow = length(grid), ncol = n)
+  for (i in seq_len(n)) {
+    u <- cdf((log(grid) - target$lp[i]) / target$scale, target$dist)
+    integrand <- function(prob) {
+      log_t <- quantile_log(prob, target, i)
+      log_s <- rep(0, length(prob))
+      for (p in params[-1]) log_s <- log_s + log_survival(log_t, p, i)
+      exp(log_s)
     }
-    
-    if(is.null(dim(Ht))) return()
+    # Integrate successive probability intervals to preserve monotonicity
+    # and avoid repeatedly integrating the entire interval from zero.
+    lower <- 0
+    total <- 0
+    for (j in seq_along(u)) {
+      if (u[j] > lower) {
+        total <- total + stats::integrate(integrand, lower, u[j],
+          rel.tol = 1e-8, abs.tol = 1e-10)$value
+      }
+      cif[j, i] <- total
+      lower <- u[j]
+    }
   }
-  
-  temp.matrix <- rbind(rep(0, dim(Ht)[2]), exp(-Ht) * hi)
-  new_matrix <- (temp.matrix[-nrow(temp.matrix), ] + temp.matrix[-1, ]) / 2
-  new_matrix <- diff(c(0, sort(ftime) %>% unique)) * new_matrix
-  new_matrix <- apply(new_matrix, 2, cumsum)
-  return(list(y = sort(ftime) %>% unique, CIF = new_matrix))
+  list(y = grid, CIF = cif)
 }
-
-
-
-
-

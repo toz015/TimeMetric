@@ -1,6 +1,6 @@
 # TimeMetric function and usage guide
 
-Updated 18 October 2026 for TimeMetric 0.2.1 in PR #2.
+Updated 18 October 2026 for TimeMetric 0.2.1 with the paper branch integration.
 The package name is **TimeMetric**, singular. There are **17 current exported
 functions**, **15 deprecated compatibility wrappers**, and **11 metric names**.
 Internal `pam.*` helpers are implementation details, not supported public APIs.
@@ -9,8 +9,8 @@ Read [the validation report](cran-resubmission-2026-10-18.md) before interpretin
 ## Installation and development
 
 ```r
-# Install the CRAN resubmission branch.
-remotes::install_github("toz015/TimeMetric@claude/project-thread-whlkup")
+# Install the integrated paper branch.
+remotes::install_github("toz015/TimeMetric@paper")
 library(TimeMetric)
 
 # To use the revised working tree instead, run from its root:
@@ -114,6 +114,15 @@ Use the same horizon for prediction and evaluation; passing a new `tau` to
 a summary does not regenerate an already supplied `pred` vector.
 
 ## Competing-risk example
+
+`tm_survival_eval_cr()` and `tm_summarize_cr()` accept `censoring="cox"`
+(default) or `"km"` for generalized R-squared. Optional numeric
+`censor_covariates` are used only with Cox censoring and must be aligned with
+the prediction subjects. These metrics weight observed events of any cause at
+their original follow-up times; censored subjects receive zero weight, including
+those followed beyond the outcome horizon. Censoring support is therefore
+needed at original contributing event times, not just at `tau`. Probabilities
+are floored at 1e-4. Brier score, AUC and concordance keep their own adjustments.
 
 ```r
 cr <- tm_simulate_fine_gray(200, v = 2, beta1 = c(0.5, -0.5),

@@ -34,6 +34,30 @@
 #' @param tau Optional numeric value specifying a restricted time horizon for model evaluation. 
 #'   Defaults to the maximum observed follow-up time.
 #' @param event_type An integer indicating the primary event type of interest (default = `1`).
+#' @param censoring Censoring estimator for the generalized R-squared metrics:
+#'   `"cox"` (default, optionally conditional on `censor_covariates`) or `"km"`.
+#'   Other metrics retain their own censoring adjustments.
+#' @param censor_covariates Optional numeric vector, matrix or data frame of
+#'   censoring-model covariates, in the same subject order as `event_time` and
+#'   the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
+#'   Cox censoring model has no covariates. The Cox censoring model uses
+#'   Breslow ties, so without covariates it equals exp(-Nelson-Aalen).
+#'
+#' @details
+#' The generalized R-squared metrics use event-observation IPCW. Censoring is
+#' estimated on the original follow-up times, treating any observed event type
+#' as an observed event. The unnormalized weight is
+#' \eqn{I(status_i > 0)/\widehat G(Y_i-\mid X_i)}; weights are normalized to sum
+#' to one. A censored subject has zero weight even if follow-up exceeds `tau`.
+#' Restricting the working outcome therefore does not limit censoring support
+#' requirements to `tau`: support at contributing original event times is needed.
+#' Cox weights require conditional independent censoring and a valid censoring
+#' model; marginal weights require the corresponding marginal independence.
+#' Censoring survival probabilities are floored at \eqn{10^{-4}}.
+#' The interval outcome is the target-event time capped at `tau`, with competing
+#' events assigned to `tau`. The point outcome is `I(T <= t_star, D = event_type)`,
+#' including target events at the evaluation time, as in the CIF. Normalized ratio
+#' estimates are not asserted to be exactly unbiased in finite samples.
 #'
 #' @return A data frame with two columns:
 #'   \itemize{
@@ -64,13 +88,16 @@
 #' )
 tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
                                            metrics = NULL,  t_star = NULL, 
-                                           tau = NULL, event_type = 1) 
+                                           tau = NULL, event_type = 1,
+                                           censoring = c("cox", "km"),
+                                           censor_covariates = NULL)
   
 {
   
   if (missing(event_time) || missing(pred_cif)) {
     stop("Please provide 'event_time',  and 'pred_cif' arguments.")
   }
+  censoring <- match.arg(censoring)
   
   if(is.null(tau)) tau <- max(event_time)
   if(is.null(t_star)) t_star <- median(event_time)
@@ -108,7 +135,8 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
      "r_square" %in% metrics || 
      "l_square" %in% metrics) {
     r_l_list <- pam.censor.cr(event_time, status, tau, 
-                              pred_cif, time.cif, event_type)
+                              pred_cif, time.cif, event_type,
+                              X = censor_covariates, censoring = censoring)
   }
   
   if ("pseudo_r2" %in% metrics) {
@@ -127,7 +155,8 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
     r_p_list <- pam.censor.cr.point(ftime = event_time, 
                                     fstatus = status,
                                     tau = t_star, pred.cif = pred_cif[time_idx, ],
-                                    event.type = event_type)
+                                    event.type = event_type,
+                                    X = censor_covariates, censoring = censoring)
   }
   
   if ("pseudo_r2_point" %in% metrics) {
@@ -225,19 +254,20 @@ m_cif <- function(x, time.cif, tau){
 #' @noRd
 pam.censor.cr <- function(ftime, fstatus, tau, 
                           pred.cif, time.cif,
-                          event.type = 1){
+                          event.type = 1, X = NULL,
+                          censoring = c("cox", "km")){
   
 
   ftime.new <- ifelse(ftime > tau, tau, ftime)
   ftime.new <- ifelse(ftime.new <= tau & !(fstatus %in% c(event.type, 0)), 
                       tau, ftime.new)
-  fstatus.new <- ifelse(ftime.new == tau | fstatus > 0, 1, fstatus)
   
 
   pred <- apply(pred.cif, 2, m_cif, time.cif = time.cif, tau = tau)
   
 
-  out <- pam.censor(ftime.new, pred, fstatus.new)
+  ipcw <- tm_cr_event_ipcw(ftime, fstatus, X = X, censoring = censoring)
+  out <- tm_cr_weighted_r2(ftime.new, pred, ipcw$weight)
 
   out <- c(out,
            Pseudo.R = round(as.numeric(out$R.squared) *
@@ -252,19 +282,13 @@ pam.censor.cr <- function(ftime, fstatus, tau,
 #' @noRd
 pam.censor.cr.point <- function(ftime, fstatus, tau, 
                                 pred.cif,
-                                event.type = 1){
-  
-  # create new variable T(1,tau)
-  ftime.new <- ifelse(ftime > tau, tau, ftime)
-  ftime.new <- ifelse(ftime.new <= tau & !(fstatus %in% c(event.type, 0)), 
-                      tau, ftime.new)
-  fstatus.new <- ifelse(ftime.new == tau | fstatus > 0, 1, fstatus)
-  
+                                event.type = 1, X = NULL,
+                                censoring = c("cox", "km")){
   
   # obtain PA measure
-  i.obs <- ifelse(ftime < tau & fstatus == event.type, 1, 0)
-  out <- pam.censor.point(i.obs = i.obs, i.predict = pred.cif,
-                          y =  ftime.new, delta = fstatus.new)
+  i.obs <- ifelse(ftime <= tau & fstatus == event.type, 1, 0)
+  ipcw <- tm_cr_event_ipcw(ftime, fstatus, X = X, censoring = censoring)
+  out <- tm_cr_weighted_r2(i.obs, pred.cif, ipcw$weight)
   out <- c(out,
            Pseudo.R = round(as.numeric(out$R.squared) *
                               as.numeric(out$L.squared), digits = 4))
@@ -283,11 +307,7 @@ pam.censor.point <- function(i.obs, i.predict, y, delta){
   
   #KM estimate for censoring distribution
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  #sum.km.censoring<-summary(fit.km.censoring,  censored=TRUE)
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-  
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
   
   ratio.km[is.nan(ratio.km)]<-0
@@ -326,10 +346,7 @@ pam.censor<-function(y,y.predict,delta){
   y.predict.sorted<-y.predict[order(y)]
   
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-  
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
   
   ratio.km[is.nan(ratio.km)]<-0
@@ -403,12 +420,21 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1) {
   w1 <- w1 * w2
   
   for (i in 1:n) {
-    A[i, which(Time_survival[i] < Time_survival)] <- 1
-    A[i, ] <- A[i, ] * w1[i]
-    B[i, intersect(intersect(which((Time_survival[i] >= 
-                                      Time_survival)), which(Cause != Cause_int)), 
-                   which(Censoring == 1))] <- 1
-    B[i, ] <- B[i, ] * w3[i, ]
+    # Only invert probabilities for pairs that enter the estimator. Censoring
+    # survival may be zero after tau, where rows do not contribute.
+    if (Time_survival[i] <= tau && Cause[i] == Cause_int &&
+        Censoring[i] == 1) {
+      later <- which(Time_survival[i] < Time_survival)
+      competing <- which(Time_survival[i] >= Time_survival &
+                           Cause != Cause_int & Censoring == 1)
+      if ((length(later) && w1[i] <= 0) ||
+          any(w3[i, competing] <= 0)) {
+        stop("Censoring survival must be positive for comparable pairs.")
+      }
+      # Wolbers et al. (2014), equation (3.4): reciprocal products.
+      A[i, later] <- 1 / w1[i]
+      B[i, competing] <- 1 / w3[i, competing]
+    }
     Q[i, which(Prediction[i] > Prediction)] <- 1
   }
   for (i in 1:n) {
@@ -443,6 +469,13 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1) {
 #' @param tau (Optional) The maximum prediction time horizon for R2 and C index. Default is maximum of observation time.
 #' @param event_type Integer code for the cause of interest (passed through).
 #' @param digits Number of decimal places to round the metric values (default = 2).
+#' @param censoring Censoring estimator for generalized R-squared metrics,
+#'   `"cox"` (default) or `"km"`; passed to [tm_survival_eval_cr()].
+#' @param censor_covariates Optional numeric censoring-model covariates shared
+#'   across models. Rows must match each model's subject order. Passed to
+#'   [tm_survival_eval_cr()]; used only with `censoring = "cox"`.
+#' @details See [tm_survival_eval_cr()] for the event-observation weighting
+#'   rule, original-time support requirements and probability floor.
 #'
 #' @return A data.frame with:
 #' \itemize{
@@ -471,7 +504,10 @@ tm_summarize_cr <- function(models,
                            t_star = NULL,
                            tau = NULL,
                            event_type = 1,
-                           digits = 2) {
+                           digits = 2,
+                           censoring = c("cox", "km"),
+                           censor_covariates = NULL) {
+  censoring <- match.arg(censoring)
   if (!is.list(models) || length(models) == 0)
     stop("'models' must be a non-empty named list.")
   if (is.null(names(models)) || any(names(models) == ""))
@@ -493,7 +529,9 @@ tm_summarize_cr <- function(models,
       metrics    = metrics,
       t_star     = t_star,
       tau        = tau,
-      event_type = event_type
+      event_type = event_type,
+      censoring = censoring,
+      censor_covariates = censor_covariates
     )
     
     if (!all(c("Metric", "Value") %in% names(res)))
