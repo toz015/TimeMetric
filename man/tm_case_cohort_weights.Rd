@@ -23,9 +23,8 @@ Computes Prentice-style weights for case-cohort designs. If `strata`
 is provided, stratified case-cohort weights are computed.
 }
 \examples{
-# Case-cohort design: a random subcohort plus all cases. Sampling weights
-# inflate subjects who were not sampled, so the subcohort represents the
-# full cohort.
+# Compute weights using the full cohort, then retain the random subcohort
+# and all cases for analysis. Sampled non-cases represent cohort non-cases.
 d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
                         beta = c(0.5, -0.5), seed = 2025)
 set.seed(2025)

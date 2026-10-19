@@ -1,0 +1,29 @@
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+name: minimal-dependencies
+permissions: read-all
+jobs:
+  minimal-dependencies:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          cache-version: 'minimal-1'
+      - name: Install package
+        run: R CMD INSTALL .
+        shell: bash
+      - name: Exercise default two-phase metrics with required dependencies only
+        run: Rscript .github/scripts/minimal-dependencies.R
+        shell: bash

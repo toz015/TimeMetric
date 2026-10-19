@@ -1,4 +1,9 @@
 # Numerical invariance gate for the r_sh / r_e removal.
+# Audit amendment 2026-10-11: four two_phase_ncc expectations and three
+# right-censored point-metric expectations were updated after correcting
+# m-controls probabilities and the event/survival probability mismatch. See
+# test-api-selection.R for independent reference checks and
+# docs/validation/results/metric-baseline-before.csv for the original values.
 #
 # fixtures/metric-baseline.csv holds committed literal values generated from
 # the package BEFORE either metric was removed, at commit 675c99f, using the
@@ -119,8 +124,9 @@ inv_cr_event_reference <- function() {
   time <- p$times
   status <- p$status
   censor_times <- sort(unique(time[status == 0]))
-  # No-covariate Cox = exp(-Nelson-Aalen). Construct hazard jumps directly
-  # from original censor counts/risk sets, without the package weight helper.
+  # No-covariate Breslow Cox = exp(-Nelson-Aalen), tied times included.
+  # Construct hazard jumps directly from original censor counts/risk sets,
+  # without the package weight helper.
   jumps <- vapply(censor_times, function(t) sum(time == t & status == 0) /
     sum(time >= t), numeric(1))
   G <- vapply(time, function(t) exp(-sum(jumps[censor_times < t])), numeric(1))

@@ -8,6 +8,10 @@
 #' @param tau (Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.
 #' @param new_data (Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in model.
 #' @param predict (Optional) A logical value indicating whether to return individual predictions. Default is TRUE. 
+#' @details With `predict = FALSE`, R-squared metrics return missing values
+#'   with a warning if censoring weights cannot be normalized, for example
+#'   when the training censoring survival is zero at an observed evaluation
+#'   event. Individual predictions remain available with `predict = TRUE`.
 #' @return
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
@@ -95,11 +99,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
     y.order <- y.order.new
   }
   
-  if (p == 1) {
-    x.matrix <- as.matrix(x.matrix.unsorted[y.order])
-  } else {
-    x.matrix <- x.matrix.unsorted[y.order, ]
-  }
+  x.matrix <- x.matrix.unsorted[y.order, , drop = FALSE]
   
   
   nsize <- length(y)
@@ -110,9 +110,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
     delta <- censor.unsorted.new[y.order]
   } 
   
-  sum.km.censoring <- summary(fit.km.censoring, times = y, extend = TRUE)
-  km.censoring <- sum.km.censoring$surv
-  km.censoring.minus <- c(1, km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y)
   
   ratio.km <- delta/km.censoring.minus
   ratio.km[is.nan(ratio.km)] <- 0
@@ -126,8 +124,9 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
     }
     
     gtau <- (tau/temp.pred)^(1/model$scale)
+    # E[min(T, tau)] = E[T I(T <= tau)] + tau P(T > tau).
     t.predicted <- temp.pred * gamma(1 + model$scale) *
-      (1-expint::gammainc((1 + model$scale), gtau))
+      stats::pgamma(gtau, shape = 1 + model$scale) + tau * exp(-gtau)
   } else if (model$dist == "lognormal") {
     if(is.null(new_data)){
       temp.pred <- predict(model, type = "response")[y.order]
@@ -135,9 +134,12 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
       temp.pred <- predict(model, newdata = as.data.frame(x.matrix), type = "response")
     }
     gtau <- (log(tau)-log(temp.pred))/model$scale
-    t.predicted <- temp.pred * exp((model$scale)^2/2) * pnorm(gtau)
+    t.predicted <- temp.pred * exp((model$scale)^2/2) *
+      pnorm(gtau - model$scale) + tau * pnorm(gtau, lower.tail = FALSE)
   }
   
+  y.original <- y
+  delta.original <- delta
   if (!is.null(tau)) {
     delta <- ifelse(y <= tau, delta, 1)
     y <- pmin(y, tau)
@@ -145,14 +147,13 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
   }
   
   if (predict) {
-    time_points <- y
-    time_points <- time_points[time_points <= tau] 
+    time_points <- y.original
     
     pre_sp <- predictSurvProb2survreg(model, as.data.frame(x.matrix), time_points)
     t.predicted2 <- integrate_survival(pre_sp, y, delta, tau)
     return(list(pred = t.predicted, #t.predicted2,
-                times = y,
-                status = delta,
+                times = y.original,
+                status = delta.original,
                 surv_prob = pre_sp,
                 model = model,
                 new_data = new_data,
@@ -162,6 +163,12 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
                 covs = covs))
   }
   
+  if (any(!is.finite(weight.km)) || !any(weight.km > 0)) {
+    warning("R-squared metrics require positive censoring survival at observed ",
+            "evaluation events and at least one observed event.", call. = FALSE)
+    return(list(R.squared = NA_character_, L.squared = NA_character_,
+                Psuedo.R = NA_character_))
+  }
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
                            warning("Error in WLS fitting: ", conditionMessage(e), call. = FALSE)

@@ -59,8 +59,8 @@ find_mu_c <- function(c_mu, censor, cens.times, event.times, f.event, n) {
 #' @param report.mu_and_sd A logical value. If TRUE, a summary of censoring parameters
 #'   and event time quantiles is returned instead of the full dataset.
 #' @param seed Optional integer. If supplied, the random number generator is
-#'   seeded with it for reproducibility. The default \code{NULL} leaves the
-#'   random number generator state untouched.
+#'   seeded with it for reproducibility. The default \code{NULL} uses the current random number stream
+#'   without resetting it; random draws advance its state.
 #'
 #' @return A data frame containing the simulated data with columns `obs.times`, `obs.event`, and the covariates `X`.
 #'   Alternatively, if `report.mu_and_sd` is TRUE, it returns a data frame with censoring

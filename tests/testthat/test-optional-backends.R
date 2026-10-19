@@ -28,7 +28,7 @@ test_that("both optional backends are declared in Suggests, not Imports", {
   expect_false("randomForestSRC" %in% imports)
   expect_false("cmprsk" %in% imports)
   # and the newly-required runtime deps really are in Imports
-  expect_true(all(c("expint", "pec", "magrittr",
+  expect_true(all(c("pec", "magrittr",
                     "purrr", "tibble") %in% imports))
   # rms was removed entirely: it served only the Schemper-Henderson estimator
   # and forced R >= 4.4.0 (findings.md #35, #36)

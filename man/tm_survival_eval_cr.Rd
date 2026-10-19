@@ -18,7 +18,8 @@ tm_survival_eval_cr(
 )
 }
 \arguments{
-\item{pred_cif}{A matrix of predicted cumulative incidence functions (CIFs) for different subjects.}
+\item{pred_cif}{Numeric matrix of cumulative incidence functions with one
+row per value of \code{time.cif} and one column per subject.}
 
 \item{event_time}{A numeric vector of observed event or censoring times for subjects.}
 
@@ -32,7 +33,8 @@ tm_survival_eval_cr(
 }}
 
 \item{metrics}{A character vector specifying the performance metrics to calculate. 
-The default is `"all"`, which computes all available metrics. 
+The default \code{NULL} computes pseudo R-squared (integrated and point),
+C-index, Brier score, and time-dependent AUC. Use \code{"all"} for all nine.
 Valid options include:
 \itemize{
   \item `"pseudo_r2"`
@@ -61,7 +63,8 @@ Other metrics retain their own censoring adjustments.}
 \item{censor_covariates}{Optional numeric vector, matrix or data frame of
 censoring-model covariates, in the same subject order as `event_time` and
 the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
-Cox censoring model has no covariates.}
+Cox censoring model has no covariates. The Cox censoring model uses
+Breslow ties, so without covariates it equals exp(-Nelson-Aalen).}
 }
 \value{
 A data frame with two columns:

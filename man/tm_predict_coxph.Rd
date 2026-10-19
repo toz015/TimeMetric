@@ -42,6 +42,14 @@ it returns the predicted survival times alongside observed values and event stat
 R-squared quantifies the proportion of variability in the observed survival times explained by the model's predictions,
 while L-squared measures the proportion of prediction error explained by a corrected prediction function. Together, these metrics provide a comprehensive evaluation of the predictive power of the Cox model.
 }
+\details{
+Probabilities use the fitted training baseline, including its case
+  weights, strata, tie method and offsets. Offset centering follows the
+  weighted training mean used by [survival::survfit()].
+  With `predict = FALSE`, R-squared metrics return missing values with a
+  warning if censoring weights cannot be normalized, for example when the
+  training censoring survival is zero at an observed evaluation event.
+}
 \examples{
 data(pbc, package = "survival")
 pbc <- pbc[!is.na(pbc$trt), ]

@@ -4,7 +4,8 @@
 #' It calculates various performance metrics including Pseudo R-squared, R-squared, L-squared, C-index, 
 #' Brier Score, and Time-Dependent AUC.
 #'
-#' @param pred_cif A matrix of predicted cumulative incidence functions (CIFs) for different subjects.
+#' @param pred_cif Numeric matrix of cumulative incidence functions with one
+#'   row per value of \code{time.cif} and one column per subject.
 #' @param event_time A numeric vector of observed event or censoring times for subjects.
 #' @param time.cif A numeric vector of time points corresponding to the predicted CIFs.
 #' @param status A numeric vector indicating the event type for each subject: by default
@@ -14,7 +15,8 @@
 #'     \item `2` (or other values) for competing events.
 #'   }
 #' @param metrics A character vector specifying the performance metrics to calculate. 
-#'   The default is `"all"`, which computes all available metrics. 
+#'   The default \code{NULL} computes pseudo R-squared (integrated and point),
+#'   C-index, Brier score, and time-dependent AUC. Use \code{"all"} for all nine.
 #'   Valid options include:
 #'   \itemize{
 #'     \item `"pseudo_r2"`
@@ -38,7 +40,8 @@
 #' @param censor_covariates Optional numeric vector, matrix or data frame of
 #'   censoring-model covariates, in the same subject order as `event_time` and
 #'   the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
-#'   Cox censoring model has no covariates.
+#'   Cox censoring model has no covariates. The Cox censoring model uses
+#'   Breslow ties, so without covariates it equals exp(-Nelson-Aalen).
 #'
 #' @details
 #' The generalized R-squared metrics use event-observation IPCW. Censoring is
@@ -183,10 +186,9 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
   status.recode <- ifelse(status == event_type, -1, status)
   status.recode <- ifelse(status.recode > 0, 2, status.recode)
   status.recode <- ifelse(status.recode == -1, 1, status.recode)
+  X <- pred_cif[time_idx, ]
   
   if ("brier_score" %in% metrics) {
-    X <- pred_cif[time_idx, ]
-    
     brier_result <- suppressMessages(tdROC::tdROC.cr(
       X = X,  
       Y = event_time,      
@@ -305,11 +307,7 @@ pam.censor.point <- function(i.obs, i.predict, y, delta){
   
   #KM estimate for censoring distribution
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  #sum.km.censoring<-summary(fit.km.censoring,  censored=TRUE)
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-  
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
   
   ratio.km[is.nan(ratio.km)]<-0
@@ -348,10 +346,7 @@ pam.censor<-function(y,y.predict,delta){
   y.predict.sorted<-y.predict[order(y)]
   
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-  
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
   
   ratio.km[is.nan(ratio.km)]<-0

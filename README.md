@@ -41,7 +41,7 @@ pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
 tm_summarize(list(cox = pred))
 #>            Metric  cox
 #> 1       pseudo_r2 0.24
-#> 2 pseudo_r2_point 0.09
+#> 2 pseudo_r2_point 0.16
 #> 3       harrell_c 0.66
 #> 4           uno_c 0.66
 #> 5     brier_score 0.21
@@ -103,15 +103,20 @@ inverse of its sampling probability:
 
 ```r
 set.seed(2001)
-w  <- tm_case_cohort_weights(time = d$time, status = d$status,
-                             subcohort = rbinom(nrow(d), 1, 0.4))
+in_subcohort <- rbinom(nrow(d), 1, 0.4) == 1
+w <- tm_case_cohort_weights(d$time, d$status, subcohort = in_subcohort)
+keep <- which(in_subcohort | d$status == 1)
+keep <- keep[order(d$time[keep])]
+cc_pred <- tm_predict_coxph(fit, covs = c("x1", "x2"), new_data = d[keep, ])
 km <- survival::survfit(survival::Surv(d$time, 1 - d$status) ~ 1)
-
-tm_evaluate_two_phase(pred_results = pred, km_cens_fit = km, case_weights = w)
+tm_evaluate_two_phase(pred_results = cc_pred, km_cens_fit = km,
+                       case_weights = w[keep])
 ```
 
-`tm_nested_case_control_weights(time, status, m = 2)` produces the equivalent
-weights for a matched nested case-control sample.
+`tm_nested_case_control_weights(time, status, m = 2)` computes inverse-selection
+weights for two controls per case. Supply matching strata via `strata` when
+needed, subset to the subjects actually sampled, and align weights with the
+prediction order.
 
 ## Optional backends
 

@@ -43,7 +43,8 @@ tm_cr_event_ipcw <- function(ftime, fstatus, X = NULL,
     dat <- data.frame(original_time = ftime, censored = 1 - delta)
     if (!is.null(X)) dat <- cbind(dat, X)
     fit <- survival::coxph(
-      survival::Surv(original_time, censored) ~ ., data = dat)
+      survival::Surv(original_time, censored) ~ ., data = dat,
+      ties = "breslow")
     # Center the baseline and linear predictors together. The source script's
     # uncentered baseline / centered predictor combination is not reproduced.
     bh <- survival::basehaz(fit, centered = TRUE)

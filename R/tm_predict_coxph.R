@@ -12,6 +12,12 @@
 #'   computation and define the evaluation time grid; they never estimate the
 #'   baseline hazard. All prediction parameters come from the training fit.
 #' @param predict A logical value indicating whether to return individual predictions. Default is TRUE.
+#' @details Probabilities use the fitted training baseline, including its case
+#'   weights, strata, tie method and offsets. Offset centering follows the
+#'   weighted training mean used by [survival::survfit()].
+#'   With `predict = FALSE`, R-squared metrics return missing values with a
+#'   warning if censoring weights cannot be normalized, for example when the
+#'   training censoring survival is zero at an observed evaluation event.
 #' @return
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
@@ -99,9 +105,7 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 
-  sum.km.censoring <- summary(fit.km.censoring, times = y, extend = TRUE)
-  km.censoring <- sum.km.censoring$surv
-  km.censoring.minus <- c(1, km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y)
   ratio.km <- delta/km.censoring.minus
   ratio.km[is.nan(ratio.km)] <- 0
   weight.km <- ratio.km/(sum(ratio.km))
@@ -151,6 +155,12 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
                           covs = covs
                                      ))}
 
+  if (any(!is.finite(weight.km)) || !any(weight.km > 0)) {
+    warning("R-squared metrics require positive censoring survival at observed ",
+            "evaluation events and at least one observed event.", call. = FALSE)
+    return(list(R.squared = NA_character_, L.squared = NA_character_,
+                Psuedo.R = NA_character_))
+  }
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
                            return(c(NA, NA))
@@ -175,8 +185,40 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
 # Training-baseline survival on an arbitrary sorted evaluation grid. Chunking
 # avoids allocating a training-times x validation-subjects survfit object.
 tm_cox_survival <- function(model, new_data, linear_predictor, times) {
-  bh <- survival::basehaz(model, centered = TRUE)
+  # The predictions below are subject-specific, so survival's warning about the
+  # default curve of an interaction model does not apply.
+  bh <- tryCatch(
+    withCallingHandlers(
+      survival::basehaz(model, centered = TRUE),
+      warning = function(w) {
+        if (grepl("contains interactions", conditionMessage(w))) {
+          invokeRestart("muffleWarning")
+        }
+      }),
+    error = function(e) {
+      if (grepl("strata by covariate interaction", conditionMessage(e))) NULL
+      else stop(e)
+    })
+  if (is.null(bh)) return(tm_cox_survival_by_row(model, new_data, times))
   if (!nrow(bh)) stop("The training fit has no baseline time grid.")
+  if (length(attr(stats::terms(model), "offset"))) {
+    # survfit/basehaz centers offsets at their weighted training mean. predict's
+    # lp centering differs between in-sample and newdata calls, so construct the
+    # relative risk on the baseline's scale from the fitted design and offsets.
+    training_frame <- stats::model.frame(model)
+    training_offset <- stats::model.offset(training_frame)
+    training_weight <- stats::model.weights(training_frame)
+    offset_center <- if (is.null(training_weight)) mean(training_offset) else
+      stats::weighted.mean(training_offset, training_weight)
+    prediction_frame <- if (!is.null(attr(new_data, "terms"))) new_data else
+      stats::model.frame(stats::delete.response(stats::terms(model)), new_data,
+                        xlev = model$xlevels, na.action = stats::na.pass)
+    design <- stats::model.matrix(model, data = prediction_frame)
+    beta <- stats::coef(model)
+    beta[is.na(beta)] <- 0
+    linear_predictor <- as.numeric(sweep(design, 2, model$means, "-") %*% beta) +
+      stats::model.offset(prediction_frame) - offset_center
+  }
   if (is.null(bh$strata)) {
     bh$strata <- "all"
     subject_strata <- rep("all", nrow(new_data))
@@ -204,6 +246,23 @@ tm_cox_survival <- function(model, new_data, linear_predictor, times) {
       block <- rows[start:min(start + 255L, length(rows))]
       out[block, ] <- exp(-outer(exp(linear_predictor[block]), h0))
     }
+  }
+  out
+}
+
+# Strata-by-covariate interactions have no shared stratum baseline, so each
+# subject's curve comes from survfit() on the raw covariates.
+#' @noRd
+tm_cox_survival_by_row <- function(model, new_data, times) {
+  if (!is.null(attr(new_data, "terms"))) {
+    stop("Cox models with strata-by-covariate interactions need raw covariates; ",
+         "pass the evaluation data as new_data.", call. = FALSE)
+  }
+  out <- matrix(NA_real_, nrow(new_data), length(times))
+  for (i in seq_len(nrow(new_data))) {
+    fit <- survival::survfit(model, newdata = new_data[i, , drop = FALSE],
+                             se.fit = FALSE)
+    out[i, ] <- c(1, fit$surv)[findInterval(times, fit$time) + 1L]
   }
   out
 }
