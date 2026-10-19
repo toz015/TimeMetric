@@ -48,6 +48,6 @@
 
 # tm_predict_cif dispatches on a survreg model1
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAACj/2kSuhbnoxP/YCih37k4o/6ossg+yJKz/b+rELpiZw
-    P+wtUXHim2s/4js+mm+Cbz/uGKZUkv9MP/Q+FlCkXUI/6ByGSIP9UD/o/8Muvllt
+    WAoAAAACAAQFAwACAwAAAAAOAAAACj/2kihWYF7lP/YDjin5zo4/6pJiAlOXVz/cGDtgKF7E
+    P+wzzErGza8/4kfNiYsunT/uHk92X9iuP/Q/bCaZx70/6CUHIIWxhT/pB8YyfthN
 

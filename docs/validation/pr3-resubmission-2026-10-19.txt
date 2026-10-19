@@ -1,0 +1,23 @@
+PR #3 integrated validation — 2026-10-19
+
+Preserved commit 3167271 (AFT CIF quadrature and 12-year manuscript alignment)
+and the newer remote branch 4c6d8e2, including 4caf7b2's reciprocal-IPCW CR
+concordance fix. The merge is bf7a600. No force push or history replacement.
+
+Integrated source: 808 passing assertions across 175 tests, with zero failures,
+warnings or skips. All nine manuscript listings execute. The PBC/GBSG examples
+still reproduce all 35 manuscript table cells. Competing-risk examples use an
+explicit simulated fixture; real FHS results and full simulations remain to be
+regenerated after BOTH numerical corrections.
+
+Network-enabled R CMD check --as-cran --run-donttest on the built tarball:
+0 errors, 0 warnings, 3 notes (new submission; external clock unavailable;
+local HTML Tidy/V8 validation limitations). Incoming checks, examples, package
+tests and the PDF manual pass. No CRAN submission was made.
+
+Fresh GitHub checks are required on the final PR head before merge; consult
+the PR check records rather than reusing the earlier c09e9fa CI result.
+
+Generated logs are retained locally under docs/validation/results/pr3-final-2026-10-19
+and excluded from Git/package builds. The existing primary working directory
+and manuscript review files were not overwritten.

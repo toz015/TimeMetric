@@ -129,10 +129,7 @@ test_that("cif_pred is times-by-subjects with the time grid in column 1", {
 })
 
 test_that("tm_predict_cif dispatches on a survreg model1", {
-  # The survreg path routes model2 through get_CIF_aft's aft.other loop, which
-  # indexes coefficients as [-1] to drop an intercept. model2 must therefore
-  # also be an AFT fit: passing a coxph (no intercept) yields a non-conformable
-  # matrix product.
+  # Both cause-specific models use the supported AFT prediction path.
   dd <- pc_data()
   m1 <- survival::survreg(
     survival::Surv(time, status == 1) ~ X1 + X2, data = dd, dist = "weibull",
