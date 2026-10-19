@@ -18,7 +18,8 @@ tm_survival_eval_cr(
 )
 }
 \arguments{
-\item{pred_cif}{A matrix of predicted cumulative incidence functions (CIFs) for different subjects.}
+\item{pred_cif}{Numeric matrix of cumulative incidence functions with one
+row per value of \code{time.cif} and one column per subject.}
 
 \item{event_time}{A numeric vector of observed event or censoring times for subjects.}
 
@@ -32,7 +33,8 @@ tm_survival_eval_cr(
 }}
 
 \item{metrics}{A character vector specifying the performance metrics to calculate. 
-The default is `"all"`, which computes all available metrics. 
+The default \code{NULL} computes pseudo R-squared (integrated and point),
+C-index, Brier score, and time-dependent AUC. Use \code{"all"} for all nine.
 Valid options include:
 \itemize{
   \item `"pseudo_r2"`

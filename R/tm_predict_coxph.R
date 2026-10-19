@@ -12,6 +12,9 @@
 #'   computation and define the evaluation time grid; they never estimate the
 #'   baseline hazard. All prediction parameters come from the training fit.
 #' @param predict A logical value indicating whether to return individual predictions. Default is TRUE.
+#' @details Probabilities use the fitted training baseline, including its case
+#'   weights, strata, tie method and offsets. Offset centering follows the
+#'   weighted training mean used by [survival::survfit()].
 #' @return
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
@@ -177,6 +180,24 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
 tm_cox_survival <- function(model, new_data, linear_predictor, times) {
   bh <- survival::basehaz(model, centered = TRUE)
   if (!nrow(bh)) stop("The training fit has no baseline time grid.")
+  if (length(attr(stats::terms(model), "offset"))) {
+    # survfit/basehaz centers offsets at their weighted training mean. predict's
+    # lp centering differs between in-sample and newdata calls, so construct the
+    # relative risk on the baseline's scale from the fitted design and offsets.
+    training_frame <- stats::model.frame(model)
+    training_offset <- stats::model.offset(training_frame)
+    training_weight <- stats::model.weights(training_frame)
+    offset_center <- if (is.null(training_weight)) mean(training_offset) else
+      stats::weighted.mean(training_offset, training_weight)
+    prediction_frame <- if (!is.null(attr(new_data, "terms"))) new_data else
+      stats::model.frame(stats::delete.response(stats::terms(model)), new_data,
+                        xlev = model$xlevels, na.action = stats::na.pass)
+    design <- stats::model.matrix(model, data = prediction_frame)
+    beta <- stats::coef(model)
+    beta[is.na(beta)] <- 0
+    linear_predictor <- as.numeric(sweep(design, 2, model$means, "-") %*% beta) +
+      stats::model.offset(prediction_frame) - offset_center
+  }
   if (is.null(bh$strata)) {
     bh$strata <- "all"
     subject_strata <- rep("all", nrow(new_data))

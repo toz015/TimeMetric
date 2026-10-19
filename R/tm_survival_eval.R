@@ -8,10 +8,10 @@
 #'
 #' @param event_time A numeric vector of observed survival times.
 #' @param pred_mean_survival A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.
-#' @param predicted_probability A numeric vector of predicted survival probabilities (Note: Only models with discrete estimated survival probabilities can use this input.). with
+#' @param predicted_probability Numeric matrix of predicted survival probabilities, with
 #'   \itemize{
 #'     \item rows = subjects.
-#'     \item columns = observed survival times
+#'     \item columns = sorted observed follow-up times, including duplicates
 #'   }
 #' @param status A numeric vector indicating event occurrence (1 for event, 0 for censoring).
 #' @param covariates A character vector specifying the names of the covariates used in the model.

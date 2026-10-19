@@ -79,4 +79,5 @@ importFrom(survival,
   survfit
 )
 importFrom(tibble,tibble)
+importFrom(tidyr,unnest)
 importFrom(utils,head)

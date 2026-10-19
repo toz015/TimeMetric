@@ -56,8 +56,8 @@ it is calculated using `uniroot` to achieve the desired censoring.}
 and event time quantiles is returned instead of the full dataset.}
 
 \item{seed}{Optional integer. If supplied, the random number generator is
-seeded with it for reproducibility. The default \code{NULL} leaves the
-random number generator state untouched.}
+seeded with it for reproducibility. The default \code{NULL} uses the current random number stream
+without resetting it; random draws advance its state.}
 }
 \value{
 A data frame containing the simulated data with columns `obs.times`, `obs.event`, and the covariates `X`.

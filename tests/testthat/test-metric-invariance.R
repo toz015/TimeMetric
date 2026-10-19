@@ -1,4 +1,9 @@
 # Numerical invariance gate for the r_sh / r_e removal.
+# Audit amendment 2026-10-11: four two_phase_ncc expectations and three
+# right-censored point-metric expectations were updated after correcting
+# m-controls probabilities and the event/survival probability mismatch. See
+# test-api-selection.R for independent reference checks and
+# docs/validation/results/metric-baseline-before.csv for the original values.
 #
 # fixtures/metric-baseline.csv holds committed literal values generated from
 # the package BEFORE either metric was removed, at commit 675c99f, using the

@@ -3,7 +3,7 @@ Type: Package
 Title: Unified Performance Metrics for Survival Models with Right-Censoring,
     Competing Risks, and Two-Phase Designs
 Version: 0.2.1
-Date: 2026-10-17
+Date: 2026-10-18
 Authors@R: c(
     person("Tong", "Zhu", email = "toz015@ucla.edu", role = c("aut", "cre")),
     person("Zian", "Zhuang", role = "aut"),
@@ -41,8 +41,8 @@ Imports:
     magrittr,
     purrr,
     tibble,
-    pec,
-    expint
+    tidyr,
+    pec
 URL: https://github.com/toz015/TimeMetric
 BugReports: https://github.com/toz015/TimeMetric/issues
 License: MIT + file LICENSE
@@ -56,8 +56,7 @@ Suggests:
     pkgload,
     covr,
     randomForestSRC,
-    cmprsk,
-    tidyr
+    cmprsk
 Config/testthat/edition: 3
 NeedsCompilation: no
 Config/roxygen2/version: 8.1.0

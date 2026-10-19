@@ -57,23 +57,60 @@ test_that("matched NCC excludes other-stratum sampling occasions", {
   time <- c(1, 4, 5, 2, 4, 5)
   status <- c(1, 0, 0, 1, 0, 0)
   strata <- c("A", "A", "A", "B", "B", "B")
-  w <- tm_nested_case_control_weights(time, status, strata, m = 2)
+  w <- tm_nested_case_control_weights(time, status, strata, m = 1)
   expect_equal(w, c(1, 2, 2, 1, 2, 2))
   o <- c(6, 2, 4, 1, 5, 3)
-  expect_equal(tm_nested_case_control_weights(time[o], status[o], strata[o], 2), w[o])
+  expect_equal(tm_nested_case_control_weights(time[o], status[o], strata[o], 1), w[o])
   # Equal-time events in separate strata are separate valid occasions.
   time[c(1, 4)] <- 1
-  expect_equal(tm_nested_case_control_weights(time, status, strata, 2), w)
+  expect_equal(tm_nested_case_control_weights(time, status, strata, 1), w)
 })
 
 test_that("NCC accounts for repeated occasions and small risk sets", {
   # Two cases at t=1,2. A non-case survives both draws: p=1-(1-1/3)(1-1/2).
-  expect_equal(tm_nested_case_control_weights(c(1, 2, 4, 5), c(1, 1, 0, 0), m = 2),
+  expect_equal(tm_nested_case_control_weights(c(1, 2, 4, 5), c(1, 1, 0, 0), m = 1),
                c(1, 1, 1.5, 1.5))
   expect_equal(tm_nested_case_control_weights(c(1, 4, 5), c(1, 0, 0), m = 9), c(1, 1, 1))
+  # Two simultaneous cases each sample one of two eligible controls:
+  # P(ever selected) = 1 - (1 - 1/2)^2 = 3/4.
   expect_equal(tm_nested_case_control_weights(c(1, 1, 4, 5), c(1, 1, 0, 0),
-                                               strata = rep("A", 4), m = 2), c(1, 1, 1.8, 1.8))
-  expect_error(tm_nested_case_control_weights(c(1, 2), c(1, 0), m = 1), "integer >= 2")
+                                               strata = rep("A", 4), m = 1), c(1, 1, 4/3, 4/3))
+  for (bad in list(0, -1, 1.5, Inf, NA_real_, "2", c(1, 2))) {
+    expect_error(tm_nested_case_control_weights(c(1, 2), c(1, 0), m = bad),
+                 "positive integer")
+  }
   expect_error(tm_nested_case_control_weights(c(1, 2), c(1, 0), strata = "A", m = 2),
                 "one non-missing")
+})
+
+test_that("Cox offsets match survfit with weights, strata and all tie methods", {
+  d <- fx_surv()
+  d$time <- ceiling(d$time * 3)
+  d$off <- seq(2, 4, length.out = nrow(d))
+  d$w <- seq(.5, 3, length.out = nrow(d))
+  d$g <- factor(rep(c("A", "B"), length.out = nrow(d)))
+  for (ties in c("efron", "breslow", "exact")) {
+    for (stratified in c(FALSE, TRUE)) {
+      formula <- if (stratified)
+        survival::Surv(time, status) ~ x1 + offset(off) + survival::strata(g) else
+        survival::Surv(time, status) ~ x1 + offset(off)
+      # Exact partial likelihood does not support case weights.
+      fit <- if (ties == "exact")
+        survival::coxph(formula, d, ties = ties, x = TRUE, y = TRUE, model = TRUE) else
+        survival::coxph(formula, d, weights = w, ties = ties,
+                         x = TRUE, y = TRUE, model = TRUE)
+      new <- d[c(41, 6, 78, 3, 22, 5), ]
+      new$off <- new$off + .7
+      p <- tm_predict_coxph(fit, c("x1", "off", "g"), new_data = new)
+      ordered <- new[order(new$time), ]
+      expected <- t(vapply(seq_len(nrow(ordered)), function(i) {
+        sf <- survival::survfit(fit, newdata = ordered[i, , drop = FALSE], se.fit = FALSE)
+        as.numeric(summary(sf, times = sort(new$time), extend = TRUE)$surv)
+      }, numeric(nrow(new))))
+      expect_equal(unname(p$surv_prob), unname(expected), tolerance = 1e-12)
+      training <- tm_predict_coxph(fit, c("x1", "off", "g"))
+      explicit <- tm_predict_coxph(fit, c("x1", "off", "g"), new_data = d)
+      expect_equal(training$surv_prob, explicit$surv_prob, tolerance = 1e-12)
+    }
+  }
 })

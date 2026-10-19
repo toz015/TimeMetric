@@ -14,8 +14,7 @@ tm_nested_case_control_weights(time, status, strata = NULL, m = NULL)
 \item{strata}{Optional factor/character defining matching strata in the full
 phase-one cohort, not IDs of sampled case-control sets.}
 
-\item{m}{Integer >= 2, total size of each case-control set: one case plus
-m - 1 controls (required).}
+\item{m}{Positive integer, number of controls per case (required).}
 }
 \value{
 Numeric vector of weights, in full-cohort input order.
@@ -25,17 +24,19 @@ Computes inverse-selection weights for NCC designs. If `strata` is
 provided, matched NCC weights are computed.
 }
 \details{
-Supply full-cohort follow-up before selecting sampled rows. All
-  cases receive weight 1; non-cases receive the inverse probability of ever
-  being sampled. Only same-stratum case events contribute in matched designs.
-  Sampling is without replacement within an occasion, independently across
-  cases; small risk sets supply all available controls. The eligibility rule
-  is time > case time. Ties with censoring therefore need a specified ordering
-  or suitably resolved times. A non-case with no eligible sampling occasion
-  has weight Inf and cannot be treated as an observed phase-two control.
+Supply full-cohort follow-up and event information, not only sampled rows.
+Controls are sampled without replacement within each case's risk set and
+independently across cases. At tied failure times, all simultaneous cases
+are excluded from the eligible controls. Events precede censoring at ties.
+Matching restricts both cases and controls to the same stratum. If fewer
+than \code{m} controls are eligible, all eligible controls are sampled.
+A non-case with no sampling opportunity has infinite inverse probability;
+such a subject cannot belong to the sampled analysis dataset. Subset the
+returned weights to the subjects actually sampled and align their order
+with the prediction objects before evaluation.
 }
 \examples{
-# Unmatched NCC: m = 2 means one case and one control per set.
+# Unmatched nested case-control design with m = 2 controls per case.
 d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
                         beta = c(0.5, -0.5), seed = 2025)
 set.seed(2025)

@@ -57,8 +57,8 @@ drawn, which keeps a few long follow-up times from compressing the plot.}
 
 \item{seed}{Optional integer. If supplied, the random number generator is
 seeded with it before \code{sample_size} subjects are drawn, so the
-sampled points are reproducible. The default \code{NULL} leaves the
-random number generator state untouched.}
+sampled points are reproducible. The default \code{NULL} uses the current random number stream
+without resetting it; random draws advance its state.}
 }
 \value{
 A patchwork \code{ggplot} object combining all panels.

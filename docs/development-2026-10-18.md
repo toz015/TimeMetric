@@ -4,6 +4,11 @@ This records the current paper checkout. The earlier plans and audits in
 `docs/superpowers/` are preserved unchanged; their status labels describe those
 historical checkpoints, not necessarily the current implementation.
 
+The paper branch has since been integrated with PR #2. The completed runs
+listed below describe the earlier paper commit, not a validation of the combined
+code. Recompute affected outputs in a new directory before using them with this
+revision; the source fingerprints intentionally prevent reusing old checkpoints.
+
 ## Method changes
 
 - Cox predictions use the training fit's baseline cumulative hazard with
@@ -12,7 +17,9 @@ historical checkpoints, not necessarily the current implementation.
   that unrestricted mean survival is identified beyond observed follow-up.
 - Matched nested case-control inclusion probabilities count sampling occasions
   within matching strata, including tied cases and small risk sets. `m` denotes
-  total set size (one case and `m - 1` controls); inputs are phase-one cohorts.
+  the number of controls per case; inputs are phase-one cohorts. This replaces
+  the earlier paper branch's total-set-size convention. At tied failures all
+  simultaneous cases are excluded from control draws; events precede censoring.
 - Competing-risks R-squared uses observed-event IPCW at original follow-up
   times, including events beyond the evaluation horizon. Cox (default,
   optionally conditional) and KM censoring estimates use a probability floor
