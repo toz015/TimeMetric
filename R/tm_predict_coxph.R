@@ -102,9 +102,7 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 
-  sum.km.censoring <- summary(fit.km.censoring, times = y, extend = TRUE)
-  km.censoring <- sum.km.censoring$surv
-  km.censoring.minus <- c(1, km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y)
   ratio.km <- delta/km.censoring.minus
   ratio.km[is.nan(ratio.km)] <- 0
   weight.km <- ratio.km/(sum(ratio.km))
@@ -178,7 +176,21 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
 # Training-baseline survival on an arbitrary sorted evaluation grid. Chunking
 # avoids allocating a training-times x validation-subjects survfit object.
 tm_cox_survival <- function(model, new_data, linear_predictor, times) {
-  bh <- survival::basehaz(model, centered = TRUE)
+  # The predictions below are subject-specific, so survival's warning about the
+  # default curve of an interaction model does not apply.
+  bh <- tryCatch(
+    withCallingHandlers(
+      survival::basehaz(model, centered = TRUE),
+      warning = function(w) {
+        if (grepl("contains interactions", conditionMessage(w))) {
+          invokeRestart("muffleWarning")
+        }
+      }),
+    error = function(e) {
+      if (grepl("strata by covariate interaction", conditionMessage(e))) NULL
+      else stop(e)
+    })
+  if (is.null(bh)) return(tm_cox_survival_by_row(model, new_data, times))
   if (!nrow(bh)) stop("The training fit has no baseline time grid.")
   if (length(attr(stats::terms(model), "offset"))) {
     # survfit/basehaz centers offsets at their weighted training mean. predict's
@@ -225,6 +237,23 @@ tm_cox_survival <- function(model, new_data, linear_predictor, times) {
       block <- rows[start:min(start + 255L, length(rows))]
       out[block, ] <- exp(-outer(exp(linear_predictor[block]), h0))
     }
+  }
+  out
+}
+
+# Strata-by-covariate interactions have no shared stratum baseline, so each
+# subject's curve comes from survfit() on the raw covariates.
+#' @noRd
+tm_cox_survival_by_row <- function(model, new_data, times) {
+  if (!is.null(attr(new_data, "terms"))) {
+    stop("Cox models with strata-by-covariate interactions need raw covariates; ",
+         "pass the evaluation data as new_data.", call. = FALSE)
+  }
+  out <- matrix(NA_real_, nrow(new_data), length(times))
+  for (i in seq_len(nrow(new_data))) {
+    fit <- survival::survfit(model, newdata = new_data[i, , drop = FALSE],
+                             se.fit = FALSE)
+    out[i, ] <- c(1, fit$surv)[findInterval(times, fit$time) + 1L]
   }
   out
 }

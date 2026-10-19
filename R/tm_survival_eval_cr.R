@@ -40,7 +40,8 @@
 #' @param censor_covariates Optional numeric vector, matrix or data frame of
 #'   censoring-model covariates, in the same subject order as `event_time` and
 #'   the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
-#'   Cox censoring model has no covariates.
+#'   Cox censoring model has no covariates. The Cox censoring model uses
+#'   Breslow ties, so without covariates it equals exp(-Nelson-Aalen).
 #'
 #' @details
 #' The generalized R-squared metrics use event-observation IPCW. Censoring is
@@ -306,11 +307,7 @@ pam.censor.point <- function(i.obs, i.predict, y, delta){
   
   #KM estimate for censoring distribution
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  #sum.km.censoring<-summary(fit.km.censoring,  censored=TRUE)
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-  
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
   
   ratio.km[is.nan(ratio.km)]<-0
@@ -349,10 +346,7 @@ pam.censor<-function(y,y.predict,delta){
   y.predict.sorted<-y.predict[order(y)]
   
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-  
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
   
   ratio.km[is.nan(ratio.km)]<-0

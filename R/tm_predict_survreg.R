@@ -106,9 +106,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
     delta <- censor.unsorted.new[y.order]
   } 
   
-  sum.km.censoring <- summary(fit.km.censoring, times = y, extend = TRUE)
-  km.censoring <- sum.km.censoring$surv
-  km.censoring.minus <- c(1, km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y)
   
   ratio.km <- delta/km.censoring.minus
   ratio.km[is.nan(ratio.km)] <- 0

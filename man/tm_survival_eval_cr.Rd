@@ -63,7 +63,8 @@ Other metrics retain their own censoring adjustments.}
 \item{censor_covariates}{Optional numeric vector, matrix or data frame of
 censoring-model covariates, in the same subject order as `event_time` and
 the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
-Cox censoring model has no covariates.}
+Cox censoring model has no covariates. The Cox censoring model uses
+Breslow ties, so without covariates it equals exp(-Nelson-Aalen).}
 }
 \value{
 A data frame with two columns:

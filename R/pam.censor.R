@@ -35,11 +35,7 @@ pam.censor<-function(y,y.predict,delta){
 
   #KM estimate for censoring distribution
   fit.km.censoring <- survfit(Surv(y.sorted, 1-delta.sorted) ~ 1  )
-  #sum.km.censoring<-summary(fit.km.censoring,  censored=TRUE)
-  sum.km.censoring<-summary(fit.km.censoring,times=y.sorted,extend=TRUE)
-  km.censoring<-sum.km.censoring$surv
-
-  km.censoring.minus<-c(1,km.censoring[-length(km.censoring)])
+  km.censoring.minus <- tm_censoring_left_limit(fit.km.censoring, y.sorted)
   ratio.km<- delta.sorted/km.censoring.minus
 
   ratio.km[is.nan(ratio.km)]<-0
@@ -67,4 +63,15 @@ pam.censor<-function(y,y.predict,delta){
   L2 <-format(round(num.L2/denom.L2,digits = 4),nsmall=4)
 
   return(list(R.squared=R2,L.squared=L2))
+}
+
+#' Left limit G(t-) of a censoring Kaplan-Meier fit
+#'
+#' Rows tied at a time share one left limit, so the result does not depend on
+#' the order of tied rows.
+#' @keywords internal
+#' @noRd
+tm_censoring_left_limit <- function(fit, times) {
+  idx <- findInterval(times, fit$time, left.open = TRUE)
+  c(1, fit$surv)[idx + 1L]
 }

@@ -27,6 +27,16 @@
   available controls. `m` remains the number of controls per case, with
   full-cohort input. Simultaneous cases are excluded from control draws and
   events precede censoring at ties. Paper examples and tests use this convention.
+* IPCW weights for ordinary survival R-squared, point R-squared and the
+  Cox/AFT prediction helpers now use one censoring left limit G(t-) for all
+  rows tied at t. Previously, results with tied times depended on row order,
+  and point R-squared was off when a subject was censored exactly at t*.
+  Data with tied times can give slightly different values.
+* The competing-risks Cox censoring model uses Breslow ties, so the
+  no-covariate model equals exp(-Nelson-Aalen) with tied censoring times.
+* `tm_predict_coxph()` supports strata-by-covariate interactions such as
+  `x * strata(g)` when `new_data` is given, and no longer repeats survival's
+  interaction warning on every call.
 * Added independent prediction/inclusion-probability checks and paper analysis
   scripts. PBC is compared before/after within 0.2.1; full simulation execution
   is an explicit separate action. See the paper workflow in `README.md`.
