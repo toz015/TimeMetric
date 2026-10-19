@@ -11,6 +11,10 @@ paper_load <- function(root) {
 
 paper_metrics <- c("r_square", "l_square", "pseudo_r2", "harrell_c",
                    "uno_c", "brier_score", "td_auc")
+# Keep the historical base metric set separate from calibration-enabled runs.
+paper_cohort_metrics <- c(paper_metrics, "ici")
+paper_sample_metrics <- c(paper_metrics, "ici")
+paper_simulation_metrics <- c(paper_metrics, "ici")
 
 paper_git <- function(root, ...) {
   ans <- system2("git", c("-C", shQuote(root), ...), stdout = TRUE, stderr = TRUE)
@@ -23,7 +27,8 @@ paper_signature <- function(root, settings) {
              list.files(file.path(root, "analysis"), pattern = "\\.R$", full.names = TRUE),
              file.path(root, "DESCRIPTION"))
   packages <- c("TimeMetric", "survival", "tdROC", "yardstick", "randomForestSRC",
-                "cmprsk", "riskCommunicator", "expint", "pec", "dplyr", "pkgload")
+                "cmprsk", "riskCommunicator", "expint", "pec", "dplyr", "pkgload",
+                "pmcalibration", "prodlim", "Hmisc")
   versions <- setNames(vapply(packages, function(p) {
     if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else NA_character_
   }, character(1)), packages)

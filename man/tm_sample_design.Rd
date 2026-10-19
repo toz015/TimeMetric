@@ -8,10 +8,11 @@ tm_sample_design(
   models,
   case_weights,
   km_cens,
-  metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc"),
+  metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc", "ici"),
   t_star = NULL,
   tau = NULL,
-  digits = 2
+  digits = 2,
+  calibration_args = list()
 )
 }
 \arguments{
@@ -29,7 +30,8 @@ Each model entry must itself be a list containing:
 }
 Note: If \code{pred} is provided, it will be used to calculate R2 and concordance measure.}
 
-\item{case_weights}{Numeric vector of Prentice (or other) sampling weights for all subjects.}
+\item{case_weights}{Numeric vector of inverse-inclusion sampling weights,
+aligned with each model's evaluation subjects.}
 
 \item{km_cens}{A Kaplan-Meier fit for censoring (based on training data) used to compute IPCW.}
 
@@ -40,6 +42,9 @@ Note: If \code{pred} is provided, it will be used to calculate R2 and concordanc
 \item{tau}{Optional numeric scalar, specify the max time horizon for R2 measure and concordance measure (default = 10e10).}
 
 \item{digits}{Integer number of decimal places to round values (default 2).}
+
+\item{calibration_args}{Optional named list passed to [tm_calibration()],
+e.g. \code{list(nk = 3)}. Weights come from \code{case_weights}.}
 }
 \value{
 A data.frame: rows = metrics, columns = model names.

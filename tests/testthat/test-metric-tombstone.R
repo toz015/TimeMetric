@@ -45,10 +45,11 @@ test_that("tm_metric_names() no longer offers the removed metrics", {
   nms <- tm_metric_names()
   expect_false("r_e" %in% nms)
   expect_false("r_sh" %in% nms)
-  expect_length(nms, 11L)
+  expect_length(nms, 14L)
   expect_identical(nms, sort(c(
     "brier_score", "c_index", "harrell_c", "l2_point", "l_square",
-    "pseudo_r2", "pseudo_r2_point", "r2_point", "r_square", "td_auc", "uno_c"
+    "pseudo_r2", "pseudo_r2_point", "r2_point", "r_square", "td_auc", "uno_c",
+    "ici", "e50", "e90"
   )))
 })
 

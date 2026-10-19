@@ -14,7 +14,8 @@ tm_survival_eval_cr(
   tau = NULL,
   event_type = 1,
   censoring = c("cox", "km"),
-  censor_covariates = NULL
+  censor_covariates = NULL,
+  calibration_args = list()
 )
 }
 \arguments{
@@ -34,7 +35,8 @@ row per value of \code{time.cif} and one column per subject.}
 
 \item{metrics}{A character vector specifying the performance metrics to calculate. 
 The default \code{NULL} computes pseudo R-squared (integrated and point),
-C-index, Brier score, and time-dependent AUC. Use \code{"all"} for all nine.
+C-index, Brier score, time-dependent AUC, and ICI. Use \code{"all"} to
+include the components and E50/E90 as well.
 Valid options include:
 \itemize{
   \item `"pseudo_r2"`
@@ -46,10 +48,12 @@ Valid options include:
   \item `"c_index"`
   \item `"brier_score"`
   \item `"td_auc"`
+  \item `"ici"`, `"e50"`, `"e90"`
 }}
 
 \item{t_star}{Optional numeric value specifying a reference time for evaluating point-version Pseudo_R_square, 
-the Brier Score and Time-Dependent AUC. Defaults to the median of `event_time`.}
+the Brier score, time-dependent AUC, and calibration. Defaults to the median
+of `event_time`.}
 
 \item{tau}{Optional numeric value specifying a restricted time horizon for model evaluation. 
 Defaults to the maximum observed follow-up time.}
@@ -65,6 +69,9 @@ censoring-model covariates, in the same subject order as `event_time` and
 the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
 Cox censoring model has no covariates. The Cox censoring model uses
 Breslow ties, so without covariates it equals exp(-Nelson-Aalen).}
+
+\item{calibration_args}{Optional named list passed to [tm_calibration_cr()],
+e.g. \code{list(bandwidth = 0.2)}. These settings affect calibration only.}
 }
 \value{
 A data frame with two columns:
@@ -93,6 +100,11 @@ The interval outcome is the target-event time capped at `tau`, with competing
 events assigned to `tau`. The point outcome is `I(T <= t_star, D = event_type)`,
 including target events at the evaluation time, as in the CIF. Normalized ratio
 estimates are not asserted to be exactly unbiased in finite samples.
+Calibration uses the target-event CIF at or before \code{t_star} on the
+supplied grid and evaluates the outcome at \code{t_star}. It uses the local
+Aalen--Johansen estimator described in [tm_calibration_cr()]; \code{censoring}
+and \code{censor_covariates} do not control this estimator. A failed curve
+fit warns and returns missing calibration metrics without discarding others.
 }
 \examples{
 # Competing risks: cause 1 is the event of interest, cause 2 the competing

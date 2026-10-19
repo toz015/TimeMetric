@@ -111,8 +111,8 @@ test_that("two-phase metric selection accepts all and rejects unknown names", {
   expect_error(evaluate("c_index"), "Invalid metrics")
   expect_setequal(evaluate("all")$Metric,
                    c("pseudo_r2", "r_square", "l_square", "harrell_c",
-                     "uno_c", "brier_score", "td_auc"))
-  expect_equal(nrow(evaluate(NULL)), 5L)
+                     "uno_c", "brier_score", "td_auc", "ici", "e50", "e90"))
+  expect_equal(nrow(evaluate(NULL)), 6L)
 })
 
 test_that("point pseudo R-squared compares events with event probabilities", {

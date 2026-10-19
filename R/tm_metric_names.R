@@ -49,7 +49,11 @@ tm_metric_aliases <- function() {
     "uno_c"                        = "uno_c",
     "C_index"                      = "c_index",
     "c_index"                      = "c_index",
-    # calibration and discrimination over time
+    # calibration at the evaluation time
+    "ici"                          = "ici",
+    "e50"                          = "e50",
+    "e90"                          = "e90",
+    # probability prediction error and discrimination over time
     "Brier Score"                  = "brier_score",
     "Brier_Score"                  = "brier_score",
     "brier_score"                  = "brier_score",

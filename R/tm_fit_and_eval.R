@@ -6,7 +6,9 @@
 #' @param covariates A character vector of covariate names to include in the model.
 #' @param models Character vector of model types: "coxph", "exp", "lognormal",
 #'   or "weibull". The default fits only "coxph"; use "all" to fit all four.
-#' @param metrics A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
+#' @param metrics A character string or vector specifying the metrics to compute.
+#'   The default \code{NULL} includes ICI and the existing performance metrics;
+#'   use \code{"all"} to additionally include E50 and E90. Options include:
 #'   \itemize{
 #'     \item "r_square": R-squared metric.
 #'     \item "l_square": L-squared metric.
@@ -15,12 +17,19 @@
 #'     \item "uno_c": Uno's Concordance Index.
 #'     \item "brier_score": Brier Score.
 #'     \item "td_auc": Time-dependent AUC.
+#'     \item "ici", "e50", "e90": Absolute calibration error summaries.
 #'   }
 #'
 #' @param predicted_data (Optional) A data frame containing validation data. If `NULL`, the function 
 #' uses the same data as `data` for model evaluation.
-#' @param t_star (Optional) A positive numeric value specifying the time point at which the Brier score and AUC score is calculated.
+#' @param t_star (Optional) Positive evaluation time for Brier score, AUC, and
+#'   calibration; the median evaluation follow-up if omitted.
 #' @param tau (Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.
+#' @param calibration_args Optional named list passed to [tm_calibration()].
+#'   For sampling-adjusted calibration use [tm_sample_design()] or
+#'   [tm_calibration()] directly; weights cannot be supplied through this list.
+#' @details Calibration evaluates model-predicted event probabilities exactly
+#'   at \code{t_star} (the median evaluation follow-up if omitted).
 #'
 #' @details Rows with missing values in \code{time}, \code{status}, or a
 #'   requested covariate are excluded from training and evaluation with a
@@ -40,7 +49,7 @@
 #' dat <- pbc[, c("time", "status", covariates)]
 #' dat <- dat[stats::complete.cases(dat), ]
 #'
-#' # Default Cox model and all its available metrics
+#' # Default Cox model and metrics, including ICI
 #' results <- tm_fit_and_eval(train_data = dat, covariates = covariates)
 #' results
 #'
@@ -56,7 +65,8 @@
 #' @export
 
 tm_fit_and_eval <- function (train_data, covariates, models = "coxph", 
-                                 metrics = "all", predicted_data = NULL, t_star = NULL, tau = NULL) {
+                                 metrics = NULL, predicted_data = NULL, t_star = NULL,
+                                 tau = NULL, calibration_args = list()) {
   time_var <- "time"
   status_var <- "status"
   # Validate inputs
@@ -86,13 +96,15 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
   }
   model_types <- if ("all" %in% models) valid_models else models
   metrics <- tm_normalize_metrics(metrics)
-  valid_metrics <- c("pseudo_r2", "r_square", "l_square", "harrell_c",
-                     "uno_c", "brier_score", "td_auc")
+  default_metrics <- c("pseudo_r2", "r_square", "l_square", "harrell_c",
+                       "uno_c", "brier_score", "td_auc", "ici")
+  valid_metrics <- c(default_metrics, "e50", "e90")
   invalid_metrics <- setdiff(metrics, c("all", valid_metrics))
-  if (length(invalid_metrics) > 0 || length(metrics) == 0) {
+  if (length(invalid_metrics) > 0 || (!is.null(metrics) && length(metrics) == 0)) {
     stop("Invalid metrics: ", paste(invalid_metrics, collapse = ", "))
   }
-  metrics <- if ("all" %in% metrics) valid_metrics else unique(metrics)
+  metrics <- if (is.null(metrics)) default_metrics else
+    if ("all" %in% metrics) valid_metrics else unique(metrics)
   # Define a list to hold metrics
   metrics_results <- list()
   
@@ -177,6 +189,30 @@ tm_fit_and_eval <- function (train_data, covariates, models = "coxph",
     }
   }
   
+  calibration_metrics <- intersect(c("ici", "e50", "e90"), metrics)
+  if (length(calibration_metrics)) {
+    if ("case_weights" %in% names(calibration_args)) {
+      stop("For sampling-adjusted calibration use tm_sample_design() or ",
+           "tm_calibration(..., case_weights = ...).", call. = FALSE)
+    }
+    calibration_time <- if (is.null(t_star)) stats::median(test_data$time) else t_star
+    for (fit_name in names(fits)) {
+      survival_probability <- if (fit_name == "coxph") {
+        lp <- as.numeric(stats::predict(fits[[fit_name]], newdata = test_data,
+                                        type = "lp", reference = "sample"))
+        tm_cox_survival(fits[[fit_name]], test_data, lp, calibration_time)
+      } else {
+        predictSurvProb2survreg(fits[[fit_name]], test_data, calibration_time)
+      }
+      p <- 1 - as.numeric(survival_probability)
+      calibration <- tm_calibration_values(tm_calibration, c(list(
+        p = p, event_time = test_data$time, status = test_data$status,
+        t_star = calibration_time), calibration_args))
+      metrics_results[[fit_name]][calibration_metrics] <-
+        as.list(calibration[calibration_metrics])
+    }
+  }
+
   # Format the result as a data frame
   metrics_df <- do.call(rbind, lapply(names(metrics_results), function(models) {
     model_metrics <- metrics_results[[models]]

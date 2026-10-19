@@ -5,6 +5,7 @@ script <- sub("^--file=", "", file_arg[1])
 if (!file.exists(script)) script <- gsub("~+~", " ", script, fixed = TRUE)
 source(file.path(dirname(normalizePath(script)), "common.R"))
 root <- paper_root(script)
+source(file.path(root, "analysis", "simulation_calibration.R"))
 
 options_from <- function(args) {
   o <- list(mode = "plan", part = "all", repeats = NULL, output = NULL)
@@ -34,7 +35,11 @@ settings <- list(mode = opt$mode, train_n = if (smoke) 240L else 10000L,
                  test_n = if (smoke) 120L else 3000L,
                  sample_n = if (smoke) c(80L, 120L) else c(300L, 3000L),
                  ntree = if (smoke) 30L else 1000L,
-                 rf_seed = 1234L, legacy_integration = TRUE)
+                 rf_seed = 1234L, legacy_integration = TRUE,
+                 metrics = paper_simulation_metrics,
+                 calibration_args = list(nk = 5L),
+                 calibration_grid = "last at or before t_star",
+                 calibration_precision = "unrounded")
 scenarios <- expand.grid(v = 1/c(0.5, 1, 1.5, 2), beta = c(0.5, 0.7, 1, 1.5))
 scenarios$scenario <- seq_len(nrow(scenarios))
 sim1 <- expand.grid(scenario = seq_len(nrow(scenarios)), rep = 1:100)
@@ -148,7 +153,7 @@ evaluate_job <- function(job) {
                              if (nonlinear) c(1,-1,-0.5,0.5) else c(1,-1), 1234, nonlinear)
       median(train_ref$time)
     } else median(test$time)
-    rows <- list(); support <- list()
+    rows <- list(); support <- list(); calibration <- list()
     for (m in names(models)) {
       fit <- models[[m]]
       covs <- if (m == "Cox.reduce") "x2" else c("x1", "x2")
@@ -162,13 +167,19 @@ evaluate_job <- function(job) {
         pred <- list(model = NULL, times = test$time, status = test$status,
                      surv_prob = sp, pred = NULL, new_data = test, covs = covs)
       }
-      table <- tm_summarize(setNames(list(pred), m), metrics = paper_metrics,
+      # Preserve the existing metrics and their historical rounding.
+      table <- tm_summarize(setNames(list(pred), m), metrics = setdiff(settings$metrics, "ici"),
                             tau = tau, t_star = t_star, digits = 4)
-      rows[[m]] <- data.frame(Model = m, Metric = table$Metric, Value = table[[m]])
+      cal <- paper_simulation_calibration(pred, t_star, settings$calibration_args)
+      rows[[m]] <- rbind(
+        data.frame(Model = m, Metric = table$Metric, Value = table[[m]]),
+        data.frame(Model = m, Metric = "ici", Value = cal$ici))
+      calibration[[m]] <- cbind(Model = m, cal$diagnostics)
       if (inherits(fit, "coxph")) support[[m]] <- cbind(Model = m, paper_support(fit, test, tau))
     }
     list(ok = TRUE, job = job, metrics = do.call(rbind, rows), tau = tau,
          t_star = t_star, support = do.call(rbind, support),
+         calibration = do.call(rbind, calibration),
          observed_censoring = mean(test$status == 0))
   }, warning = function(w) {
     warnings <<- c(warnings, conditionMessage(w)); invokeRestart("muffleWarning")
@@ -180,7 +191,8 @@ evaluate_job <- function(job) {
 for (i in seq_len(nrow(chosen))) {
   j <- chosen[i, ]
   path <- file.path(out, "checkpoints", paste0(j$id, ".rds"))
-  if (file.exists(path) && isTRUE(readRDS(path)$ok)) {
+  if (file.exists(path) &&
+      paper_simulation_record_complete(readRDS(path), settings$metrics)) {
     message("Reuse ", j$id); next
   }
   message("Run ", j$id)
@@ -195,10 +207,12 @@ for (i in seq_len(nrow(chosen))) {
 records <- lapply(list.files(file.path(out, "checkpoints"), pattern = "\\.rds$", full.names = TRUE), readRDS)
 status <- do.call(rbind, lapply(records, function(r) data.frame(
   id = r$job$id, part = r$job$part, rep = r$job$rep, ok = r$ok,
-  finite = r$ok && all(is.finite(r$metrics$Value)),
+  metrics_complete = paper_simulation_record_complete(r, settings$metrics, finite = FALSE),
+  finite = paper_simulation_record_complete(r, settings$metrics),
   error = if (r$ok) "" else r$error, warnings = paste(r$warnings, collapse = " | "))))
 utils::write.csv(status, file.path(out, "run_status.csv"), row.names = FALSE)
-successful <- Filter(function(r) isTRUE(r$ok), records)
+successful <- Filter(function(r)
+  paper_simulation_record_complete(r, settings$metrics, finite = FALSE), records)
 if (!length(successful)) stop("No job succeeded. See run_status.csv.")
 raw <- do.call(rbind, lapply(successful, function(r) {
   meta <- r$job[rep(1, nrow(r$metrics)), ]
@@ -210,6 +224,11 @@ support <- do.call(rbind, lapply(successful, function(r) {
   if (!is.null(r$support)) cbind(id = r$job$id, r$support)
 }))
 utils::write.csv(support, file.path(out, "tables", "support_diagnostics.csv"), row.names = FALSE)
+calibration <- do.call(rbind, lapply(successful, function(r) {
+  if (!is.null(r$calibration)) cbind(id = r$job$id, part = r$job$part,
+    rep = r$job$rep, r$calibration)
+}))
+utils::write.csv(calibration, file.path(out, "tables", "calibration_diagnostics.csv"), row.names = FALSE)
 group <- c("part", "scenario", "v", "beta", "n", "censor", "quantile", "Model", "Metric")
 keys <- interaction(raw[group], drop = TRUE, lex.order = TRUE)
 summary <- do.call(rbind, lapply(split(seq_len(nrow(raw)), keys), function(ix) {
@@ -245,7 +264,7 @@ if (nrow(s3)) {
   utils::write.csv(accuracy, file.path(out, "tables", "sim3_accuracy.csv"), row.names = FALSE)
 }
 
-plotted <- c("pseudo_r2", "brier_score", "harrell_c", "td_auc")
+plotted <- c("pseudo_r2", "brier_score", "harrell_c", "td_auc", "ici")
 save_plot <- function(p, name, width, height) {
   p <- p + ggplot2::labs(caption = if (smoke) "SMOKE TEST: reduced sample sizes and repetitions; not manuscript results." else
                           "See configuration.rds and run_status.csv for versions and completion.")
@@ -281,7 +300,7 @@ if (nrow(errors)) {
     ggplot2::geom_boxplot(outlier.size = 0.4) +
     ggplot2::facet_grid(censor ~ Metric, scales = "free_y") + ggplot2::theme_bw() +
     ggplot2::labs(x = "Test sample size", y = "Estimate minus uncensored reference", fill = "Horizon percentile")
-  save_plot(p, "paper.fig6.updated", 13, 7)
+  save_plot(p, "paper.fig6.updated", 15.5, 7)
 }
 completion <- aggregate(id ~ part, jobs, length); names(completion)[2] <- "planned_jobs"
 done <- aggregate(id ~ part, status, length); names(done)[2] <- "attempted_jobs"

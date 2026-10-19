@@ -110,7 +110,7 @@ paper_original_real <- function(root, out, datasets = c("pbc", "framingham", "gb
 paper_original_metric_label <- function(metric) switch(metric,
   pseudo_r2 = expression("Pseudo-" * R^2), r_square = expression(R^2),
   l_square = expression(L^2), brier_score = "Brier score", harrell_c = "Harrell's C",
-  uno_c = "Uno's C", td_auc = "AUC", metric)
+  uno_c = "Uno's C", td_auc = "AUC", ici = "ICI", metric)
 
 # The following layouts follow the existing manuscript redraw script: bars,
 # paired R/L dots in Simulation 2, and three labeled rows of boxplots in Sim 3.
@@ -121,7 +121,7 @@ paper_original_simulations <- function(root, out, preview = FALSE) {
     return(invisible(NULL))
   }
   raw <- utils::read.csv(raw_file, check.names = FALSE)
-  scalar <- c("pseudo_r2", "brier_score", "harrell_c", "td_auc")
+  scalar <- c("pseudo_r2", "brier_score", "harrell_c", "td_auc", "ici")
   destination <- if (preview) file.path(out, "figures", "original_format_preview") else file.path(out, "figures")
   dir.create(destination, recursive = TRUE, showWarnings = FALSE)
   save_plot <- function(p, name, width, height) {
@@ -136,6 +136,13 @@ paper_original_simulations <- function(root, out, preview = FALSE) {
   ready <- function(part) {
     d <- raw[raw$part == part, ]
     if (!nrow(d)) return(FALSE)
+    required <- c(scalar, "r_square", "l_square", "uno_c")
+    designs <- split(d$Metric, interaction(
+      d[c("scenario", "n", "censor", "quantile", "Model")], drop = TRUE))
+    if (!all(vapply(designs, function(x) setequal(x, required), logical(1)))) {
+      message(part, ": required metric rows including ICI are missing. Figure skipped.")
+      return(FALSE)
+    }
     if (preview) return(TRUE)
     keys <- c("scenario", "n", "censor", "quantile", "Model", "Metric")
     cells <- split(d, interaction(d[keys], drop = TRUE))
@@ -180,7 +187,7 @@ paper_original_simulations <- function(root, out, preview = FALSE) {
           row_header("bold('(b) Vary the variance of event times through ') * 1/v", 0.203)
       patchwork::wrap_plots(header, patchwork::wrap_plots(plots, nrow = 2), ncol = 1, heights = c(0.08, 1))
     })
-    save_plot(patchwork::wrap_plots(groups, ncol = 1), "paper.fig4.updated", 7, 7)
+    save_plot(patchwork::wrap_plots(groups, ncol = 1), "paper.fig4.updated", 10, 7)
     utils::write.csv(means, file.path(destination, "paper.fig4.plot_data.csv"), row.names = FALSE)
   }
   for (part in c("sim2_linear", "sim2_nonlinear")) {
@@ -216,14 +223,17 @@ paper_original_simulations <- function(root, out, preview = FALSE) {
     p <- patchwork::wrap_plots(plots, nrow = 2) + patchwork::plot_annotation(
       theme = ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 12, face = "bold")))
     stem <- if (linear) "paper.fig5.updated" else "paper.fig5.2.updated"
-    width <- if (linear) 10 else 8
-    save_plot(p, stem, width, width * 3.5/5.5)
+    width <- if (linear) 12 else 10
+    height <- if (linear) 10 * 3.5/5.5 else 8 * 3.5/5.5
+    save_plot(p, stem, width, height)
     utils::write.csv(means, file.path(destination, paste0(stem, ".plot_data.csv")), row.names = FALSE)
   }
   if (ready("sim3")) {
     error_file <- file.path(out, "tables", "sim3_errors.csv")
     d <- utils::read.csv(error_file)
-    box_metrics <- c("pseudo_r2", "brier_score", "harrell_c", "uno_c", "td_auc")
+    box_metrics <- c("pseudo_r2", "brier_score", "harrell_c", "uno_c", "td_auc", "ici")
+    if (!all(box_metrics %in% d$Metric))
+      stop("Simulation 3 error table is missing metrics including ICI. Recompute its summaries.")
     d <- d[d$Metric %in% box_metrics, ]
     # Use the NEW error calculations. Styling never recalculates their reference.
     d$quantile <- factor(d$quantile, levels = c(90, 50))
@@ -256,7 +266,7 @@ paper_original_simulations <- function(root, out, preview = FALSE) {
       ggplot2::theme(legend.position = "none")
     xlab <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0.5, y = 0.5, label = "Sample size", size = 5) +
       ggplot2::theme_void()
-    save_plot(patchwork::wrap_plots(big, xlab, ncol = 1, heights = c(1,0.05)), "paper.fig6.updated", 13, 6)
+    save_plot(patchwork::wrap_plots(big, xlab, ncol = 1, heights = c(1,0.05)), "paper.fig6.updated", 15.5, 6)
   }
   if (preview) writeLines("Preview from reduced smoke-test results; NOT manuscript simulation results.",
                            file.path(destination, "SMOKE_PREVIEW_ONLY.txt"))

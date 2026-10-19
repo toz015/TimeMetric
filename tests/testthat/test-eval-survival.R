@@ -23,6 +23,9 @@ test_that("tm_survival_eval returns a Metric/Value data frame", {
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "Value"))
   expect_type(res$Value, "double")
+  # Preserve the pre-calibration snapshots; the new default ICI and its
+  # independent numerical references are covered in test-calibration.R.
+  res <- res[res$Metric != "ici", ]
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$Value), style = "serialize")
 })
@@ -113,6 +116,7 @@ test_that("tm_summarize pivots one model into a Metric column table", {
 
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "value"))
+  res <- res[res$Metric != "ici", ]
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$value), style = "serialize")
 })
@@ -130,6 +134,7 @@ test_that("tm_summarize puts one column per model and rounds to digits", {
   expect_identical(names(res), c("Metric", "cox", "weibull"))
   # default digits = 2
   expect_equal(res$cox, round(res$cox, 2), tolerance = 1e-12)
+  res <- res[res$Metric != "ici", ]
   expect_snapshot_value(snap_num(res$cox), style = "serialize")
   expect_snapshot_value(snap_num(res$weibull), style = "serialize")
 })
@@ -157,7 +162,8 @@ test_that("tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)",
   # returned by tm_survival_eval
   expect_true(all(c("pseudo_r2", "r_square", "l_square",
                     "brier_score") %in% names(res)))
-  expect_snapshot_value(sort(names(res)), style = "serialize")
+  expect_snapshot_value(sort(setdiff(names(res), c("ici", "e50", "e90"))),
+                          style = "serialize")
   expect_snapshot_value(snap_num(res[["r_square"]]), style = "serialize")
 })
 

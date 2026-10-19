@@ -77,7 +77,11 @@ test_that("two-phase evaluation works for a case-cohort design", {
 
   expect_true(inherits(res, "data.frame"))
   expect_true(all(c("Metric", "Value") %in% names(res)))
-  expect_identical(nrow(res), 5L)
+  expect_identical(nrow(res), 6L)
+  expect_true("ici" %in% res$Metric)
+  expect_false(any(c("e50", "e90") %in% res$Metric))
+  # Retain the historical snapshots for all existing metrics.
+  res <- res[res$Metric != "ici", , drop = FALSE]
   expect_true(all(is.finite(res$Value)))
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$Value), style = "serialize")
@@ -93,7 +97,11 @@ test_that("two-phase evaluation works for a nested case-control design", {
   )
 
   expect_true(all(c("Metric", "Value") %in% names(res)))
-  expect_identical(nrow(res), 5L)
+  expect_identical(nrow(res), 6L)
+  expect_true("ici" %in% res$Metric)
+  expect_false(any(c("e50", "e90") %in% res$Metric))
+  # Retain the historical snapshots for all existing metrics.
+  res <- res[res$Metric != "ici", , drop = FALSE]
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$Value), style = "serialize")
 })
@@ -159,6 +167,8 @@ test_that("tm_sample_design summarises a two-phase design", {
   expect_metric_table(res)
   expect_identical(names(res), c("Metric", "cc"))
   expect_equal(res$cc, round(res$cc, 2), tolerance = 1e-12)
+  expect_true("ici" %in% res$Metric)
+  res <- res[res$Metric != "ici", , drop = FALSE]
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$cc), style = "serialize")
 })
@@ -175,7 +185,9 @@ test_that("two-phase default metric names are pinned with current spelling", {
   expect_true("uno_c" %in% defaults)
   expect_false("Pesudo_R" %in% defaults)
   expect_true(all(defaults %in% tm_metric_names()))
-  expect_snapshot_value(defaults, style = "serialize")
+  expect_true("ici" %in% defaults)
+  expect_false(any(c("e50", "e90") %in% defaults))
+  expect_snapshot_value(defaults[defaults != "ici"], style = "serialize")
 })
 
 test_that("two-phase uses Pesudo_R where the survival path uses Pseudo_R_square", {

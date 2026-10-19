@@ -1,6 +1,48 @@
 # TimeMetric 0.2.1
 
+## Calibration
+
+* Added `tm_calibration()` for right-censored event probabilities and
+  `tm_calibration_cr()` for a target-cause CIF, both at one specified horizon
+  and without requiring the original prediction model. Results contain ICI,
+  E50 and E90 plus calibrated probabilities in original subject order.
+* Right-censored calibration uses `pmcalibration` restricted cubic splines;
+  competing-risks calibration uses `prodlim` nearest-neighborhood
+  Aalen--Johansen estimates. Both use `pmcalibration::cal_metrics()` for the
+  summaries, retaining repeated predictions with their subject frequencies.
+  `pmcalibration` and `prodlim` are now declared runtime dependencies.
+* Ordinary and competing-risks evaluators and comparison tables include ICI
+  by default. E50/E90 are opt-in (`metrics = c("ici", "e50", "e90")` or
+  `"all"`). `tm_fit_and_eval()` now defaults to `metrics = NULL` for this
+  same ICI-only calibration selection; explicit `"all"` includes all three.
+  `calibration_args` forwards knot/bandwidth settings to the new functions.
+* Calibration uses the requested outcome horizon and the last supplied
+  prediction-grid value at or before it. Direct probability interfaces and
+  fit-and-evaluate can use predictions calculated exactly at the horizon.
+  Zero/one probabilities are never silently dropped; ordinary survival
+  fitting clips them inward with a warning and summaries use the originals.
+  Non-estimable calibration fits warn and leave other metrics available.
+  Calibration confidence intervals are not included.
+
+* Right-censored two-phase evaluation now includes ICI by default, with
+  E50/E90 available explicitly or via `"all"`. `tm_calibration(case_weights = ...)`
+  fits a sampling-weighted Cox spline model and computes weighted summaries;
+  `tm_evaluate_two_phase()` and `tm_sample_design()` forward aligned sampling
+  weights and `calibration_args`. Calibration-only calls need no original
+  prediction model, mean-time predictions, or separate censoring fit.
+  Weighted constant predictions use Kaplan-Meier; all fits retain original
+  boundary probabilities for metrics. `Hmisc` is a direct dependency for the
+  shared spline basis and weighted quantiles. Design-based intervals and
+  sampling-adjusted competing-risks calibration are not implemented.
+
 ## Paper integration
+
+* Simulation 1, both Simulation 2 parts and Simulation 3 now include ICI at
+  their existing evaluation horizons, with five-knot Cox spline calibration.
+  ICI is stored without rounding and enters replication summaries, Simulation
+  3 references/errors, figure panels and report tables. Calibration diagnostics
+  are saved per job and model. Resume and report checks require ICI rows.
+  Existing simulation outputs must be kept in a separate directory.
 
 * Competing-risks C-index now uses reciprocal censoring-survival products,
   following Wolbers et al. (2014), equation (3.4). Previously it multiplied

@@ -12,7 +12,8 @@ tm_summarize_cr(
   event_type = 1,
   digits = 2,
   censoring = c("cox", "km"),
-  censor_covariates = NULL
+  censor_covariates = NULL,
+  calibration_args = list()
 )
 }
 \arguments{
@@ -27,7 +28,8 @@ tm_summarize_cr(
 \item{metrics}{Character vector of metrics to compute (passed through to
 \code{tm_survival_eval_cr()}); use \code{"all"} for all supported.}
 
-\item{t_star}{(Optional) evaluation time for Brier score, AUC, and point version R2. Default is median of observation time.}
+\item{t_star}{(Optional) Evaluation time for Brier score, AUC, point R2,
+and calibration. Defaults to the median observed follow-up.}
 
 \item{tau}{(Optional) The maximum prediction time horizon for R2 and C index. Default is maximum of observation time.}
 
@@ -41,6 +43,8 @@ tm_summarize_cr(
 \item{censor_covariates}{Optional numeric censoring-model covariates shared
 across models. Rows must match each model's subject order. Passed to
 [tm_survival_eval_cr()]; used only with `censoring = "cox"`.}
+
+\item{calibration_args}{Optional named list passed to [tm_calibration_cr()].}
 }
 \value{
 A data.frame with:

@@ -7,7 +7,9 @@
 #'   computed directly from \code{predicted_probability}.
 #'
 #' @param event_time A numeric vector of observed survival times.
-#' @param pred_mean_survival A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.
+#' @param pred_mean_survival Optional numeric vector of predicted mean survival
+#'   times, used for explained variation and concordance. Predicted probabilities
+#'   are still needed for point metrics, Brier score, AUC, and calibration.
 #' @param predicted_probability Numeric matrix of predicted survival probabilities, with
 #'   \itemize{
 #'     \item rows = subjects.
@@ -27,20 +29,34 @@
 #'     \item "l_square" - L-squared measure
 #'     \item "Harrell's C" - Harrell's concordance index
 #'     \item "Uno's C" - Uno's concordance index
-#'     \item "brier_score" - Brier score for calibration
+#'     \item "brier_score" - Overall probability prediction error
 #'     \item "td_auc" - Time-dependent area under the curve (AUC)
+#'     \item "ici", "e50", "e90" - Absolute calibration error summaries
 #'   }
-#'   Default is "all", which computes all available metrics.
+#'   The default \code{NULL} includes ICI but omits E50 and E90. Use
+#'   \code{"all"} to include every supported metric.
 #'   
 #'   
-#' @param t_star (Optional) A numeric value specifying the evaluation time for point R-squared, Brier Score and time-dependent AUC.
+#' @param t_star (Optional) Evaluation time for point R-squared, Brier score,
+#'   time-dependent AUC, and calibration.
 #'   If NULL, it defaults to the median survival time.
 #' @param tau (Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 #'   If NULL, it defaults to the maximum observed survival time.
+#' @param calibration_args Optional named list passed to [tm_calibration()],
+#'   e.g. \code{list(nk = 3)}. These settings affect calibration only.
+#'   For sampling weights use [tm_sample_design()] or [tm_calibration()]
+#'   directly, rather than passing weights through this list.
 #'
 #' @details Point R-squared uses the event indicator `I(T <= t_star)` and
 #'   the predicted event probability `1 - S` at the selected prediction-grid
 #'   column. Events at the evaluation time are included.
+#'   Calibration uses \code{1 - S(t_star)} from the last supplied grid column
+#'   at or before \code{t_star}, interpreting the grid as a right-continuous
+#'   step function (risk zero before its first time). Its outcome horizon is
+#'   exactly \code{t_star}, not the nearest future grid time. See
+#'   [tm_calibration()] for the estimator and boundary-probability policy.
+#'   A failed calibration fit warns and returns missing calibration metrics;
+#'   other requested metrics are retained.
 #'
 #' @return A data frame with two columns:
 #'   \item{Metric}{The name of the computed evaluation metric.}
@@ -86,7 +102,8 @@ tm_survival_eval <- function (model, event_time,
                                         predicted_probability, 
                                         pred_mean_survival = NULL,
                                         status, covariates, new_data = NULL,
-                                        metrics = NULL,  t_star = NULL, tau = NULL) 
+                                        metrics = NULL,  t_star = NULL, tau = NULL,
+                                        calibration_args = list())
 {
   
   #if (missing(covariates) || missing(new_data)) {
@@ -99,9 +116,10 @@ tm_survival_eval <- function (model, event_time,
   
   valid_metrics <- c("pseudo_r2", "r_square", "l_square",
                      "pseudo_r2_point", "r2_point", "l2_point",
-                     "harrell_c", "uno_c", "brier_score", "td_auc")
+                     "harrell_c", "uno_c", "brier_score", "td_auc",
+                     "ici", "e50", "e90")
   default_metrics <- c("pseudo_r2", "pseudo_r2_point",
-                       "harrell_c", "uno_c", "brier_score", "td_auc")
+                       "harrell_c", "uno_c", "brier_score", "td_auc", "ici")
   
   metrics <- tm_normalize_metrics(metrics)
   
@@ -118,13 +136,15 @@ tm_survival_eval <- function (model, event_time,
   
   y.order <- order(event_time)
   event_time <- event_time[y.order]
-  predicted_probability <- predicted_probability[y.order, ]
+  predicted_probability <- as.matrix(predicted_probability)[y.order, , drop = FALSE]
   status <- status[y.order]
   
-  if(is.null(pred_mean_survival)){
+  needs_time_prediction <- any(metrics %in% c(
+    "pseudo_r2", "r_square", "l_square", "harrell_c", "uno_c"))
+  if(needs_time_prediction && is.null(pred_mean_survival)){
     predicted_data <- integrate_survival(
       predicted_probability, event_time, status, tau)
-  }else{
+  }else if (needs_time_prediction){
     predicted_data <- pred_mean_survival[y.order]
   }
   
@@ -222,6 +242,21 @@ tm_survival_eval <- function (model, event_time,
     metrics_results$"td_auc" <- round(AUC_result$main_res$AUC.empirical, 4)
   }
 
+  calibration_metrics <- intersect(c("ici", "e50", "e90"), metrics)
+  if (length(calibration_metrics)) {
+    if ("case_weights" %in% names(calibration_args)) {
+      stop("For sampling-adjusted calibration use tm_sample_design() or ",
+           "tm_calibration(..., case_weights = ...).", call. = FALSE)
+    }
+    p <- tm_calibration_grid_risk(predicted_probability, event_time, t_star,
+                                  length(event_time), survival = TRUE)
+    calibration <- tm_calibration_values(tm_calibration, c(list(
+      p = p, event_time = event_time, status = status, t_star = t_star),
+      calibration_args))
+    metrics_results[calibration_metrics] <- as.list(round(
+      calibration[calibration_metrics], 4))
+  }
+
   result_df <- data.frame(
     Metric = names(metrics_results),
     Value = unlist(metrics_results, use.names = FALSE),
@@ -252,9 +287,11 @@ tm_survival_eval <- function (model, event_time,
 #'   }
 #'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordance measure.
 #' @param metrics Optional character vector of metrics to compute (passed through).
-#' @param t_star Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.
+#' @param t_star Optional evaluation time for point metrics and calibration.
+#'   Defaults to the median observed follow-up.
 #' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordance measure (default = 10e10).
 #' @param digits Number of decimal places to round the metric values (default = 2).
+#' @param calibration_args Optional named list passed to [tm_calibration()].
 #'
 #' @return A data frame with:
 #'   \itemize{
@@ -278,7 +315,8 @@ tm_summarize <- function(models,
                         metrics = NULL,
                         t_star = NULL,
                         tau = 10e10,
-                        digits = 2) {
+                        digits = 2,
+                        calibration_args = list()) {
   if (!is.list(models) || length(models) == 0) {
     stop("'models' must be a non-empty named list.")
   }
@@ -304,7 +342,8 @@ tm_summarize <- function(models,
       new_data = mod$new_data,
       covariates = mod$covs,
       t_star = t_star,
-      tau = tau
+      tau = tau,
+      calibration_args = calibration_args
     )
     
     # Ensure expected columns exist and add Model label
@@ -344,7 +383,8 @@ tm_summarize <- function(models,
     "harrell_c",
     "uno_c",
     "brier_score",
-    "td_auc"
+    "td_auc",
+    "ici", "e50", "e90"
   )
 
   res_wide$Metric <- factor(res_wide$Metric, levels = preferred_order)

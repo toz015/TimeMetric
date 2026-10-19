@@ -29,6 +29,7 @@ Description: Evaluates the predictive performance of survival models in a
     Extends and generalizes the 'PAmeasures' package.
 Depends: R (>= 4.1.0)
 Imports:
+    Hmisc,
     survival,
     stats,
     utils,
@@ -42,7 +43,9 @@ Imports:
     purrr,
     tibble,
     tidyr,
-    pec
+    pec,
+    pmcalibration (>= 0.2.0),
+    prodlim
 URL: https://github.com/toz015/TimeMetric
 BugReports: https://github.com/toz015/TimeMetric/issues
 License: MIT + file LICENSE
@@ -60,3 +63,4 @@ Suggests:
 Config/testthat/edition: 3
 NeedsCompilation: no
 Config/roxygen2/version: 8.1.0
+RoxygenNote: 7.3.3

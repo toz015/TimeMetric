@@ -23,15 +23,26 @@ km_surv <- function(t, km_cens) {
 #'   \code{tm_predict_coxph()}, with \code{times} (or legacy \code{time}),
 #'   \code{status} (0 = censored, 1 = event), \code{pred} (predicted mean
 #'   survival times), and \code{surv_prob} (subjects by sorted observed times).
-#' @param t_star (Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
+#' @param t_star (Optional) Evaluation time for Brier score, time-dependent
+#'   AUC, and calibration.
 #'   If NULL, it defaults to the median survival time.
 #' @param tau (Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 #'   If NULL, it defaults to the maximum observed survival time.
 #' @param km_cens_fit Kaplan-Meier estimate of the censoring distribution, a
-#'   `survival::survfit` object.
+#'   `survival::survfit` object. Not required when only calibration is requested.
 #' @param metrics Character vector of metrics. \code{NULL} uses the default
-#'   five metrics; \code{"all"} additionally returns \code{r_square} and
-#'   \code{l_square}.
+#'   metrics, including ICI; \code{"all"} additionally returns \code{r_square},
+#'   \code{l_square}, \code{e50}, and \code{e90}.
+#' @param calibration_args Optional named list of calibration settings,
+#'   e.g. \code{list(nk = 3)}. Sampling weights are supplied by
+#'   \code{case_weights}, not through this list.
+#'
+#' @details Calibration uses the event risk from the last prediction-grid
+#'   column at or before \code{t_star}, with the exact requested outcome
+#'   horizon. Both the Cox spline calibration model and absolute-error
+#'   summaries use sampling weights; see [tm_calibration()].
+#'   Calibration-only inputs need \code{times}, \code{status}, and
+#'   \code{surv_prob}, without fitted models or mean time predictions.
 #'
 #' @return A tibble with columns:
 #'   - `Metric`: name of metric
@@ -65,11 +76,12 @@ km_surv <- function(t, km_cens) {
 tm_evaluate_two_phase <- function(pred_results, 
                                                  t_star = NULL, tau = 10e10, 
                                                  km_cens_fit, case_weights, 
-                                                 metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc")) {
+                                                 metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc", "ici"),
+                                                 calibration_args = list()) {
   metrics <- tm_normalize_metrics(metrics)
-  default_metrics <- c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc")
+  default_metrics <- c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc", "ici")
   valid_metrics <- c("pseudo_r2", "r_square", "l_square", "harrell_c",
-                     "uno_c", "brier_score", "td_auc")
+                     "uno_c", "brier_score", "td_auc", "ici", "e50", "e90")
   if (is.null(metrics)) metrics <- default_metrics
   invalid <- setdiff(metrics, c("all", valid_metrics))
   if (length(invalid) > 0 || length(metrics) == 0) {
@@ -81,6 +93,30 @@ tm_evaluate_two_phase <- function(pred_results,
   
   if (is.null(t_star)) t_star <- quantile(pred_results$time, 0.5)
   if (is.null(tau)) tau <- max(pred_results$time)
+
+  calibration_metrics <- intersect(c("ici", "e50", "e90"), metrics)
+  calibration_results <- list()
+  if (length(calibration_metrics)) {
+    tm_validate_calibration_weights(case_weights, length(pred_results$time))
+    if (!is.list(calibration_args) || (length(calibration_args) &&
+        (is.null(names(calibration_args)) || any(names(calibration_args) == "") ||
+         anyDuplicated(names(calibration_args)))) ||
+        any(!names(calibration_args) %in% "nk")) {
+      stop("'calibration_args' must be a named list containing only 'nk'; ",
+           "supply sampling weights in 'case_weights'.", call. = FALSE)
+    }
+    p <- tm_calibration_grid_risk(pred_results$surv_prob,
+      sort(pred_results$time), t_star, length(pred_results$time), survival = TRUE)
+    calibration <- tm_calibration_values(tm_calibration, c(list(
+      p = p, event_time = pred_results$time, status = pred_results$status,
+      t_star = t_star, case_weights = case_weights), calibration_args))
+    calibration_results <- as.list(round(calibration[calibration_metrics], 4))
+    if (all(metrics %in% calibration_metrics)) {
+      return(data.frame(Metric = names(calibration_results),
+        Value = unlist(calibration_results, use.names = FALSE),
+        stringsAsFactors = FALSE))
+    }
+  }
   
   dat1_intermediate <- tibble(time = pred_results$time, 
                                   status = pred_results$status,
@@ -168,6 +204,7 @@ tm_evaluate_two_phase <- function(pred_results,
     }
     
 
+    results <- c(results, calibration_results)
     result_df <- data.frame(
       Metric = names(results),
       Value = unlist(results, use.names = FALSE),
@@ -199,12 +236,15 @@ tm_evaluate_two_phase <- function(pred_results,
 #'     \item \code{model} -- (optional) the underlying fitted survival model object.
 #'   }
 #'   Note: If \code{pred} is provided, it will be used to calculate R2 and concordance measure.
-#' @param case_weights Numeric vector of Prentice (or other) sampling weights for all subjects.
+#' @param case_weights Numeric vector of inverse-inclusion sampling weights,
+#'   aligned with each model's evaluation subjects.
 #' @param km_cens A Kaplan-Meier fit for censoring (based on training data) used to compute IPCW.
 #' @param metrics Character vector of metrics to compute (default shown below).
 #' @param t_star Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.
 #' @param tau Optional numeric scalar, specify the max time horizon for R2 measure and concordance measure (default = 10e10).
 #' @param digits Integer number of decimal places to round values (default 2).
+#' @param calibration_args Optional named list passed to [tm_calibration()],
+#'   e.g. \code{list(nk = 3)}. Weights come from \code{case_weights}.
 #'
 #' @return A data.frame: rows = metrics, columns = model names.
 #' @export
@@ -232,9 +272,9 @@ tm_sample_design <- function(models,
                               case_weights,
                               km_cens,
                               metrics = c("pseudo_r2", "harrell_c", "uno_c",
-                                          "brier_score", "td_auc"),
+                                          "brier_score", "td_auc", "ici"),
                               t_star = NULL, tau = NULL,
-                              digits = 2) {
+                              digits = 2, calibration_args = list()) {
   metrics <- tm_normalize_metrics(metrics)
   
   if (!is.list(models) || length(models) == 0)
@@ -242,7 +282,10 @@ tm_sample_design <- function(models,
   if (is.null(names(models)) || any(names(models) == ""))
     names(models) <- paste0("Model_", seq_along(models))
   
-  required <- c("times", "status", "surv_prob", "pred")
+  required <- c("times", "status", "surv_prob")
+  needs_time_prediction <- is.null(metrics) || any(metrics %in% c(
+    "all", "pseudo_r2", "r_square", "l_square", "harrell_c", "uno_c"))
+  if (needs_time_prediction) required <- c(required, "pred")
   
   eval_one <- function(mod, name) {
     if (!all(required %in% names(mod))) {
@@ -264,7 +307,8 @@ tm_sample_design <- function(models,
       tau          = tau,       # global (NULL allowed)
       km_cens_fit  = km_cens,
       case_weights = case_weights,
-      metrics      = metrics
+      metrics      = metrics,
+      calibration_args = calibration_args
     )
     
     if (!all(c("Metric", "Value") %in% names(res)))
@@ -296,7 +340,7 @@ tm_sample_design <- function(models,
   # Preferred ordering (keep present ones)
   preferred <- c("pseudo_r2", "r_square", "l_square",
                  "harrell_c", "uno_c",
-                 "brier_score", "td_auc")
+                 "brier_score", "td_auc", "ici", "e50", "e90")
   present <- intersect(preferred, wide$Metric)
   others  <- setdiff(wide$Metric, preferred)
   wide$Metric <- factor(wide$Metric, levels = c(present, sort(others)))

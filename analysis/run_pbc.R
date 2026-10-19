@@ -35,7 +35,7 @@ make_predictions <- function(cox_fn) list(
 before <- make_predictions(old)
 after <- make_predictions(tm_predict_coxph)
 tables <- lapply(list(before = before, after = after), function(p) {
-  tm_summarize(p, metrics = paper_metrics, tau = 10e10, digits = 4)
+  tm_summarize(p, metrics = paper_cohort_metrics, tau = 10e10, digits = 4)
 })
 for (name in names(tables)) {
   utils::write.csv(tables[[name]], file.path(out, paste0("metrics_", name, ".csv")), row.names = FALSE)
@@ -70,6 +70,9 @@ saveRDS(list(train = train, test = test, models = fits, before = before, after =
 settings <- paper_support(fits$Cox, test, 10e10)
 settings$probability_time_requested <- median(test$time)
 settings$probability_time_used <- sort(test$time)[TimeMetric:::tm_nearest_time_index(sort(test$time), median(test$time))]
+settings$calibration_time <- median(test$time)
+settings$calibration_prediction_time <- max(test$time[test$time <= settings$calibration_time])
+settings$calibration_method <- "pmcalibration restricted cubic spline; five knots"
 utils::write.csv(settings, file.path(out, "analysis_settings.csv"), row.names = FALSE)
 
 plot_data <- do.call(rbind, lapply(c("before", "after"), function(version) {

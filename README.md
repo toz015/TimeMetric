@@ -46,12 +46,13 @@ tm_summarize(list(cox = pred))
 #> 4           uno_c 0.66
 #> 5     brier_score 0.21
 #> 6          td_auc 0.74
+#> 7             ici 0.03
 ```
 
 ## Metrics
 
-`tm_metric_names()` returns the canonical identifiers accepted by every
-`metrics` argument and emitted in the `Metric` column:
+`tm_metric_names()` returns the canonical identifiers used by the evaluation
+interfaces and emitted in the `Metric` column; each setting supports a subset:
 
 | Name | Measure |
 |---|---|
@@ -61,9 +62,101 @@ tm_summarize(list(cox = pred))
 | `c_index` | Concordance for competing risks |
 | `brier_score` | Brier score (Brier 1950; Graf et al. 1999) |
 | `td_auc` | Time-dependent AUC (Heagerty, Lumley & Pepe 2000) |
+| `ici`, `e50`, `e90` | Mean, median, and 90th percentile absolute calibration error at a specified time |
 
 Not every metric applies to every setting: competing risks use `c_index` rather
-than the concordance indices defined for right-censored data.
+than the concordance indices defined for right-censored data. Calibration is
+available for ordinary right-censored and competing-risks cohorts, and for
+right-censored two-phase sampling designs. Default evaluation and comparison tables
+include `ici`; request `metrics = c("ici", "e50", "e90")` for all three, or
+`metrics = "all"` for these alongside the other supported metrics.
+
+## Calibration at a specified time
+
+The calibration functions accept predicted event probabilities from any source,
+without the original fitted model. `t_star` is a single evaluation horizon in
+the same units as follow-up; repeat the call for multiple horizons. ICI averages
+calibration error across subjects, not across follow-up time.
+
+```r
+# Ordinary right-censoring: p = 1 - S(t_star) for each subject.
+t_star <- 1
+p <- 1 - as.numeric(pec::predictSurvProb(fit, newdata = d, times = t_star))
+cal <- tm_calibration(p, d$time, d$status, t_star)
+cal$metrics                   # ici, e50, e90, without display rounding
+head(cal$curve)               # predicted and calibrated, in subject order
+
+# Add all three to a model comparison table.
+tm_summarize(list(cox = pred), t_star = t_star,
+             metrics = c("ici", "e50", "e90"), digits = 4)
+```
+
+For competing risks, supply the target-cause CIF and retain all other event
+types in `status` (0 denotes censoring):
+
+```r
+# A runnable example with known exponential cause-specific hazards.
+set.seed(29)
+rate1 <- exp(.5 * d$x1 - .5 * d$x2)
+target <- stats::rexp(nrow(d), rate1)
+competing <- stats::rexp(nrow(d), .4)
+censor <- stats::rexp(nrow(d), .3)
+cr_time <- pmin(target, competing, censor)
+cr_status <- ifelse(censor < pmin(target, competing), 0L,
+                    ifelse(target <= competing, 1L, 2L))
+t_star <- 1
+p_cif <- rate1 / (rate1 + .4) * (1 - exp(-(rate1 + .4) * t_star))
+cal_cr <- tm_calibration_cr(p_cif, cr_time, cr_status,
+                            t_star = t_star, event_type = 1)
+cal_cr$metrics
+```
+
+Right-censored curves use `pmcalibration::pmcalibration()` with restricted cubic
+splines (default five knots, controlled by `nk`). Competing-risks curves use
+`prodlim::prodlim()` and its nearest-neighborhood Aalen--Johansen estimator,
+controlled by `bandwidth`. Both summarize errors with
+`pmcalibration::cal_metrics()`, exposing only ICI (`Eavg` in the backend), E50,
+and E90. This competing-risks curve estimator differs from Fine-Gray spline
+calibration. Constant right-censored predictions use marginal Kaplan--Meier
+risk; small or few-valued samples use simpler calibration as documented in
+`?tm_calibration`.
+
+The matrix evaluators interpret supplied probability grids as right-continuous
+steps and use the last grid value at or before `t_star` for calibration.
+`tm_calibration()` and `tm_calibration_cr()` accept probabilities already
+evaluated exactly at the requested time. Exact 0/1 probabilities are retained;
+the right-censored backend moves them slightly inward for fitting only and
+warns. A failed curve fit warns and produces missing calibration values in the
+evaluation table without dropping the other metrics.
+
+Use held-out or out-of-fold predictions where possible. Calibration assumes
+the respective estimator's censoring conditions; the competing-risks
+`censoring`/`censor_covariates` arguments for generalized R-squared do not change
+the calibration estimator.
+
+For a right-censored case-cohort or NCC validation sample, provide the positive
+inverse-inclusion weights for the sampled subjects in prediction order:
+
+```r
+cal_w <- tm_calibration(p, event_time, status, t_star,
+                        case_weights = sampling_weights)
+cal_w$metrics
+# Calibration-only evaluation needs no separate censoring fit or mean times.
+tm_sample_design(list(external = prediction), case_weights = sampling_weights,
+                 metrics = "ici", t_star = t_star)
+```
+
+The weighted implementation fits its own Cox calibration model, using the same
+complementary log-log risk transformation and spline-knot rule as the ordinary
+backend. Both coefficients and baseline cumulative hazard use sampling weights;
+ICI then averages absolute errors with those weights. Constant risks use weighted
+Kaplan-Meier. E50/E90 use normalized weighted order-statistic interpolation.
+`calibration_args = list(nk = 3)` controls the two-phase curve. Weights must
+represent inclusion under the actual sampling mechanism, rather than combined
+sampling/censoring weights or risk-set weights from a different estimator.
+This assumes an appropriate calibration Cox model and conditionally independent
+censoring given its predictor. No sampling-adjusted competing-risks calibration
+or design-based confidence intervals are implemented.
 
 ## Functions
 
@@ -75,6 +168,7 @@ than the concordance indices defined for right-censored data.
 | `tm_survival_eval_cr()` | Competing risks |
 | `tm_evaluate_two_phase()` | Case-cohort and nested case-control |
 | `tm_fit_and_eval()` | Fits several models from raw data, then evaluates |
+| `tm_calibration()`, `tm_calibration_cr()` | Direct probability inputs; return calibration metrics and curve |
 
 **Prediction** — produce the input the evaluators expect:
 
@@ -144,12 +238,20 @@ than an older installed TimeMetric version. The analyses also need `pkgload`,
 # Recompute all real-data analyses and export their manuscript figures/tables.
 Rscript --vanilla figures/run_real_data.R
 
-# Run or resume the full simulation; this starts substantial computation.
-Rscript --vanilla figures/run_simulations.R --mode=full
+# Add ICI to saved PBC/FHS results, preserving existing fits and other metrics.
+# The GBSG sampling-design result is carried forward unchanged.
+Rscript --vanilla figures/reevaluate_real_calibration.R
+
+# Validate and add weighted ICI to saved GBSG results, preserving the model fits.
+Rscript --vanilla figures/reevaluate_sample_calibration.R
+
+# Run or resume the full simulation including ICI.
+Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_full
 
 # Redraw completed results only, without refitting or rerunning simulations.
 Rscript --vanilla figures/redraw_original.R
 # Optional: --section=real or --section=simulations
+# For the new ICI run, add --sim-output=results/simulations/ici_full
 ```
 
 The presentation entry points in `figures/` preserve the selected manuscript
@@ -163,6 +265,7 @@ with:
 ```r
 rmarkdown::render("paper.code.Rmd", output_dir = "results/report")
 # Optional: params = list(redraw_figures = TRUE)
+# For ICI simulations: params = list(simulation_output = "results/simulations/ici_full")
 ```
 
 Rendering requires all four full simulation parts and all three real-data
@@ -176,6 +279,7 @@ Local outputs, excluded from Git:
 | Location | Contents |
 |---|---|
 | `results/simulations/full/` | Completed simulation, models, checkpoints, raw and summary metrics, figures |
+| `results/simulations/ici_full/` | New simulation run including ICI, kept separate from historical results |
 | `results/real_data/runs/<run>/` | Real-data models, predictions and diagnostics |
 | `results/real_data/paper/` | Final real-data figures and tables, with their source-run manifest |
 
@@ -193,6 +297,28 @@ Keep full simulation models and checkpoints for resumption. Statistical inputs
 in `R/`, `analysis/` and `DESCRIPTION` are fingerprinted; changes require a new
 simulation output directory rather than silently mixing versions. Smoke runs
 are optional, write to a separate directory, and are not manuscript results.
+The existing simulation designs are all right-censored. They now include ICI
+with a five-knot Cox spline calibration curve at the existing `t_star` for each
+job. E50/E90 are not included. ICI is retained without rounding for aggregation.
+Per-model horizons, prediction-grid times, calibration methods and errors are
+written to `tables/calibration_diagnostics.csv`. In Simulation 3, ICI follows
+the existing large-sample uncensored reference and error-summary calculation.
+Old checkpoints without ICI are not treated as complete, and the updated report
+requires ICI rows rather than silently showing historical results.
+
+Only display the plan, without fitting or evaluating anything:
+
+```sh
+Rscript --vanilla figures/run_simulations.R --mode=plan
+```
+
+To select a part or a repetition range, append
+`--part=sim2_linear,sim2_nonlinear` or `--repeats=1:10` to the full-run command.
+Repeat the same command to resume an unchanged run. Before launching, ensure
+`pmcalibration`, `Hmisc` and the other package dependencies are available in
+the R library used by `Rscript`. See [simulation launch instructions](docs/simulation-ici.md)
+for terminal and RStudio commands.
+
 To run package checks without creating paper results:
 
 ```sh

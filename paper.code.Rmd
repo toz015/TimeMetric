@@ -1,13 +1,13 @@
 ---
 title: "TimeMetric: paper results and reproduction"
-date: "2026-10-18"
+date: "2026-10-19"
 output:
   html_document:
     toc: true
     toc_depth: 2
     self_contained: true
 params:
-  simulation_output: "results/simulations/full"
+  simulation_output: "results/simulations/ici_full"
   real_paper_output: "results/real_data/paper"
   redraw_figures: false
 ---
@@ -70,6 +70,14 @@ accuracy_path <- file.path(sim_out, "tables", "sim3_accuracy.csv")
 require_files(c(summary_path, accuracy_path), "The simulation summary tables are missing.")
 sim_summary <- read_table(summary_path)
 accuracy <- read_table(accuracy_path)
+simulation_metrics <- c("r_square", "l_square", "pseudo_r2", "harrell_c",
+                        "uno_c", "brier_score", "td_auc", "ici")
+summary_cells <- split(sim_summary$Metric, interaction(sim_summary[
+  c("part", "scenario", "v", "beta", "n", "censor", "quantile", "Model")], drop = TRUE))
+if (!length(summary_cells) || !all(vapply(summary_cells,
+    function(x) length(x) == length(simulation_metrics) && setequal(x, simulation_metrics),
+    logical(1))) || !"ici" %in% accuracy$Metric)
+  stop("The report requires simulation results including ICI. Select a completed ICI run.")
 if (anyNA(sim_summary[c("completed_jobs", "finite_B", "mean", "empirical_SD", "MCSE")]) ||
     any(sim_summary$completed_jobs != 100 | sim_summary$finite_B != 100))
   stop("Simulation summary cells must contain 100 finite repetitions.")
@@ -85,7 +93,7 @@ real_table_paths <- file.path(real_out,
 require_files(real_table_paths, "The real-data manuscript tables are missing.")
 if (!all(basename(c(real_figures, real_table_paths)) %in% checks$File))
   stop("The integrity record does not cover every displayed real-data figure and table.")
-scalar_metrics <- c("pseudo_r2", "brier_score", "harrell_c", "td_auc")
+scalar_metrics <- c("pseudo_r2", "brier_score", "harrell_c", "td_auc", "ici")
 show_simulation <- function(part) {
   x <- sim_summary[sim_summary$part == part &
     sim_summary$Metric %in% c("r_square", "l_square", scalar_metrics),
@@ -106,26 +114,34 @@ to be recomputed. They load this checkout's package code using `pkgload`.
 
 ```{bash reproduce, eval=FALSE, echo=TRUE}
 # Full simulations: substantial computation, with checkpoint resumption.
-Rscript --vanilla figures/run_simulations.R --mode=full
+Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_full
 
 # PBC, Framingham and GBSG2, with final figures/tables in one paper folder.
 Rscript --vanilla figures/run_real_data.R
 
+# Add ICI to saved cohort predictions without refitting models.
+Rscript --vanilla figures/reevaluate_real_calibration.R
+
+# Validate and add weighted ICI to saved GBSG predictions without refitting.
+Rscript --vanilla figures/reevaluate_sample_calibration.R
+
 # Figures only, using completed results and the selected manuscript style.
-Rscript --vanilla figures/redraw_original.R
+Rscript --vanilla figures/redraw_original.R --sim-output=results/simulations/ici_full
 ```
 
 Render this report after the runs finish. `rmarkdown`, `knitr` and Pandoc are
 needed in addition to the analysis dependencies listed in the README.
 
 ```{r render-instructions, eval=FALSE, echo=TRUE}
-rmarkdown::render("paper.code.Rmd", output_dir = "results/report")
+rmarkdown::render("paper.code.Rmd", output_dir = "results/report",
+                  params = list(simulation_output = "results/simulations/ici_full"))
 # Optional: refresh graphics through the same presentation entry point.
 rmarkdown::render("paper.code.Rmd", output_dir = "results/report",
-                  params = list(redraw_figures = TRUE))
+                  params = list(simulation_output = "results/simulations/ici_full",
+                                redraw_figures = TRUE))
 ```
 
-The default inputs are `results/simulations/full/` and
+The default inputs are `results/simulations/ici_full/` and
 `results/real_data/paper/`; use the document parameters to select other completed
 outputs. Results are kept outside Git. A fresh checkout must compute them
 before this report can be rendered. Smoke-test results are not accepted here.
@@ -145,6 +161,12 @@ R/package versions and RNG configuration are recorded in `configuration.rds`
 and `sessionInfo.txt` in the simulation output directory. Models and per-job
 checkpoints are retained for resumption. Changing calculation sources or
 settings requires a new output directory.
+
+ICI is evaluated at the same requested horizon as the existing point metrics,
+using a five-knot Cox spline calibration curve. Its per-repetition values are
+saved without rounding. Simulation 3 compares ICI with the same large-sample
+uncensored reference used for the other metrics at each horizon. This reference
+is an empirical estimate rather than an assumed zero calibration error.
 
 ## Simulation 1: effect size and event-time variability
 
@@ -218,7 +240,9 @@ checked against the export's checksum record before display.
 The seed-1234567 training/test split compares full Cox, reduced Cox and Weibull
 AFT models. Cox predictions use the training fit's baseline hazard and matched
 centering. The existing evaluation-grid integration is retained; the repair
-does not establish an unrestricted mean beyond observed follow-up.
+does not establish an unrestricted mean beyond observed follow-up. ICI assesses
+death-risk calibration at 1829 days, using the preceding prediction-grid value
+at 1827 days, via a five-knot restricted cubic spline in `pmcalibration`.
 
 ```{r pbc-table}
 knitr::kable(read_table(real_table_paths[1]), digits = 4)
@@ -236,12 +260,12 @@ complete-case cohort and seed-1234567 split. Prediction and evaluation use
 used for fitting. The model set contains full and reduced Fine-Gray models and
 two cause-specific Weibull AFT specifications.
 
-Competing-risks R-squared uses observed events at their original follow-up
-times, a Cox censoring estimate without covariates and a probability floor of
-1e-4. Censored rows have zero R-squared weight, including those censored after
-the horizon. The lines integrate one minus the hypertension CIF; this is a
+Competing-risks R-squared uses a Cox censoring estimate without covariates,
+fitted to the original follow-up. The lines integrate one minus the hypertension CIF; this is a
 restricted no-hypertension summary with competing deaths kept distinct, and a
 descriptive illustration rather than a calibration curve.
+The ICI row separately evaluates the predicted hypertension CIF at 12 years
+using nearest-neighborhood Aalen--Johansen calibration via `prodlim`.
 
 ```{r framingham-table}
 knitr::kable(read_table(real_table_paths[2]), digits = 4)
@@ -256,6 +280,11 @@ knitr::include_graphics(real_figures[2])
 The seed-2025 analysis compares Cox models fitted to a case-cohort sample and a
 random sample. Sampling weights are calculated on the phase-one cohort before
 selecting phase-two subjects. The table uses the current two-phase evaluation.
+Weighted ICI is evaluated at 637 days using a five-knot Cox spline calibration
+curve, with sampling weights applied to both curve estimation and error
+averaging. The ICI values are 0.0944 and 0.0836 for the case-cohort and
+random-sample fits, respectively. Independent natural-spline and survival-curve
+calculations agree with these results.
 
 ```{r gbsg-table}
 knitr::kable(read_table(real_table_paths[3]), digits = 4)

@@ -8,10 +8,11 @@ tm_fit_and_eval(
   train_data,
   covariates,
   models = "coxph",
-  metrics = "all",
+  metrics = NULL,
   predicted_data = NULL,
   t_star = NULL,
-  tau = NULL
+  tau = NULL,
+  calibration_args = list()
 )
 }
 \arguments{
@@ -22,7 +23,9 @@ tm_fit_and_eval(
 \item{models}{Character vector of model types: "coxph", "exp", "lognormal",
 or "weibull". The default fits only "coxph"; use "all" to fit all four.}
 
-\item{metrics}{A character string or vector specifying the metrics to compute. Default is "all" to compute all available metrics. Options include:
+\item{metrics}{A character string or vector specifying the metrics to compute.
+The default \code{NULL} includes ICI and the existing performance metrics;
+use \code{"all"} to additionally include E50 and E90. Options include:
 \itemize{
   \item "r_square": R-squared metric.
   \item "l_square": L-squared metric.
@@ -31,14 +34,20 @@ or "weibull". The default fits only "coxph"; use "all" to fit all four.}
   \item "uno_c": Uno's Concordance Index.
   \item "brier_score": Brier Score.
   \item "td_auc": Time-dependent AUC.
+  \item "ici", "e50", "e90": Absolute calibration error summaries.
 }}
 
 \item{predicted_data}{(Optional) A data frame containing validation data. If `NULL`, the function 
 uses the same data as `data` for model evaluation.}
 
-\item{t_star}{(Optional) A positive numeric value specifying the time point at which the Brier score and AUC score is calculated.}
+\item{t_star}{(Optional) Positive evaluation time for Brier score, AUC, and
+calibration; the median evaluation follow-up if omitted.}
 
 \item{tau}{(Optional) A time point for truncating the survival time. If provided, the function evaluates predictions up to this time point.}
+
+\item{calibration_args}{Optional named list passed to [tm_calibration()].
+For sampling-adjusted calibration use [tm_sample_design()] or
+[tm_calibration()] directly; weights cannot be supplied through this list.}
 }
 \value{
 A data frame containing the selected model's performance metrics.
@@ -47,6 +56,9 @@ A data frame containing the selected model's performance metrics.
 This function computes a comprehensive set of performance metrics for survival analysis models. It provides metrics such as R_square, L_square, Pseudo_R, Harrell's C, Uno's C, Brier Score, and Time-dependent AUC. Users can specify particular metrics and model types, enabling tailored performance evaluation for various survival models.
 }
 \details{
+Calibration evaluates model-predicted event probabilities exactly
+  at \code{t_star} (the median evaluation follow-up if omitted).
+
 Rows with missing values in \code{time}, \code{status}, or a
   requested covariate are excluded from training and evaluation with a
   warning. All requested metrics use the same complete evaluation rows.
@@ -63,7 +75,7 @@ covariates <- c("age", "log_albumin", "log_bili", "log_protime", "edema")
 dat <- pbc[, c("time", "status", covariates)]
 dat <- dat[stats::complete.cases(dat), ]
 
-# Default Cox model and all its available metrics
+# Default Cox model and metrics, including ICI
 results <- tm_fit_and_eval(train_data = dat, covariates = covariates)
 results
 
