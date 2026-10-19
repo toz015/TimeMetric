@@ -1,0 +1,41 @@
+
+══ Testing test-calibration-migration.R ════════════════════════════════════════
+
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 0 ]
+[ FAIL 0 | WARN 1 | SKIP 0 | PASS 0 ]
+[ FAIL 1 | WARN 1 | SKIP 0 | PASS 0 ]
+[ FAIL 2 | WARN 1 | SKIP 0 | PASS 0 ]
+
+── Warning ('test-calibration-migration.R:83:5'): pre-ICI saved runs migrate completely before publication ──
+running command ''/opt/homebrew/Cellar/r/4.5.3/lib/R/bin/Rscript' --vanilla '/var/folders/z7/p968ccvd4d9c27v5n0y0qbyw0000gn/T//Rtmp7QdTy8/calibration-migration-8f17319f85e8/figures/reevaluate_real_calibration.R' '--input=/private/var/folders/z7/p968ccvd4d9c27v5n0y0qbyw0000gn/T/Rtmp7QdTy8/calibration-migration-8f17319f85e8/old' '--output=/var/folders/z7/p968ccvd4d9c27v5n0y0qbyw0000gn/T//Rtmp7QdTy8/calibration-migration-8f17319f85e8/cohort' 2>&1' had status 1
+Backtrace:
+    ▆
+ 1. └─run("reevaluate_real_calibration.R", old, cohort) at test-calibration-migration.R:90:3
+ 2.   └─base::system2(...) at test-calibration-migration.R:83:5
+
+── Failure ('test-calibration-migration.R:87:5'): pre-ICI saved runs migrate completely before publication ──
+Expected `attr(log, "status")` to be NULL.
+Differences:
+`actual` is an integer vector (1)
+`expected` is NULL
+
+Error in paper_publish_real_outputs(root, output) : 
+  The manuscript table requires ICI for gbsg
+Execution halted
+Backtrace:
+    ▆
+ 1. └─run("reevaluate_real_calibration.R", old, cohort) at test-calibration-migration.R:90:3
+ 2.   └─testthat::expect_null(...) at test-calibration-migration.R:87:5
+
+── Error ('test-calibration-migration.R:88:5'): pre-ICI saved runs migrate completely before publication ──
+Error in `run("reevaluate_real_calibration.R", old, cohort)`: Error in paper_publish_real_outputs(root, output) : 
+  The manuscript table requires ICI for gbsg
+Execution halted
+Backtrace:
+    ▆
+ 1. └─run("reevaluate_real_calibration.R", old, cohort) at test-calibration-migration.R:90:3
+
+[ FAIL 2 | WARN 1 | SKIP 0 | PASS 0 ]
+Error:
+! Test failures.
+Execution halted

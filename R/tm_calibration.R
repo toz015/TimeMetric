@@ -25,7 +25,7 @@
 #' \code{tm_calibration()} uses \code{pmcalibration::pmcalibration()} with a
 #' restricted cubic spline and no confidence interval computation. The knot
 #' count is capped at the number of distinct fitting probabilities; with fewer
-#' than three distinct probabilities or fewer than six subjects it uses the
+#' than five distinct probabilities or fewer than six subjects it uses the
 #' backend's single-predictor Cox calibration instead. Constant predictions
 #' are compared with the marginal Kaplan--Meier risk.
 #'
@@ -137,7 +137,9 @@ tm_calibration <- function(p, event_time, status, t_star, nk = 5,
               "retained in the metrics.", call. = FALSE)
     }
     distinct <- length(unique(fitting_p))
-    smooth <- if (distinct < 3L || length(p) < 6L) "none" else "rcs"
+    # Hmisc needs at least three interior knot locations; 3/4-valued risks
+    # cannot provide these. Match the weighted path's linear Cox fallback.
+    smooth <- if (distinct < 5L || length(p) < 6L) "none" else "rcs"
     cal <- pmcalibration::pmcalibration(
       y = survival::Surv(event_time, status), p = fitting_p, time = t_star,
       smooth = smooth, nk = min(nk, distinct), ci = "none", plot = FALSE)

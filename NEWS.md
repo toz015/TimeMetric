@@ -5,6 +5,13 @@
 
 ## Calibration
 
+* Three- and four-valued ordinary risks now use linear Cox calibration,
+  matching unit-weighted calibration without spline errors or console output.
+* Saved-result upgrades defer manuscript publication until PBC, Framingham
+  and GBSG all contain ICI. Explicit input paths work without a published-run
+  manifest. A simulated end-to-end migration test preserves prior metrics,
+  original files and the active manifest until the upgrade is complete.
+
 * Added `tm_calibration()` for right-censored event probabilities and
   `tm_calibration_cr()` for a target-cause CIF, both at one specified horizon
   and without requiring the original prediction model. Results contain ICI,

@@ -190,3 +190,31 @@ test_that("fit-and-evaluate selects calibration and keeps ICI alone by default",
                   round(unname(reference[c("e90", "ici", "e50")]), 2))
   }
 })
+
+
+test_that("three and four distinct risks use a quiet linear Cox calibration", {
+  withr::local_seed(882)
+  n <- 90L
+  time <- rexp(n)
+  status <- rbinom(n, 1, .7)
+  for (distinct in 3:4) {
+    p <- rep(seq(.1, .7, length.out = distinct), length.out = n)
+    expect_silent(result <- tm_calibration(p, time, status, .7))
+    expect_identical(result$method, "pmcalibration_none")
+    expect_true(all(is.finite(result$metrics)))
+    # Independent Cox fit and survfit prediction, rather than the backend's
+    # own calibration summary, check the fallback's numerical meaning.
+    z <- log(-log1p(-p))
+    fit <- survival::coxph(survival::Surv(time, status) ~ z)
+    curves <- survival::survfit(fit, newdata = data.frame(z = z))
+    reference <- 1 - as.numeric(summary(curves, times = .7)$surv)
+    expect_equal(result$curve$calibrated, reference, tolerance = 1e-8)
+    error <- abs(p - reference)
+    expect_equal(result$metrics, c(ici = mean(error), e50 = median(error),
+      e90 = unname(quantile(error, .9))), tolerance = 1e-8)
+    expect_silent(weighted <- tm_calibration(p, time, status, .7,
+      case_weights = rep(1, n)))
+    expect_equal(result$curve, weighted$curve, tolerance = 1e-8)
+    expect_equal(result$metrics, weighted$metrics, tolerance = 1e-8)
+  }
+})

@@ -1,0 +1,29 @@
+Calibration fixes validated 2026-10-19
+Base paper revision: d7ee2881bb1eb9a3cad98878576797fbf790d618
+
+1. Ordinary survival calibration uses a linear Cox fit below five distinct
+risks, consistent with the weighted path. Tests cover three and four distinct
+risks, silent output, an independent survfit reference and unit-weight equality.
+2. Cohort migration creates an unpublished intermediate run. The sampling
+migration consumes it via explicit --input and publishes the complete run.
+Both scripts honor explicit paths without consulting a published manifest.
+The README documents this sequence. An integration regression creates
+synthetic saved PBC/FHS/GBSG predictions and exercises both actual scripts,
+checks unchanged old metrics and original files, and verifies that the
+published manifest advances only after all three datasets contain ICI.
+
+Both regressions reproduce the reviewed defects before the code changes.
+Source suite: 917 passing assertions / 192 tests, zero failures/warnings/skips.
+Separate migration integration: 17 passing assertions, zero warnings/skips.
+Network-enabled R CMD check --as-cran --run-donttest: 0 errors, 0 warnings,
+3 NOTEs (new submission, external time verification, old HTML Tidy/no V8).
+R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1.
+
+The full-dependency GitHub job now runs the migration regression in addition
+to the package suite. All nine checks must pass on the PR head before merge.
+
+The synthetic Framingham fixture tests software behavior only; it does not
+reproduce clinical results. Real-data ICI tables and full simulation figures
+still require their own analysis reruns. No clinical claims were updated.
+
+Checked tarball SHA256: c1c54c73e7330c77819f4c6932ea41abd2b4c49c25d53072050703afccf43c8c

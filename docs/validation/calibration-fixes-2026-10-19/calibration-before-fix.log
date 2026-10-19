@@ -1,0 +1,25 @@
+calibration: ................................................1
+
+══ Failed ══════════════════════════════════════════════════════════════════════
+── 1. Error ('test-calibration.R:202:5'): three and four distinct risks use a qu
+Error in `Hmisc::rcspline.eval(x, nk = nk, knots = knots, inclx = TRUE)`: 
+Backtrace:
+     ▆
+  1. ├─testthat::expect_silent(...) at test-calibration.R:202:5
+  2. │ └─testthat:::quasi_capture(enquo(object), NULL, evaluate_promise)
+  3. │   ├─testthat (local) .capture(...)
+  4. │   │ ├─withr::with_output_sink(...)
+  5. │   │ │ └─base::force(code)
+  6. │   │ ├─base::withCallingHandlers(...)
+  7. │   │ └─base::withVisible(code)
+  8. │   └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+  9. └─TimeMetric::tm_calibration(p, time, status, 0.7)
+ 10.   └─pmcalibration::pmcalibration(...) at timemetric-calibration-fix/R/tm_calibration.R:141:5
+ 11.     └─pmcalibration::glm_cal(...)
+ 12.       └─pmcalibration::reg_spline_X(...)
+ 13.         └─Hmisc::rcspline.eval(x, nk = nk, knots = knots, inclx = TRUE)
+
+══ DONE ════════════════════════════════════════════════════════════════════════
+Error:
+! Test failures.
+Execution halted

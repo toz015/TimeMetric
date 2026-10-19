@@ -58,7 +58,7 @@ outcomes, without requiring the original prediction model.
 \code{tm_calibration()} uses \code{pmcalibration::pmcalibration()} with a
 restricted cubic spline and no confidence interval computation. The knot
 count is capped at the number of distinct fitting probabilities; with fewer
-than three distinct probabilities or fewer than six subjects it uses the
+than five distinct probabilities or fewer than six subjects it uses the
 backend's single-predictor Cox calibration instead. Constant predictions
 are compared with the marginal Kaplan--Meier risk.
 

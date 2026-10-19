@@ -68,13 +68,31 @@ products themselves. Independent pair enumeration covers both pair types,
 observations at the horizon, unused zero-survival rows and public evaluation
 wrappers. Previous competing-risk C-index results require reevaluation.
 
+## Calibration integration
+
+This candidate adds ordinary and sampling-weighted survival calibration and
+unweighted competing-risk calibration. ICI is included by default; E50 and
+E90 are optional. The runtime dependencies 'Hmisc', 'pmcalibration' and
+'prodlim' are declared, with references and limitations in the help pages.
+
+Three- and four-valued ordinary predictions use linear Cox calibration,
+matching unit-weighted results and independent 'survival::survfit' predictions.
+Regression tests require silent successful computation, preventing the spline
+backend error and unsuppressible frequency-table output found during review.
+The manuscript upgrade scripts defer publication until all three datasets
+contain ICI, and honor explicit input paths without requiring an existing
+published manifest. An end-to-end synthetic pre-ICI migration test preserves
+old metrics and input files and runs in the full-dependency CI job.
+
 ## Local validation of the integrated corrections
 
 R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
-* Source suite: 808 assertions across 175 tests; 0 failures, 0 warnings,
+* Source suite: 917 assertions across 192 tests; 0 failures, 0 warnings,
   0 skips, including optional prediction backends.
-* All nine manuscript R listings execute. PBC and GBSG examples reproduce all
+* Separate manuscript migration regression: 17 assertions pass using simulated
+  saved predictions, with no clinical inputs or downloads required.
+* Prior main-branch manuscript validation (before adding ICI): all nine R listings execute. PBC and GBSG examples reproduce all
   35 reported table cells on public data. The competing-risk example uses an
   explicitly labelled simulated fixture because the public Framingham teaching
   data are unavailable locally; no claim is made to reproduce its clinical
@@ -102,11 +120,11 @@ DESCRIPTION/URL checks and the PDF manual pass.
 
 ## Platform checks
 
-Fresh GitHub Actions checks have been requested for the integrated PR #3
-revision containing both the AFT CIF and reciprocal-IPCW concordance fixes.
-The six platform jobs, full-dependency suite, required-dependency smoke test
-and coverage job must pass on the final PR head before merging. Results are
-tracked at <https://github.com/toz015/TimeMetric/pull/3/checks>.
+The calibration integration will be merged only after all nine checks pass
+on its final PR head: six platform checks, the full-dependency suite (including
+the new manuscript migration regression), required-dependency smoke test and
+coverage job. The PR description records the final head and check results.
+The earlier numerical corrections were already merged through PR #3.
 
 ## Downstream dependencies
 

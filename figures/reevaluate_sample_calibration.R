@@ -6,13 +6,14 @@ root <- normalizePath(file.path(dirname(script), '..'))
 source(file.path(root, 'analysis', 'common.R'))
 source(file.path(root, 'figures', 'original_format.R'))
 source(file.path(root, 'figures', 'paper_outputs.R'))
-input <- paper_current_real_run(root)
+input <- NULL
 output <- NULL
 for (arg in commandArgs(trailingOnly = TRUE)) {
   if (startsWith(arg, '--input=')) input <- sub('^--input=', '', arg) else
   if (startsWith(arg, '--output=')) output <- sub('^--output=', '', arg) else
     stop('Use --input=/path/to/source_run and --output=/path/to/new_run.')
 }
+if (is.null(input)) input <- paper_current_real_run(root)
 input <- normalizePath(input, mustWork = TRUE)
 if (is.null(output)) output <- file.path(root, 'results', 'real_data', 'runs',
   paste0(format(Sys.time(), '%Y-%m-%d_%H%M%S', tz = 'America/Los_Angeles'), '_sample_ici'))

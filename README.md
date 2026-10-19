@@ -240,10 +240,11 @@ Rscript --vanilla figures/run_real_data.R
 
 # Add ICI to saved PBC/FHS results, preserving existing fits and other metrics.
 # The GBSG sampling-design result is carried forward unchanged.
-Rscript --vanilla figures/reevaluate_real_calibration.R
+Rscript --vanilla figures/reevaluate_real_calibration.R --output=results/real_data/runs/cohort_ici
 
-# Validate and add weighted ICI to saved GBSG results, preserving the model fits.
-Rscript --vanilla figures/reevaluate_sample_calibration.R
+# Publication is deferred until GBSG is ready. Pass the cohort output explicitly.
+# Use new output directories; existing runs are never overwritten.
+Rscript --vanilla figures/reevaluate_sample_calibration.R --input=results/real_data/runs/cohort_ici --output=results/real_data/runs/all_ici
 
 # Run or resume the full simulation including ICI.
 Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_full
