@@ -420,12 +420,21 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1) {
   w1 <- w1 * w2
   
   for (i in 1:n) {
-    A[i, which(Time_survival[i] < Time_survival)] <- 1
-    A[i, ] <- A[i, ] * w1[i]
-    B[i, intersect(intersect(which((Time_survival[i] >= 
-                                      Time_survival)), which(Cause != Cause_int)), 
-                   which(Censoring == 1))] <- 1
-    B[i, ] <- B[i, ] * w3[i, ]
+    # Only invert probabilities for pairs that enter the estimator. Censoring
+    # survival may be zero after tau, where rows do not contribute.
+    if (Time_survival[i] <= tau && Cause[i] == Cause_int &&
+        Censoring[i] == 1) {
+      later <- which(Time_survival[i] < Time_survival)
+      competing <- which(Time_survival[i] >= Time_survival &
+                           Cause != Cause_int & Censoring == 1)
+      if ((length(later) && w1[i] <= 0) ||
+          any(w3[i, competing] <= 0)) {
+        stop("Censoring survival must be positive for comparable pairs.")
+      }
+      # Wolbers et al. (2014), equation (3.4): reciprocal products.
+      A[i, later] <- 1 / w1[i]
+      B[i, competing] <- 1 / w3[i, competing]
+    }
     Q[i, which(Prediction[i] > Prediction)] <- 1
   }
   for (i in 1:n) {

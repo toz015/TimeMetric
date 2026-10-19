@@ -39,6 +39,8 @@
 # its event-probability direction and inclusive endpoint are now corrected.
 # These three values use independent KM risk sets and weighted moments below;
 # the historical CSV remains untouched.
+# CR C-index now uses the independently enumerated reciprocal-IPCW reference
+# below, following the intentional correction of Wolbers equation (3.4).
 
 baseline_rows <- function() {
   path <- testthat::test_path("fixtures", "metric-baseline.csv")
@@ -150,9 +152,22 @@ inv_cr_event_reference <- function() {
   t_star <- median(time)
   point <- moment(as.numeric(time <= t_star & status == 1),
     cif[max(which(grid <= t_star)), ])
+  # C-index uses marginal KM rather than the Cox probabilities above.
+  left <- vapply(time, function(t) prod(1 - jumps[censor_times < t]), numeric(1))
+  right <- vapply(time, function(t) prod(1 - jumps[censor_times <= t]), numeric(1))
+  pairs <- expand.grid(i = which(status == 1 & time <= tau), j = seq_along(time))
+  a <- time[pairs$i] < time[pairs$j]
+  keep <- a | status[pairs$j] == 2
+  pairs <- pairs[keep, ]
+  a <- a[keep]
+  probability <- ifelse(a, left[pairs$i] * right[pairs$i],
+                         left[pairs$i] * left[pairs$j])
+  concordance <- sum((prediction[pairs$i] < prediction[pairs$j]) / probability) /
+    sum(1 / probability)
   c(pseudo_r2 = unname(interval["pseudo"]), r_square = unname(interval["r"]),
     l_square = unname(interval["l"]), pseudo_r2_point = unname(point["pseudo"]),
-    r2_point = unname(point["r"]), l2_point = unname(point["l"]))
+    r2_point = unname(point["r"]), l2_point = unname(point["l"]),
+    c_index = round(concordance, 4))
 }
 
 # Mirrors tp_inputs() in test-two-phase.R. set.seed(2001) is required: both

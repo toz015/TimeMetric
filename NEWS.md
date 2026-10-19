@@ -5,6 +5,11 @@
 
 ## Paper integration
 
+* Competing-risks C-index now uses reciprocal censoring-survival products,
+  following Wolbers et al. (2014), equation (3.4). Previously it multiplied
+  comparable pairs by those products. Only contributing pairs are inverted,
+  avoiding undefined weights in unused rows after the evaluation horizon.
+  Existing competing-risks C-index results require reevaluation.
 * Point R-squared now includes target events at the evaluation time (`T <= t`)
   in both survival and competing-risks evaluation, matching the manuscript.
   Ordinary survival point R-squared compares the event indicator with `1 - S`
