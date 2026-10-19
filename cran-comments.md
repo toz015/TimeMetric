@@ -62,11 +62,17 @@ closed-form Weibull identities (including scale five), independent time-scale
 integration, grid-invariance tests, and lognormal/loglogistic identities cover
 it. The documented time summary integrates one minus the CIF.
 
-## Local validation of the manuscript correction
+The integrated branch also includes the competing-risk C-index correction:
+comparable pairs use reciprocal censoring-survival products rather than the
+products themselves. Independent pair enumeration covers both pair types,
+observations at the horizon, unused zero-survival rows and public evaluation
+wrappers. Previous competing-risk C-index results require reevaluation.
+
+## Local validation of the integrated corrections
 
 R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
-* Source suite: 795 assertions across 171 tests; 0 failures, 0 warnings,
+* Source suite: 808 assertions across 175 tests; 0 failures, 0 warnings,
   0 skips, including optional prediction backends.
 * All nine manuscript R listings execute. PBC and GBSG examples reproduce all
   35 reported table cells on public data. The competing-risk example uses an
@@ -75,30 +81,32 @@ R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
   results. These must be regenerated after the AFT correction.
 * Four Cox fits agree with independent 'survival::survfit' predictions to
   1.3e-15. The manuscript's fixed-scale AFT fixture is checked against the
-  analytic competing-risk Weibull CIF at every subject/time combination.
+  analytic competing-risk Weibull CIF at all 87,300 subject/time combinations
+  (maximum absolute error 9.99e-16).
 * The analysis scripts now consistently use the manuscript's 12-year FHS
   horizon. The real-data runner loads only dependencies of selected datasets.
   Full manuscript simulation results have not been regenerated.
 
 ## R CMD check results
 
-On the updated 0.2.1 source tarball,
-`R CMD check --as-cran --run-donttest` reports **0 errors, 0 warnings, 2 NOTEs**.
-Examples, installed-package tests and the PDF manual pass.
-`_R_CHECK_CRAN_INCOMING_REMOTE_=false` was set because network access was
-unavailable; remote incoming checks have not been rerun for this correction.
+On the integrated 0.2.1 source tarball, the network-enabled
+`R CMD check --as-cran --run-donttest` run on 2026-10-19 reports
+**0 errors, 0 warnings, 3 NOTEs**. Examples, installed-package tests, incoming
+DESCRIPTION/URL checks and the PDF manual pass.
 
-1. Future file timestamps: unable to verify current time (network unavailable).
-2. HTML manual: local HTML Tidy is too old and 'V8' is unavailable, so
+1. CRAN incoming feasibility: "New submission".
+2. Future file timestamps: unable to verify current time using the external
+   clock service, despite network access for the other checks.
+3. HTML manual: local HTML Tidy is too old and 'V8' is unavailable, so
    HTML validation and math-rendering checks are skipped.
 
 ## Platform checks
 
-The earlier c09e9fa release candidate passed nine GitHub Actions checks.
-Those checks predate the new AFT CIF integration correction. Fresh remote
-platform checks and review are still required for the updated patch; no CI
-success is claimed for it. PR #3 remains unmerged because the automatic
-approval service could not execute the authorized publication step.
+Fresh GitHub Actions checks have been requested for the integrated PR #3
+revision containing both the AFT CIF and reciprocal-IPCW concordance fixes.
+The six platform jobs, full-dependency suite, required-dependency smoke test
+and coverage job must pass on the final PR head before merging. Results are
+tracked at <https://github.com/toz015/TimeMetric/pull/3/checks>.
 
 ## Downstream dependencies
 
