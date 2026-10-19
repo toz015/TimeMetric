@@ -1,0 +1,193 @@
+"file","context","test","nb","failed","skipped","error","warning","user","system","real","passed"
+"test-aft-cif-integration.R","aft-cif-integration","Weibull CIFs match the closed form, including scale five",6,0,FALSE,FALSE,0,0.0710000000000002,0.004,0.075,6
+"test-aft-cif-integration.R","aft-cif-integration","AFT CIF values do not depend on intervening evaluation times",1,0,FALSE,FALSE,0,0.042,0.002,0.044,1
+"test-aft-cif-integration.R","aft-cif-integration","lognormal and loglogistic CIFs obey the equal-hazard identity",2,0,FALSE,FALSE,0,0.00700000000000012,0,0.00800000000000001,2
+"test-aft-cif-integration.R","aft-cif-integration","unequal Weibull hazards agree with integration on the time scale",1,0,FALSE,FALSE,0,0.00499999999999989,0,0.00499999999999989,1
+"test-api-selection.R","api-selection","competing-risk AUC can be requested without Brier score",2,0,FALSE,FALSE,0,0.532,0.018,0.556,2
+"test-api-selection.R","api-selection","fit-and-evaluate keeps metric values attached to their names",4,0,FALSE,FALSE,0,0.536,0.037,0.579,4
+"test-api-selection.R","api-selection","survreg prediction supports a single covariate in new data",2,0,FALSE,FALSE,0,0.00699999999999967,0.001,0.0089999999999999,2
+"test-api-selection.R","api-selection","Cox validation probabilities depend on the fitted model, not labels",2,0,FALSE,FALSE,0,0.0209999999999999,0.001,0.0220000000000002,2
+"test-api-selection.R","api-selection","finite-horizon AFT means integrate survival and preserve outcomes",8,0,FALSE,FALSE,0,0.0490000000000004,0.003,0.0510000000000002,8
+"test-api-selection.R","api-selection","explained variation keeps predictions and weights aligned when sorting",1,0,FALSE,FALSE,0,0.012,0.001,0.0129999999999999,1
+"test-api-selection.R","api-selection","NCC weights use the documented number of controls and matching strata",6,0,FALSE,FALSE,0,0.032,0.003,0.0350000000000001,6
+"test-api-selection.R","api-selection","two-phase metric selection accepts all and rejects unknown names",3,0,FALSE,FALSE,0,0.307,0.004,0.314,3
+"test-api-selection.R","api-selection","point pseudo R-squared compares events with event probabilities",1,0,FALSE,FALSE,0,0.00900000000000034,0.000999999999999973,0.0110000000000001,1
+"test-api-selection.R","api-selection","held-out AUC does not hide reversed discrimination",2,0,FALSE,FALSE,0,0.0109999999999997,0.001,0.0110000000000001,2
+"test-api-selection.R","api-selection","metric subsets avoid unused R-squared outside censoring support",3,0,FALSE,FALSE,0,0.0130000000000003,0.001,0.0140000000000002,3
+"test-api-selection.R","api-selection","undefined censoring weights return missing R-squared with a diagnostic",16,0,FALSE,FALSE,0,0.0369999999999999,0.003,0.0409999999999999,16
+"test-brier-pec-chain.R","brier-pec-chain","Gt returns a censoring survival probability in [0, 1]",5,0,FALSE,FALSE,0,0.012,0.002,0.0139999999999998,5
+"test-brier-pec-chain.R","brier-pec-chain","Gt is non-increasing in the timepoint",2,0,FALSE,FALSE,0,0.012,0.001,0.0140000000000002,2
+"test-brier-pec-chain.R","brier-pec-chain","Gt rejects non-Surv input",1,0,FALSE,FALSE,0,0.00200000000000022,0,0.00299999999999967,1
+"test-brier-pec-chain.R","brier-pec-chain","pam.Brier on a coxph fit returns a finite scalar in [0, 1]",5,0,FALSE,FALSE,0,0.122,0.003,0.132,5
+"test-brier-pec-chain.R","brier-pec-chain","pam.Brier default t_star is the median of TRAINING event times",2,0,FALSE,FALSE,0,0.267,0.003,0.269,2
+"test-brier-pec-chain.R","brier-pec-chain","pec::predictSurvProb drives pam.Brier and is reachable",3,0,FALSE,FALSE,0,0.0089999999999999,0.001,0.0110000000000001,3
+"test-calibration-sample.R","calibration-sample","unit weights reproduce ordinary right-censored calibration",4,0,FALSE,FALSE,0,0.0149999999999997,0.002,0.0169999999999999,4
+"test-calibration-sample.R","calibration-sample","sampling weights affect both curve fitting and error summaries",9,0,FALSE,FALSE,0,0.0249999999999999,0.003,0.028,9
+"test-calibration-sample.R","calibration-sample","weighted constant-risk calibration agrees with hand KM risk sets",4,0,FALSE,FALSE,0,0.00599999999999978,0.001,0.00700000000000012,4
+"test-calibration-sample.R","calibration-sample","weighted Cox risk matches independently solved score and baseline",3,0,FALSE,FALSE,0,0.00599999999999978,0.002,0.00700000000000012,3
+"test-calibration-sample.R","calibration-sample","two-phase calibration uses aligned weights and the past grid value",4,0,FALSE,FALSE,0,0.02,0.002,0.0230000000000001,4
+"test-calibration-sample.R","calibration-sample","sampling calibration validates weights and preserves boundary risks",12,0,FALSE,FALSE,0,0.032,0.002,0.0350000000000001,12
+"test-calibration-sample.R","calibration-sample","ordinary evaluation cannot silently misalign sampling weights",2,0,FALSE,FALSE,0,0.0270000000000001,0,0.028,2
+"test-calibration.R","calibration","right-censored calibration matches the selected public backend",7,0,FALSE,FALSE,0,0.0169999999999999,0.002,0.0190000000000001,7
+"test-calibration.R","calibration","constant right-censored risks use an independent KM reference",3,0,FALSE,FALSE,0,0.00499999999999989,0.002,0.00499999999999989,3
+"test-calibration.R","calibration","competing-risk metrics average over subjects, not distinct risks",5,0,FALSE,FALSE,0,0.0170000000000003,0.001,0.0190000000000001,5
+"test-calibration.R","calibration","competing-risk calibration includes target events at t_star",2,0,FALSE,FALSE,0,0.00599999999999978,0.001,0.00700000000000012,2
+"test-calibration.R","calibration","boundary probabilities are retained in right-censored summaries",4,0,FALSE,FALSE,0,0.0150000000000001,0.001,0.016,4
+"test-calibration.R","calibration","calibration input failures have explicit diagnostics",8,0,FALSE,FALSE,0,0.0190000000000001,0.001,0.0190000000000001,8
+"test-calibration.R","calibration","matrix evaluators use past grid values at the requested horizon",5,0,FALSE,FALSE,0,0.0449999999999999,0.004,0.0500000000000003,5
+"test-calibration.R","calibration","default comparison tables add only ICI from the calibration family",8,0,FALSE,FALSE,0,0.461,0.00900000000000001,0.47,8
+"test-calibration.R","calibration","fit-and-evaluate selects calibration and keeps ICI alone by default",6,0,FALSE,FALSE,0,0.156,0.005,0.159,6
+"test-calibration.R","calibration","three and four distinct risks use a quiet linear Cox calibration",16,0,FALSE,FALSE,0,0.0440000000000005,0.00499999999999998,0.0499999999999998,16
+"test-cr-concordance-ipcw.R","cr-concordance-ipcw","CR concordance uses reciprocal products for both types of pair",3,0,FALSE,FALSE,0,0.00399999999999956,0,0.00499999999999989,3
+"test-cr-concordance-ipcw.R","cr-concordance-ipcw","CR concordance includes the horizon and ignores unused zero G",6,0,FALSE,FALSE,0,0.0140000000000002,0.002,0.016,6
+"test-cr-concordance-ipcw.R","cr-concordance-ipcw","uncensored CR concordance reduces to unweighted comparable pairs",2,0,FALSE,FALSE,0,0.00899999999999945,0.001,0.00900000000000034,2
+"test-cr-concordance-ipcw.R","cr-concordance-ipcw","public CR evaluation and summary use the corrected concordance",2,0,FALSE,FALSE,0,0.00499999999999989,0.001,0.00699999999999967,2
+"test-cr-event-ipcw.R","cr-event-ipcw","KM event weights use original times and exclude late censoring",4,0,FALSE,FALSE,0,0.00499999999999989,0.001,0.00599999999999934,4
+"test-cr-event-ipcw.R","cr-event-ipcw","late follow-up still affects event weights for a restricted outcome",2,0,FALSE,FALSE,0,0.00400000000000045,0,0.00399999999999956,2
+"test-cr-event-ipcw.R","cr-event-ipcw","interval and point CR metrics follow the event-weight moment identity",1,0,FALSE,FALSE,0,0.00800000000000001,0,0.00800000000000001,1
+"test-cr-event-ipcw.R","cr-event-ipcw","event weights and metrics do not depend on tied row order",4,0,FALSE,FALSE,0,0.00800000000000001,0.002,0.00899999999999945,4
+"test-cr-event-ipcw.R","cr-event-ipcw","conditional Cox probabilities match survfit and predictor shifts",3,0,FALSE,FALSE,0,0.0600000000000005,0.002,0.0620000000000003,3
+"test-cr-event-ipcw.R","cr-event-ipcw","Cox and KM share the source probability floor and no-censor limit",8,0,FALSE,FALSE,0,0.0200000000000005,0.003,0.0220000000000002,8
+"test-cr-event-ipcw.R","cr-event-ipcw","summary forwards censoring choices and covariates without changing row alignment",6,0,FALSE,FALSE,0,0.0279999999999996,0.002,0.0299999999999994,6
+"test-cran-regressions.R","cran-regressions","missing evaluation rows produce a suppressible warning and consistent metrics",3,0,FALSE,FALSE,0,0.374000000000001,0.017,0.395,3
+"test-cran-regressions.R","cran-regressions","missing training rows use the same complete sample for fitting and evaluation",4,0,FALSE,FALSE,0,0.406000000000001,0.00800000000000001,0.427,4
+"test-cran-regressions.R","cran-regressions","WLS failure is reported as a warning without console output",2,0,FALSE,FALSE,0,0.00999999999999979,0,0.0110000000000001,2
+"test-cran-regressions.R","cran-regressions","CIF fit failures use suppressible warning conditions",3,0,FALSE,FALSE,0,0.0129999999999999,0.000999999999999945,0.0140000000000002,3
+"test-cran-regressions.R","cran-regressions","default Fine-Gray simulation respects the caller's random stream",4,0,FALSE,FALSE,0,0.0259999999999998,0.003,0.0300000000000002,4
+"test-cran-regressions.R","cran-regressions","plot sampling respects the caller's stream and explicit seeds",4,0,FALSE,FALSE,0,0.0569999999999995,0.003,0.0639999999999992,4
+"test-cran-regressions.R","cran-regressions","two-phase default AUC has a required runtime dependency",3,0,FALSE,FALSE,0,0.145,0.003,0.152,3
+"test-deprecated.R","deprecated","every previously-exported name is still exported",2,0,FALSE,FALSE,0,0.00199999999999978,0.001,0.00300000000000011,2
+"test-deprecated.R","deprecated","each deprecated name warns and names its replacement",30,0,FALSE,FALSE,0,0.0220000000000002,0.00700000000000001,0.0289999999999999,30
+"test-deprecated.R","deprecated","deprecated wrappers forward arguments and return identical results",2,0,FALSE,FALSE,0,0.0389999999999997,0.001,0.04,2
+"test-deprecated.R","deprecated","the misspelled names are gone from the new API",3,0,FALSE,FALSE,0,0.00400000000000045,0.002,0.00499999999999989,3
+"test-eval-competing-risks.R","eval-competing-risks","m_cif reduces a CIF column to a scalar risk",3,0,FALSE,FALSE,0,0.00499999999999989,0.001,0.00600000000000023,3
+"test-eval-competing-risks.R","eval-competing-risks","m_cif is monotone in the CIF magnitude",2,0,FALSE,FALSE,0,0.00300000000000011,0.002,0.00499999999999989,2
+"test-eval-competing-risks.R","eval-competing-risks","tm_survival_eval_cr returns a Metric/Value table",10,0,FALSE,FALSE,0,0.395,0.016,0.423,10
+"test-eval-competing-risks.R","eval-competing-risks","both evaluation entry points return Value as double (FINDING 14 fixed)",4,0,FALSE,FALSE,0,0.307,0.005,0.317,4
+"test-eval-competing-risks.R","eval-competing-risks","pred_cif is times-by-subjects with time.cif supplied separately",3,0,FALSE,FALSE,0,0.0129999999999999,0.001,0.0129999999999999,3
+"test-eval-competing-risks.R","eval-competing-risks","competing-risks default metrics use C_index, not Harrell/Uno",5,0,FALSE,FALSE,0,0.246,0.004,0.252,5
+"test-eval-competing-risks.R","eval-competing-risks","tm_survival_eval_cr rejects a withdrawn metric name",1,0,FALSE,FALSE,0,0.0169999999999995,0,0.0169999999999995,1
+"test-eval-competing-risks.R","eval-competing-risks","tm_survival_eval_cr rejects an unknown metric name",1,0,FALSE,FALSE,0,0.0120000000000005,0.001,0.0110000000000001,1
+"test-eval-competing-risks.R","eval-competing-risks","tm_summarize_cr consumes tm_predict_cif output directly",9,0,FALSE,FALSE,0,0.258999999999999,0.00699999999999995,0.273000000000001,9
+"test-eval-competing-risks.R","eval-competing-risks","tm_summarize_cr names each model entry's required components",3,0,FALSE,FALSE,0,0.0249999999999995,0.001,0.0280000000000005,3
+"test-eval-competing-risks.R","eval-competing-risks","tm_summarize_cr puts one column per model",2,0,FALSE,FALSE,0,0.506,0.00800000000000001,0.523,2
+"test-eval-competing-risks.R","eval-competing-risks","competing-risks status codes include a third level",1,0,FALSE,FALSE,0,0.00100000000000033,0,0.00199999999999978,1
+"test-eval-survival.R","eval-survival","tm_survival_eval returns a Metric/Value data frame",9,0,FALSE,FALSE,0,0.0670000000000002,0.003,0.069,9
+"test-eval-survival.R","eval-survival","the default metric set appears in the Metric column",8,0,FALSE,FALSE,0,0.0739999999999998,0.004,0.0809999999999995,8
+"test-eval-survival.R","eval-survival","tm_survival_eval rejects an unknown metric name",1,0,FALSE,FALSE,0,0.016,0,0.0170000000000003,1
+"test-eval-survival.R","eval-survival","concordancefit is imported (FINDING 11 fixed)",1,0,FALSE,FALSE,0,0.00199999999999978,0.001,0.00200000000000067,1
+"test-eval-survival.R","eval-survival","a clean session without survival attached now succeeds (FINDING 11)",3,0,FALSE,FALSE,0,0.00300000000000011,0.001,1.514,3
+"test-eval-survival.R","eval-survival","tm_summarize pivots one model into a Metric column table",8,0,FALSE,FALSE,0,0.0700000000000003,0.004,0.0739999999999998,8
+"test-eval-survival.R","eval-survival","tm_summarize puts one column per model and rounds to digits",9,0,FALSE,FALSE,0,0.249,0.005,0.255000000000001,9
+"test-eval-survival.R","eval-survival","tm_summarize rejects a non-list or empty models argument",2,0,FALSE,FALSE,0,0.00399999999999956,0.001,0.00500000000000078,2
+"test-eval-survival.R","eval-survival","tm_fit_and_eval fits and evaluates from raw data (FINDING 12 fixed)",7,0,FALSE,FALSE,0,0.127,0.004,0.131,7
+"test-eval-survival.R","eval-survival","tm_fit_and_eval honours an explicit model and metric subset",4,0,FALSE,FALSE,0,0.143,0.002,0.145,4
+"test-eval-survival.R","eval-survival","tm_fit_and_eval requires train_data and covariates",1,0,FALSE,FALSE,0,0.00300000000000011,0,0.00300000000000011,1
+"test-fixtures.R","fixtures","fx_surv is deterministic and correctly shaped",7,0,FALSE,FALSE,0,0.00699999999999967,0.002,0.00799999999999912,7
+"test-fixtures.R","fixtures","fx_surv_uncensored has no censoring",3,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00500000000000078,3
+"test-fixtures.R","fixtures","fx_cr produces competing-risk codes",6,0,FALSE,FALSE,0,0.00500000000000078,0.002,0.00600000000000023,6
+"test-fixtures.R","fixtures","fixture models fit and are reproducible",7,0,FALSE,FALSE,0,0.0109999999999992,0.002,0.0129999999999999,7
+"test-fixtures.R","fixtures","fixture numbers are snapshot-stable",5,0,FALSE,FALSE,0,0.0119999999999987,0.003,0.0149999999999988,5
+"test-gt-characterization.R","gt-characterization","Gt is pinned on ordinary right-censored data",5,0,FALSE,FALSE,0,0.0120000000000005,0.002,0.0129999999999999,5
+"test-gt-characterization.R","gt-characterization","Gt is pinned at timepoints falling exactly on an observed time",3,0,FALSE,FALSE,0,0.00799999999999912,0.001,0.00899999999999856,3
+"test-gt-characterization.R","gt-characterization","Gt is 1 before the first event and NA beyond the last observation",2,0,FALSE,FALSE,0,0.00399999999999956,0,0.004999999999999,2
+"test-gt-characterization.R","gt-characterization","Gt is pinned under heavily tied event times and stays monotone",6,0,FALSE,FALSE,0,0.0080000000000009,0.001,0.00999999999999979,6
+"test-gt-characterization.R","gt-characterization","Gt is 1 throughout on the uncensored fixture",3,0,FALSE,FALSE,0,0.0109999999999992,0.001,0.0120000000000005,3
+"test-gt-characterization.R","gt-characterization","Gt rejects malformed input",3,0,FALSE,FALSE,0,0.00700000000000145,0,0.00699999999999967,3
+"test-gt-ipcw.R","gt-ipcw","the tie fixture really has an even number of distinct event times",2,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00399999999999956,2
+"test-gt-ipcw.R","gt-ipcw","Gt() is invariant to row permutation",16,0,FALSE,FALSE,0,0.0190000000000001,0.004,0.0220000000000002,16
+"test-gt-ipcw.R","gt-ipcw","the Brier score is invariant to row permutation",1,0,FALSE,FALSE,0,0.0200000000000014,0,0.0210000000000008,1
+"test-gt-ipcw.R","gt-ipcw","censoring survival values are in [0, 1] and non-increasing",5,0,FALSE,FALSE,0,0.0119999999999987,0.000999999999999945,0.0129999999999999,5
+"test-gt-ipcw.R","gt-ipcw","with no censoring, G(t) is 1 across the supported range",6,0,FALSE,FALSE,0,0.00700000000000145,0.002,0.00799999999999912,6
+"test-gt-ipcw.R","gt-ipcw","Gt() agrees with pec::ipcw IPCW.times for the evaluation-time weight",1,0,FALSE,FALSE,0,0.00399999999999956,0.001,0.00400000000000134,1
+"test-gt-ipcw.R","gt-ipcw","Gt(left = TRUE) agrees with pec::ipcw IPCW.subjectTimes",1,0,FALSE,FALSE,0,0.0229999999999997,0.001,0.0229999999999997,1
+"test-gt-ipcw.R","gt-ipcw","Gt() errors rather than substituting when censoring survival is zero",2,0,FALSE,FALSE,0,0.00900000000000034,0,0.00900000000000034,2
+"test-gt-ipcw.R","gt-ipcw","Gt() is NA beyond the last observed time, as pec::ipcw is",2,0,FALSE,FALSE,0,0.00399999999999956,0.001,0.004999999999999,2
+"test-gt-ipcw.R","gt-ipcw","tm_fit_and_eval gives the corrected Brier score on the exposed fixture",4,0,FALSE,FALSE,0,0.0120000000000005,0,0.0129999999999999,4
+"test-metric-invariance.R","metric-invariance","eval_default: surviving metric values are unchanged",13,0,FALSE,FALSE,0,0.0760000000000005,0.004,0.0800000000000001,13
+"test-metric-invariance.R","metric-invariance","eval_all: surviving metric values are unchanged",21,0,FALSE,FALSE,0,0.093,0.006,0.0999999999999996,21
+"test-metric-invariance.R","metric-invariance","fit_and_eval_all: surviving metric values are unchanged",15,0,FALSE,FALSE,0,0.135,0.004,0.140000000000001,15
+"test-metric-invariance.R","metric-invariance","cr_default: surviving metric values are unchanged",11,0,FALSE,FALSE,0,0.264000000000001,0.005,0.266999999999999,11
+"test-metric-invariance.R","metric-invariance","cr_all: surviving metric values are unchanged",19,0,FALSE,FALSE,0,0.282,0.006,0.288,19
+"test-metric-invariance.R","metric-invariance","two_phase_cc: surviving metric values are unchanged",11,0,FALSE,FALSE,0,0.135,0.004,0.138,11
+"test-metric-invariance.R","metric-invariance","two_phase_ncc: surviving metric values are unchanged",11,0,FALSE,FALSE,0,0.142999999999999,0.003,0.146000000000001,11
+"test-metric-invariance.R","metric-invariance","two_phase_unit: surviving metric values are unchanged",11,0,FALSE,FALSE,0,0.135,0.004,0.138,11
+"test-metric-invariance.R","metric-invariance","sample_design_cc: surviving metric values are unchanged",11,0,FALSE,FALSE,0,0.142000000000001,0.004,0.146000000000001,11
+"test-metric-invariance.R","metric-invariance","the baseline covers every canonical metric and no withdrawn one",4,0,FALSE,FALSE,0,0.00399999999999956,0.001,0.00399999999999956,4
+"test-metric-tombstone.R","metric-tombstone","every removed spelling raises the tombstone error",8,0,FALSE,FALSE,0,0.0199999999999996,0.001,0.0219999999999985,8
+"test-metric-tombstone.R","metric-tombstone","the tombstone fires even when mixed with valid metrics",1,0,FALSE,FALSE,0,0.00300000000000011,0,0.00199999999999889,1
+"test-metric-tombstone.R","metric-tombstone","surviving metric names still normalise unchanged",3,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00399999999999956,3
+"test-metric-tombstone.R","metric-tombstone","an unrelated unknown name is NOT claimed by the tombstone",1,0,FALSE,FALSE,0,0.000999999999999446,0,0.00200000000000067,1
+"test-metric-tombstone.R","metric-tombstone","tm_metric_names() no longer offers the removed metrics",4,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00399999999999956,4
+"test-metric-tombstone.R","metric-tombstone","tm_survival_eval_cr raises the tombstone, not a generic error",2,0,FALSE,FALSE,0,0.0219999999999985,0,0.0229999999999997,2
+"test-metric-tombstone.R","metric-tombstone","tm_survival_eval_cr accepts legacy spellings of surviving metrics",2,0,FALSE,FALSE,0,0.129,0.002,0.132,2
+"test-metric-tombstone.R","metric-tombstone","tm_survival_eval_cr still rejects a genuinely unknown metric",1,0,FALSE,FALSE,0,0.016,0.001,0.0169999999999995,1
+"test-metric-tombstone.R","metric-tombstone","tm_survival_eval no longer emits the removed metrics",3,0,FALSE,FALSE,0,0.0609999999999999,0.001,0.0619999999999994,3
+"test-metric-tombstone.R","metric-tombstone","tm_survival_eval with metrics = 'all' omits the removed metrics",1,0,FALSE,FALSE,0,0.0630000000000006,0.001,0.0640000000000001,1
+"test-metric-tombstone.R","metric-tombstone","tm_fit_and_eval no longer produces the removed metric columns",3,0,FALSE,FALSE,0,0.137,0.001,0.139000000000001,3
+"test-metric-tombstone.R","metric-tombstone","tm_fit_and_eval rejects the removed metrics by name",1,0,FALSE,FALSE,0,0.00300000000000011,0,0.00399999999999956,1
+"test-metric-tombstone.R","metric-tombstone","the borrowed implementations are gone from the namespace",9,0,FALSE,FALSE,0,0.0080000000000009,0.003,0.011000000000001,9
+"test-nearest-time-index.R","nearest-time-index","an exact midpoint between two times resolves to the earlier one",2,0,FALSE,FALSE,0,0.00200000000000067,0.001,0.00300000000000011,2
+"test-nearest-time-index.R","nearest-time-index","a near midpoint resolves to the genuinely nearer time on each side",2,0,FALSE,FALSE,0,0.00200000000000067,0.001,0.00300000000000011,2
+"test-nearest-time-index.R","nearest-time-index","the tie rule is independent of input row order",20,0,FALSE,FALSE,0,0.0180000000000007,0.005,0.0229999999999997,20
+"test-nearest-time-index.R","nearest-time-index","duplicated times do not make the choice order-dependent",11,0,FALSE,FALSE,0,0.00999999999999979,0.003,0.0129999999999999,11
+"test-nearest-time-index.R","nearest-time-index","an exactly observed t_star selects that time",4,0,FALSE,FALSE,0,0.00400000000000134,0.001,0.00500000000000078,4
+"test-nearest-time-index.R","nearest-time-index","metrics are invariant to input row order at the default t_star",2,0,FALSE,FALSE,0,0.119,0.002,0.119999999999999,2
+"test-nearest-time-index.R","nearest-time-index","metrics are invariant to input row order at an explicit t_star",1,0,FALSE,FALSE,0,0.115,0.001,0.116,1
+"test-nearest-time-index.R","nearest-time-index","the default t_star really does sit exactly between two times",3,0,FALSE,FALSE,0,0.00399999999999956,0.001,0.00399999999999956,3
+"test-optional-backends.R","optional-backends","both optional backends are declared in Suggests, not Imports",8,0,FALSE,FALSE,0,0.00799999999999912,0.002,0.00999999999999979,8
+"test-optional-backends.R","optional-backends","neither optional backend is imported into the namespace",2,0,FALSE,FALSE,0,0.00199999999999889,0,0.00300000000000011,2
+"test-optional-backends.R","optional-backends","fg_model backend computes CIF predictions via cmprsk",7,0,FALSE,FALSE,0,0.0130000000000017,0.003,0.0180000000000007,7
+"test-optional-backends.R","optional-backends","fg_model output feeds tm_summarize_cr like the coxph path",7,0,FALSE,FALSE,0,0.231,0.003,0.235000000000001,7
+"test-optional-backends.R","optional-backends","cr_model backend computes CIF predictions via randomForestSRC",4,0,FALSE,FALSE,0,0.116,0.00700000000000001,0.132999999999999,4
+"test-optional-backends.R","optional-backends","fg_model errors informatively when cmprsk is unavailable",1,0,FALSE,FALSE,0,0.00500000000000078,0.001,0.00600000000000023,1
+"test-optional-backends.R","optional-backends","cr_model errors informatively when randomForestSRC is unavailable",1,0,FALSE,FALSE,0,0.00399999999999956,0,0.00399999999999956,1
+"test-paper-fixes.R","paper-fixes","held-out outcomes cannot change fixed-grid Cox probabilities",4,0,FALSE,FALSE,0,0.0420000000000016,0.003,0.0690000000000008,4
+"test-paper-fixes.R","paper-fixes","training weights, ties, factors, and strata match survfit",6,0,FALSE,FALSE,0,0.052999999999999,0.002,0.0560000000000009,6
+"test-paper-fixes.R","paper-fixes","one-covariate and zero-event evaluation sets remain predictable",2,0,FALSE,FALSE,0,0.00700000000000145,0.001,0.0080000000000009,2
+"test-paper-fixes.R","paper-fixes","matched NCC excludes other-stratum sampling occasions",3,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00399999999999956,3
+"test-paper-fixes.R","paper-fixes","NCC accounts for repeated occasions and small risk sets",11,0,FALSE,FALSE,0,0.0190000000000001,0.001,0.0200000000000014,11
+"test-paper-fixes.R","paper-fixes","Cox offsets match survfit with weights, strata and all tie methods",12,0,FALSE,FALSE,0,0.122999999999999,0.005,0.129,12
+"test-paper-framingham.R","paper-framingham","third-examination cohort uses current eligibility and actual examination dates",6,0,FALSE,FALSE,0,0.00900000000000034,0.002,0.011000000000001,6
+"test-paper-framingham.R","paper-framingham","moving future endpoints does not select another examination or predictors",2,0,FALSE,FALSE,0,0.0239999999999991,0.001,0.0249999999999986,2
+"test-plots.R","plots","tm_plot_pred requires linear.pred, pred, times and status",2,0,FALSE,FALSE,0,0.00799999999999912,0.001,0.00899999999999856,2
+"test-plots.R","plots","tm_plot_pred with the default sample_index draws every subject (FINDING 18 fixed)",4,0,FALSE,FALSE,0,0.0760000000000005,0.003,0.0810000000000013,4
+"test-plots.R","plots","tm_plot_pred sample_index thins the plot to the chosen subjects",1,0,FALSE,FALSE,0,0.0549999999999997,0.001,0.0570000000000004,1
+"test-plots.R","plots","tm_plot_pred documents the arguments it actually has (FINDING 20)",3,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00500000000000078,3
+"test-plots.R","plots","tm_plot_pred builds exactly two layers",2,0,FALSE,FALSE,0,0.0499999999999989,0.001,0.0510000000000002,2
+"test-plots.R","plots","tm_plot_pred uses the supplied labels",3,0,FALSE,FALSE,0,0.0289999999999999,0.001,0.0300000000000011,3
+"test-plots.R","plots","tm_plot_pred defaults xlab to Risk Score and ylab to Days",2,0,FALSE,FALSE,0,0.0269999999999992,0.001,0.0280000000000005,2
+"test-plots.R","plots","tm_plot_pred restrict_time caps the plotted times",2,0,FALSE,FALSE,0,0.0330000000000013,0.001,0.0340000000000007,2
+"test-plots.R","plots","tm_plot_summary combines one panel per input",3,0,FALSE,FALSE,0,0.304,0.004,0.311999999999999,3
+"test-plots.R","plots","tm_plot_summary accepts explicit panel titles",2,0,FALSE,FALSE,0,0.215,0.002,0.216999999999999,2
+"test-point-r2-definition.R","point-r2-definition","CR point R2 includes a target event exactly at the horizon",4,0,FALSE,FALSE,0,0.00999999999999979,0.001,0.011000000000001,4
+"test-point-r2-definition.R","point-r2-definition","ordinary point R2 compares the event indicator with F rather than S",2,0,FALSE,FALSE,0,0.00600000000000023,0.001,0.00600000000000023,2
+"test-point-r2-definition.R","point-r2-definition","ordinary point R2 includes an event at the evaluation time",1,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00300000000000011,1
+"test-prediction-module.R","prediction-module","tm_predict_coxph returns pred, times, status, surv_prob",12,0,FALSE,FALSE,0,0.0190000000000001,0.004,0.0229999999999997,12
+"test-prediction-module.R","prediction-module","tm_predict_coxph requires time and status in new_data",1,0,FALSE,FALSE,0,0.00500000000000078,0,0.004999999999999,1
+"test-prediction-module.R","prediction-module","tm_predict_survreg returns the same component structure",7,0,FALSE,FALSE,0,0.0120000000000005,0.003,0.016,7
+"test-prediction-module.R","prediction-module","tm_predict_survreg validates model class and covariates",3,0,FALSE,FALSE,0,0.0120000000000005,0.001,0.0129999999999999,3
+"test-prediction-module.R","prediction-module","tm_predict_cif dispatches on a pair of cause-specific coxph fits",8,0,FALSE,FALSE,0,0.0239999999999991,0.002,0.0259999999999998,8
+"test-prediction-module.R","prediction-module","cif_pred is times-by-subjects with the time grid in column 1",6,0,FALSE,FALSE,0,0.0169999999999995,0.001,0.0190000000000001,6
+"test-prediction-module.R","prediction-module","tm_predict_cif dispatches on a survreg model1",4,0,FALSE,FALSE,0,0.505000000000001,0.006,0.510999999999999,4
+"test-prediction-module.R","prediction-module","tm_predict_cif rejects an unrecognised model type",2,0,FALSE,FALSE,0,0.00500000000000078,0.001,0.00600000000000023,2
+"test-smoke.R","smoke","package exports the tm_ API",3,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00399999999999956,3
+"test-smoke.R","smoke","the deleted Cluster C duplicates are gone",3,0,FALSE,FALSE,0,0.00299999999999834,0.001,0.004999999999999,3
+"test-smoke.R","smoke","functions this suite reaches with ::: are genuinely internal",2,0,FALSE,FALSE,0,0.00199999999999889,0.001,0.00400000000000134,2
+"test-tied-times.R","tied-times","censoring left limit is shared within tied times",1,0,FALSE,FALSE,0,0.00300000000000011,0,0.00300000000000011,1
+"test-tied-times.R","tied-times","right-censored metrics do not depend on the order of tied rows",4,0,FALSE,FALSE,0,0.0250000000000004,0.001,0.0259999999999998,4
+"test-tied-times.R","tied-times","point R2 matches the KM reference when censored at t*",2,0,FALSE,FALSE,0,0.0080000000000009,0.001,0.00900000000000034,2
+"test-tied-times.R","tied-times","null Cox censoring equals exp(-Nelson-Aalen) with tied censoring",1,0,FALSE,FALSE,0,0.00300000000000011,0.001,0.00400000000000134,1
+"test-tied-times.R","tied-times","competing-risk metrics do not depend on the order of tied rows",5,0,FALSE,FALSE,0,0.73,0.00800000000000001,0.738,5
+"test-tied-times.R","tied-times","Cox prediction supports strata-by-covariate interactions",11,0,FALSE,FALSE,0,0.0519999999999996,0.004,0.0560000000000009,11
+"test-two-phase.R","two-phase","tm_case_cohort_weights returns one finite weight per subject",8,0,FALSE,FALSE,0,0.00999999999999979,0.003,0.0129999999999999,8
+"test-two-phase.R","two-phase","tm_nested_case_control_weights requires m and returns one weight per subject",7,0,FALSE,FALSE,0,0.0259999999999998,0.003,0.0290000000000017,7
+"test-two-phase.R","two-phase","case-cohort and NCC weighting schemes differ",1,0,FALSE,FALSE,0,0.0140000000000011,0.001,0.0139999999999993,1
+"test-two-phase.R","two-phase","two-phase evaluation works for a case-cohort design",8,0,FALSE,FALSE,0,0.148999999999999,0.003,0.152999999999999,8
+"test-two-phase.R","two-phase","two-phase evaluation works for a nested case-control design",6,0,FALSE,FALSE,0,0.155000000000001,0.003,0.157999999999999,6
+"test-two-phase.R","two-phase","case-cohort and NCC weighting give different metric values",2,0,FALSE,FALSE,0,0.263999999999999,0.002,0.265999999999998,2
+"test-two-phase.R","two-phase","two-phase output labels AUC differently from tm_sample_design",3,0,FALSE,FALSE,0,0.249000000000001,0.001,0.251000000000001,3
+"test-two-phase.R","two-phase","tm_sample_design validates its models argument",1,0,FALSE,FALSE,0,0.0080000000000009,0,0.00900000000000034,1
+"test-two-phase.R","two-phase","tm_sample_design summarises a two-phase design",10,0,FALSE,FALSE,0,0.140000000000001,0.004,0.143000000000001,10
+"test-two-phase.R","two-phase","two-phase default metric names are pinned with current spelling",8,0,FALSE,FALSE,0,0.0080000000000009,0.003,0.0110000000000028,8
+"test-two-phase.R","two-phase","two-phase uses Pesudo_R where the survival path uses Pseudo_R_square",2,0,FALSE,FALSE,0,0.132,0.001,0.133000000000003,2

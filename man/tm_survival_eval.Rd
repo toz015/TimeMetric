@@ -14,7 +14,8 @@ tm_survival_eval(
   new_data = NULL,
   metrics = NULL,
   t_star = NULL,
-  tau = NULL
+  tau = NULL,
+  calibration_args = list()
 )
 }
 \arguments{
@@ -29,7 +30,9 @@ computed directly from \code{predicted_probability}.}
   \item columns = sorted observed follow-up times, including duplicates
 }}
 
-\item{pred_mean_survival}{A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.}
+\item{pred_mean_survival}{Optional numeric vector of predicted mean survival
+times, used for explained variation and concordance. Predicted probabilities
+are still needed for point metrics, Brier score, AUC, and calibration.}
 
 \item{status}{A numeric vector indicating event occurrence (1 for event, 0 for censoring).}
 
@@ -47,16 +50,24 @@ coded as above.}
   \item "l_square" - L-squared measure
   \item "Harrell's C" - Harrell's concordance index
   \item "Uno's C" - Uno's concordance index
-  \item "brier_score" - Brier score for calibration
+  \item "brier_score" - Overall probability prediction error
   \item "td_auc" - Time-dependent area under the curve (AUC)
+  \item "ici", "e50", "e90" - Absolute calibration error summaries
 }
-Default is "all", which computes all available metrics.}
+The default \code{NULL} includes ICI but omits E50 and E90. Use
+\code{"all"} to include every supported metric.}
 
-\item{t_star}{(Optional) A numeric value specifying the evaluation time for point R-squared, Brier Score and time-dependent AUC.
+\item{t_star}{(Optional) Evaluation time for point R-squared, Brier score,
+time-dependent AUC, and calibration.
 If NULL, it defaults to the median survival time.}
 
 \item{tau}{(Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 If NULL, it defaults to the maximum observed survival time.}
+
+\item{calibration_args}{Optional named list passed to [tm_calibration()],
+e.g. \code{list(nk = 3)}. These settings affect calibration only.
+For sampling weights use [tm_sample_design()] or [tm_calibration()]
+directly, rather than passing weights through this list.}
 }
 \value{
 A data frame with two columns:
@@ -72,6 +83,13 @@ measures, including explained variation, concordance indices, Brier Score, and t
 Point R-squared uses the event indicator `I(T <= t_star)` and
   the predicted event probability `1 - S` at the selected prediction-grid
   column. Events at the evaluation time are included.
+  Calibration uses \code{1 - S(t_star)} from the last supplied grid column
+  at or before \code{t_star}, interpreting the grid as a right-continuous
+  step function (risk zero before its first time). Its outcome horizon is
+  exactly \code{t_star}, not the nearest future grid time. See
+  [tm_calibration()] for the estimator and boundary-probability policy.
+  A failed calibration fit warns and returns missing calibration metrics;
+  other requested metrics are retained.
 }
 \examples{
 # A Cox model evaluated on right-censored data. The simulator is seeded,

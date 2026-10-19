@@ -10,7 +10,8 @@ tm_evaluate_two_phase(
   tau = 1e+11,
   km_cens_fit,
   case_weights,
-  metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc")
+  metrics = c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc", "ici"),
+  calibration_args = list()
 )
 }
 \arguments{
@@ -19,22 +20,27 @@ tm_evaluate_two_phase(
 \code{status} (0 = censored, 1 = event), \code{pred} (predicted mean
 survival times), and \code{surv_prob} (subjects by sorted observed times).}
 
-\item{t_star}{(Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
+\item{t_star}{(Optional) Evaluation time for Brier score, time-dependent
+AUC, and calibration.
 If NULL, it defaults to the median survival time.}
 
 \item{tau}{(Optional) A numeric value specifying the truncation time for calculating explained variation metrics. 
 If NULL, it defaults to the maximum observed survival time.}
 
 \item{km_cens_fit}{Kaplan-Meier estimate of the censoring distribution, a
-`survival::survfit` object.}
+`survival::survfit` object. Not required when only calibration is requested.}
 
 \item{case_weights}{Numeric sampling weights in the same subject order as
 \code{pred_results}. Prediction helpers sort subjects by observed time;
 reorder weights using \code{order(new_data$time)} as well.}
 
 \item{metrics}{Character vector of metrics. \code{NULL} uses the default
-five metrics; \code{"all"} additionally returns \code{r_square} and
-\code{l_square}.}
+metrics, including ICI; \code{"all"} additionally returns \code{r_square},
+\code{l_square}, \code{e50}, and \code{e90}.}
+
+\item{calibration_args}{Optional named list of calibration settings,
+e.g. \code{list(nk = 3)}. Sampling weights are supplied by
+\code{case_weights}, not through this list.}
 }
 \value{
 A tibble with columns:
@@ -48,6 +54,14 @@ computes key performance metrics in a tidy table format.
 Works for common two-phase sampling designs:
   - Case-cohort (unstratified or stratified)
   - Nested case-control (matched or unmatched)
+}
+\details{
+Calibration uses the event risk from the last prediction-grid
+  column at or before \code{t_star}, with the exact requested outcome
+  horizon. Both the Cox spline calibration model and absolute-error
+  summaries use sampling weights; see [tm_calibration()].
+  Calibration-only inputs need \code{times}, \code{status}, and
+  \code{surv_prob}, without fitted models or mean time predictions.
 }
 \examples{
 d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,

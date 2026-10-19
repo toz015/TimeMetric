@@ -4,7 +4,14 @@
 \alias{tm_summarize}
 \title{Summarize multiple survival models into a wide comparison table}
 \usage{
-tm_summarize(models, metrics = NULL, t_star = NULL, tau = 1e+11, digits = 2)
+tm_summarize(
+  models,
+  metrics = NULL,
+  t_star = NULL,
+  tau = 1e+11,
+  digits = 2,
+  calibration_args = list()
+)
 }
 \arguments{
 \item{models}{A **named list** in which each element corresponds to a fitted model.
@@ -23,11 +30,14 @@ Note: If \code{pred} is provided, it will be used to calculate R2 and concordanc
 
 \item{metrics}{Optional character vector of metrics to compute (passed through).}
 
-\item{t_star}{Optional numeric scalar, specify the time point to evaluate Brier score and AUC.Default is median of observation time.}
+\item{t_star}{Optional evaluation time for point metrics and calibration.
+Defaults to the median observed follow-up.}
 
 \item{tau}{Optional numeric scalar, specify the max time horizon for R2 measure and concordance measure (default = 10e10).}
 
 \item{digits}{Number of decimal places to round the metric values (default = 2).}
+
+\item{calibration_args}{Optional named list passed to [tm_calibration()].}
 }
 \value{
 A data frame with:

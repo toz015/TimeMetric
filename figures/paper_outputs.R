@@ -15,10 +15,10 @@ paper_publish_real_outputs <- function(root, run_dir,
   numbers <- c(pbc = 2L, framingham = 3L, gbsg = 4L)
   figures <- c(pbc = "paper.fig1", framingham = "paper.fig2", gbsg = "paper.fig3")
   metric_order <- c("r_square", "l_square", "pseudo_r2", "harrell_c", "uno_c",
-                    "c_index", "brier_score", "td_auc")
+                    "c_index", "brier_score", "td_auc", "ici")
   labels <- c(r_square = "$R^2$", l_square = "$L^2$", pseudo_r2 = "Pseudo-$R^2$",
     harrell_c = "Harrell's C-index", uno_c = "Uno's C-index", c_index = "C-index",
-    brier_score = "Brier Score", td_auc = "Time-dependent AUC")
+    brier_score = "Brier Score", td_auc = "Time-dependent AUC", ici = "ICI")
   headers <- list(pbc = c("Cox", "Cox (Reduced)", "Weibull AFT"),
     framingham = c("Fine--Gray", "Fine--Gray (Reduced)", "CSH-AFT",
       "CSH-AFT ($\\text{scale} = 5$)"),
@@ -45,6 +45,8 @@ paper_publish_real_outputs <- function(root, run_dir,
     if (!all(c("r_square", "l_square", "pseudo_r2", "brier_score", "td_auc") %in% wanted) ||
         ncol(table) - 1L != length(headers[[d]]) ||
         !all(is.finite(as.matrix(table[, -1])))) stop("Incomplete manuscript table for ", d)
+    if (!"ici" %in% wanted)
+      stop("The manuscript table requires ICI for ", d)
     # The manuscript displays interval R/L/pseudo-R2; point-version diagnostics
     # remain in the analysis folder, rather than adding an unrequested table row.
     stem <- paste0("paper.table", numbers[[d]], ".", d)
@@ -52,6 +54,8 @@ paper_publish_real_outputs <- function(root, run_dir,
     readable <- table
     readable$Metric <- unname(labels[readable$Metric])
     names(readable)[-1] <- headers[[d]]
+    readable[-1] <- lapply(readable[-1], function(x)
+      formatC(round(x, digits = 2), format = "f", digits = 2))
     paper_write_md(readable, file.path(stage, paste0(stem, ".md")))
     tex <- c(paste0("\\begin{tabular}{l", strrep("c", ncol(table) - 1L), "}"),
       "\\toprule", paste0("\\textbf{Metric} & ",
@@ -59,9 +63,10 @@ paper_publish_real_outputs <- function(root, run_dir,
       "\\midrule")
     for (i in seq_len(nrow(table))) {
       label <- labels[[table$Metric[i]]]
-      if (table$Metric[i] %in% c("r_square", "l_square", "pseudo_r2"))
+      if (table$Metric[i] %in% c("r_square", "l_square", "pseudo_r2", "ici"))
         label <- paste0("\\rev{", label, "}")
-      values <- paste0("\\rev{", formatC(as.numeric(table[i, -1]), format = "f", digits = 4), "}")
+      values <- paste0("\\rev{", formatC(round(as.numeric(table[i, -1]), digits = 2),
+        format = "f", digits = 2), "}")
       tex <- c(tex, paste0(paste(c(label, values), collapse = " & "), " \\\\"))
     }
     writeLines(c(tex, "\\bottomrule", "\\end{tabular}"),

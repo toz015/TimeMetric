@@ -58,6 +58,9 @@ test_that("tm_survival_eval_cr returns a Metric/Value table", {
   # pam.predicted_survial_eval. is.finite() now works without coercion.
   expect_type(res$Value, "double")
   expect_true(all(is.finite(res$Value)))
+  # Keep historical metric snapshots unchanged; calibration has independent
+  # reference and default-selection tests in test-calibration.R.
+  res <- res[res$Metric != "ici", ]
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$Value), style = "serialize")
 })
@@ -149,6 +152,7 @@ test_that("tm_summarize_cr consumes tm_predict_cif output directly", {
   expect_identical(names(res), c("Metric", "csh"))
   # default digits = 2
   expect_equal(res$csh, round(res$csh, 2), tolerance = 1e-12)
+  res <- res[res$Metric != "ici", ]
   expect_snapshot_value(res$Metric, style = "serialize")
   expect_snapshot_value(snap_num(res$csh), style = "serialize")
 })

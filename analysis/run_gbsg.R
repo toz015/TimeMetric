@@ -56,7 +56,7 @@ for (p in predictions) {
 }
 stopifnot(all(is.finite(weights)), all(weights > 0))
 metrics <- tm_sample_design(predictions, case_weights = weights, km_cens = km,
-                            metrics = paper_metrics, tau = 10e10, digits = 4)
+                            metrics = paper_sample_metrics, tau = 10e10, digits = 4)
 stopifnot(all(is.finite(as.matrix(metrics[, -1]))))
 utils::write.csv(metrics, file.path(out, "metrics.csv"), row.names = FALSE)
 paper_write_md(metrics, file.path(out, "metrics.md"))
@@ -82,6 +82,8 @@ settings <- data.frame(Full_cohort_n = nrow(df), Phase_one_train_n = nrow(train)
   Train_subcohort_n = length(sub_train), Test_subcohort_n = length(sub_test),
   Probability_time_requested = median(eval$time),
   Probability_time_used = max(eval$time[eval$time <= median(eval$time)]),
+  Calibration_time = median(eval$time),
+  Calibration_method = "sampling-weighted Cox restricted cubic spline; five knots",
   Time_horizon = 10e10, Actual_integration_end = max(eval$time))
 utils::write.csv(settings, file.path(out, "analysis_settings.csv"), row.names = FALSE)
 support <- do.call(rbind, lapply(names(models), function(m) {

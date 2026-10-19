@@ -16,7 +16,8 @@
 #'   }
 #' @param metrics A character vector specifying the performance metrics to calculate. 
 #'   The default \code{NULL} computes pseudo R-squared (integrated and point),
-#'   C-index, Brier score, and time-dependent AUC. Use \code{"all"} for all nine.
+#'   C-index, Brier score, time-dependent AUC, and ICI. Use \code{"all"} to
+#'   include the components and E50/E90 as well.
 #'   Valid options include:
 #'   \itemize{
 #'     \item `"pseudo_r2"`
@@ -28,9 +29,11 @@
 #'     \item `"c_index"`
 #'     \item `"brier_score"`
 #'     \item `"td_auc"`
+#'     \item `"ici"`, `"e50"`, `"e90"`
 #'   }
 #' @param t_star Optional numeric value specifying a reference time for evaluating point-version Pseudo_R_square, 
-#'   the Brier Score and Time-Dependent AUC. Defaults to the median of `event_time`.
+#'   the Brier score, time-dependent AUC, and calibration. Defaults to the median
+#'   of `event_time`.
 #' @param tau Optional numeric value specifying a restricted time horizon for model evaluation. 
 #'   Defaults to the maximum observed follow-up time.
 #' @param event_type An integer indicating the primary event type of interest (default = `1`).
@@ -42,6 +45,8 @@
 #'   the columns of `pred_cif`. Requires `censoring = "cox"`. With `NULL`, the
 #'   Cox censoring model has no covariates. The Cox censoring model uses
 #'   Breslow ties, so without covariates it equals exp(-Nelson-Aalen).
+#' @param calibration_args Optional named list passed to [tm_calibration_cr()],
+#'   e.g. \code{list(bandwidth = 0.2)}. These settings affect calibration only.
 #'
 #' @details
 #' The generalized R-squared metrics use event-observation IPCW. Censoring is
@@ -58,6 +63,11 @@
 #' events assigned to `tau`. The point outcome is `I(T <= t_star, D = event_type)`,
 #' including target events at the evaluation time, as in the CIF. Normalized ratio
 #' estimates are not asserted to be exactly unbiased in finite samples.
+#' Calibration uses the target-event CIF at or before \code{t_star} on the
+#' supplied grid and evaluates the outcome at \code{t_star}. It uses the local
+#' Aalen--Johansen estimator described in [tm_calibration_cr()]; \code{censoring}
+#' and \code{censor_covariates} do not control this estimator. A failed curve
+#' fit warns and returns missing calibration metrics without discarding others.
 #'
 #' @return A data frame with two columns:
 #'   \itemize{
@@ -90,7 +100,8 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
                                            metrics = NULL,  t_star = NULL, 
                                            tau = NULL, event_type = 1,
                                            censoring = c("cox", "km"),
-                                           censor_covariates = NULL)
+                                           censor_covariates = NULL,
+                                           calibration_args = list())
   
 {
   
@@ -101,15 +112,15 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
   
   if(is.null(tau)) tau <- max(event_time)
   if(is.null(t_star)) t_star <- median(event_time)
-  time_idx <- max(which(time.cif <= t_star))
+  time_idx <- findInterval(t_star, time.cif)
   
   metrics_results <- list()
   
   valid_metrics <- c("pseudo_r2", "r_square", "l_square", 
                      "pseudo_r2_point", "r2_point", "l2_point",
-                     "c_index", "brier_score", "td_auc")
+                     "c_index", "brier_score", "td_auc", "ici", "e50", "e90")
   default_metrics <- c("pseudo_r2", "pseudo_r2_point", "c_index",
-                       "brier_score", "td_auc")
+                       "brier_score", "td_auc", "ici")
   # Validation runs AFTER tm_normalize_metrics() only. A duplicate copy of this
   # block used to run before it, which rejected every legacy spelling
   # ("Harrells_C", "C_index", "Brier Score") on this path while they worked
@@ -169,10 +180,8 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
     metrics_results$l2_point <- r_p_list$L.squared
   }
   
-  pred_risk <- apply(pred_cif, 2, m_cif, time.cif=time.cif, tau=tau)
-  
-  
   if ("c_index" %in% metrics) {
+    pred_risk <- apply(pred_cif, 2, m_cif, time.cif=time.cif, tau=tau)
     C_index <- C_cr(
       time = event_time,
       status = status,
@@ -186,7 +195,7 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
   status.recode <- ifelse(status == event_type, -1, status)
   status.recode <- ifelse(status.recode > 0, 2, status.recode)
   status.recode <- ifelse(status.recode == -1, 1, status.recode)
-  X <- pred_cif[time_idx, ]
+  X <- if (time_idx == 0L) rep(0, length(event_time)) else pred_cif[time_idx, ]
   
   if ("brier_score" %in% metrics) {
     brier_result <- suppressMessages(tdROC::tdROC.cr(
@@ -214,6 +223,17 @@ tm_survival_eval_cr <- function (pred_cif, event_time, time.cif, status,
     #metrics_results$"Time Dependent Auc Empirical" <- round(AUC_result$main_res$AUC.B.integral, 4)
   }
   
+  calibration_metrics <- intersect(c("ici", "e50", "e90"), metrics)
+  if (length(calibration_metrics)) {
+    p <- tm_calibration_grid_risk(t(as.matrix(pred_cif)), time.cif, t_star,
+                                  length(event_time))
+    calibration <- tm_calibration_values(tm_calibration_cr, c(list(
+      p = p, event_time = event_time, status = status, t_star = t_star,
+      event_type = event_type), calibration_args))
+    metrics_results[calibration_metrics] <- as.list(round(
+      calibration[calibration_metrics], 4))
+  }
+
   result_df <- data.frame(
     Metric = names(metrics_results),
     Value = as.numeric(unlist(metrics_results)),
@@ -465,7 +485,8 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1) {
 #'   }
 #' @param metrics Character vector of metrics to compute (passed through to
 #'   \code{tm_survival_eval_cr()}); use \code{"all"} for all supported.
-#' @param t_star (Optional) evaluation time for Brier score, AUC, and point version R2. Default is median of observation time.
+#' @param t_star (Optional) Evaluation time for Brier score, AUC, point R2,
+#'   and calibration. Defaults to the median observed follow-up.
 #' @param tau (Optional) The maximum prediction time horizon for R2 and C index. Default is maximum of observation time.
 #' @param event_type Integer code for the cause of interest (passed through).
 #' @param digits Number of decimal places to round the metric values (default = 2).
@@ -474,6 +495,7 @@ C_cr <- function(time, status, predicted, tau = NULL, Cause_int = 1) {
 #' @param censor_covariates Optional numeric censoring-model covariates shared
 #'   across models. Rows must match each model's subject order. Passed to
 #'   [tm_survival_eval_cr()]; used only with `censoring = "cox"`.
+#' @param calibration_args Optional named list passed to [tm_calibration_cr()].
 #' @details See [tm_survival_eval_cr()] for the event-observation weighting
 #'   rule, original-time support requirements and probability floor.
 #'
@@ -506,7 +528,8 @@ tm_summarize_cr <- function(models,
                            event_type = 1,
                            digits = 2,
                            censoring = c("cox", "km"),
-                           censor_covariates = NULL) {
+                           censor_covariates = NULL,
+                           calibration_args = list()) {
   censoring <- match.arg(censoring)
   if (!is.list(models) || length(models) == 0)
     stop("'models' must be a non-empty named list.")
@@ -531,7 +554,8 @@ tm_summarize_cr <- function(models,
       tau        = tau,
       event_type = event_type,
       censoring = censoring,
-      censor_covariates = censor_covariates
+      censor_covariates = censor_covariates,
+      calibration_args = calibration_args
     )
     
     if (!all(c("Metric", "Value") %in% names(res)))
@@ -562,7 +586,7 @@ tm_summarize_cr <- function(models,
   # optional: enforce a pleasant metric order if present
   preferred_order <- c("pseudo_r2", "r_square", "l_square",
                        "pseudo_r2_point", "r2_point", "l2_point",
-                       "c_index", "brier_score", "td_auc")
+                       "c_index", "brier_score", "td_auc", "ici", "e50", "e90")
   present <- intersect(preferred_order, res_wide$Metric)
   others  <- setdiff(res_wide$Metric, preferred_order)
   res_wide$Metric <- factor(res_wide$Metric, levels = c(present, sort(others)))

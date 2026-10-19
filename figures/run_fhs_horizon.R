@@ -113,7 +113,7 @@ checks <- do.call(rbind, lapply(names(predictions), function(n) {
 }))
 metrics <- tm_summarize_cr(predictions,
   metrics = c("r_square", "l_square", "pseudo_r2", "pseudo_r2_point",
-              "c_index", "brier_score", "td_auc"),
+              "c_index", "brier_score", "td_auc", "ici"),
   event_type = 1, tau = tau, t_star = tau, digits = 4, censoring = "cox")
 stopifnot(all(is.finite(as.matrix(metrics[, -1]))))
 utils::write.csv(metrics, file.path(out, "metrics.csv"), row.names = FALSE)

@@ -7,11 +7,11 @@ test_that("package exports the tm_ API", {
     "tm_predict_cif", "tm_summarize", "tm_summarize_cr", "tm_sample_design",
     "tm_case_cohort_weights", "tm_nested_case_control_weights",
     "tm_plot_pred", "tm_plot_summary", "tm_sim_cox_weibull",
-    "tm_simulate_fine_gray"
+    "tm_simulate_fine_gray", "tm_calibration", "tm_calibration_cr"
   ) %in% exports))
   # every public function carries the prefix, apart from the deprecated aliases
   new_api <- grep("^tm_", exports, value = TRUE)
-  expect_length(new_api, 17L)   # 16 renamed functions + tm_metric_names()
+  expect_length(new_api, 19L)   # original API plus the two calibration functions
   expect_true("tm_metric_names" %in% exports)
 })
 

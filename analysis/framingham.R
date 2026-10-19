@@ -120,7 +120,7 @@ paper_run_framingham <- function(root, out = file.path(root, "results", "framing
   }
   # Explicit metrics retain R/L components and omit the withdrawn R_SH/R_E.
   metrics <- tm_summarize_cr(predictions, metrics = c("r_square", "l_square", "pseudo_r2",
-                              "pseudo_r2_point", "c_index", "brier_score", "td_auc"),
+                              "pseudo_r2_point", "c_index", "brier_score", "td_auc", "ici"),
                              event_type = 1, tau = tau, t_star = tau, digits = 4,
                              censoring = "cox")
   stopifnot(all(is.finite(as.matrix(metrics[, -1]))))
