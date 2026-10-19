@@ -54,48 +54,51 @@ Cox/AFT helpers return missing values and one suppressible diagnostic rather
 than recycling shorter calibration vectors. Tests cover all four model types;
 individual survival predictions remain available.
 
-## Local validation
+A manuscript cross-check additionally found that trapezoidal AFT CIF
+integration incorrectly assumed zero density at time zero. Weibull models
+with scale greater than one lost substantial initial event probability.
+Adaptive quadrature on the target-cause probability scale corrects this;
+closed-form Weibull identities (including scale five), independent time-scale
+integration, grid-invariance tests, and lognormal/loglogistic identities cover
+it. The documented time summary integrates one minus the CIF.
+
+## Local validation of the manuscript correction
 
 R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
-* Source test suite with NOT_CRAN=true: 785 assertions across 167 tests;
-  0 failures, 0 warnings, 0 skips, including optional prediction backends.
-* Independent numerical checks: 11/11 pass against fitted-model survival
-  predictions, numerical integration, and hand-computable sampling/ranking
-  references.
-* Additional checks cover 12 combinations of Cox interactions, tie methods
-  and offsets, including unequal case weights where supported. Probabilities
-  agree with 'survival' reference predictions within 2.8e-16. Cox and AFT
-  metric results are invariant to permutations of tied observations;
-  conditional Breslow censoring probabilities match reference curves.
-* All 17 current exported functions exercised by a public/simulated-data smoke
-  test with warnings treated as errors. Default two-phase metrics also pass
-  with only required dependencies.
-* All 30 small paper simulation jobs returned finite results without job
-  failures. These are workflow checks, not the full manuscript simulation.
+* Source suite: 795 assertions across 171 tests; 0 failures, 0 warnings,
+  0 skips, including optional prediction backends.
+* All nine manuscript R listings execute. PBC and GBSG examples reproduce all
+  35 reported table cells on public data. The competing-risk example uses an
+  explicitly labelled simulated fixture because the public Framingham teaching
+  data are unavailable locally; no claim is made to reproduce its clinical
+  results. These must be regenerated after the AFT correction.
+* Four Cox fits agree with independent 'survival::survfit' predictions to
+  1.3e-15. The manuscript's fixed-scale AFT fixture is checked against the
+  analytic competing-risk Weibull CIF at every subject/time combination.
+* The analysis scripts now consistently use the manuscript's 12-year FHS
+  horizon. The real-data runner loads only dependencies of selected datasets.
+  Full manuscript simulation results have not been regenerated.
 
 ## R CMD check results
 
-On the built 0.2.1 source tarball, with network access:
+On the updated 0.2.1 source tarball,
 `R CMD check --as-cran --run-donttest` reports **0 errors, 0 warnings, 2 NOTEs**.
-Examples, tests, incoming URL checks and the PDF manual pass.
+Examples, installed-package tests and the PDF manual pass.
+`_R_CHECK_CRAN_INCOMING_REMOTE_=false` was set because network access was
+unavailable; remote incoming checks have not been rerun for this correction.
 
-1. CRAN incoming feasibility: "New submission".
-2. HTML manual: the local HTML Tidy is too old, and 'V8' is unavailable, so
-   HTML validation and math-rendering checks are skipped on this machine.
-   These are local toolchain limitations, not claimed successful checks.
+1. Future file timestamps: unable to verify current time (network unavailable).
+2. HTML manual: local HTML Tidy is too old and 'V8' is unavailable, so
+   HTML validation and math-rendering checks are skipped.
 
 ## Platform checks
 
-All nine GitHub Actions checks passed on the reviewed implementation
-(`fa9183d`): Linux release/devel/oldrel-1, Windows release/devel, macOS release,
-full suggested dependencies, required dependencies only, and test coverage.
-The full-dependency source test job skips no tests; its installed-package
-check reports `Status: OK`. Source-only checks are intentionally skipped
-when their analysis/development inputs are excluded from the installed
-package. The final release adds the metric-subset/censoring-support safeguards
-described above; fresh checks on that commit are recorded on PR #3.
-See `docs/validation/paper-integration-2026-10-18.md` for reproduction details.
+The earlier c09e9fa release candidate passed nine GitHub Actions checks.
+Those checks predate the new AFT CIF integration correction. Fresh remote
+platform checks and review are still required for the updated patch; no CI
+success is claimed for it. PR #3 remains unmerged because the automatic
+approval service could not execute the authorized publication step.
 
 ## Downstream dependencies
 

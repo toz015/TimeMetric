@@ -1,5 +1,8 @@
 # TimeMetric 0.2.1
 
+- Correct cause-specific AFT CIF integration near time zero using adaptive quadrature on the target-event probability scale. Fixed-scale Weibull models with scale greater than one no longer lose the initial probability mass.
+- Align the Framingham analysis scripts with the manuscript's 12-year horizon and correct the CIF time-summary documentation.
+
 ## Paper integration
 
 * Point R-squared now includes target events at the evaluation time (`T <= t`)

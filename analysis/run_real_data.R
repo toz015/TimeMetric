@@ -15,10 +15,13 @@ for (a in commandArgs(trailingOnly = TRUE)) {
 }
 if (!nzchar(out) || !length(selected) || any(!selected %in% datasets)) stop("Invalid output or dataset.")
 paper_load(root)
-for (p in c("cmprsk", "riskCommunicator", "pec", "expint")) {
+required <- unique(c(
+  if ("framingham" %in% selected) c("cmprsk", "riskCommunicator"),
+  if ("gbsg" %in% selected) "pec"))
+for (p in required) {
   if (!requireNamespace(p, quietly = TRUE)) stop("Install ", p, " first.")
 }
-paper_manifest(root, out, list(analyses = c("PBC seed 1234567", "Framingham examination 3, 10 years",
+paper_manifest(root, out, list(analyses = c("PBC seed 1234567", "Framingham examination 3, 12 years",
                                            "GBSG2 seed 2025, 10% case-cohort, aligned weights")))
 out <- normalizePath(out)
 dir.create(file.path(out, "logs"), showWarnings = FALSE)

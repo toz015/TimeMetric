@@ -41,12 +41,12 @@ paper_framingham_cohort <- function(framingham) {
        reduced_covs = c("SEX", "TOTCHOL", "AGE", "DIABP"))
 }
 
-paper_run_framingham <- function(root, out = file.path(root, "results", "framingham_visit3_10y")) {
+paper_run_framingham <- function(root, out = file.path(root, "results", "framingham_visit3_12y")) {
   for (p in c("riskCommunicator", "cmprsk")) {
     if (!requireNamespace(p, quietly = TRUE)) stop("Install ", p, " before running this illustration.")
   }
   seed <- 1234567L
-  tau <- 10 * 365 # Original paper's convention: 365 days per year.
+  tau <- 12 * 365 # Original paper's convention: 365 days per year.
   e <- new.env()
   utils::data("framingham", package = "riskCommunicator", envir = e)
   prepared <- paper_framingham_cohort(e$framingham)
@@ -77,10 +77,10 @@ paper_run_framingham <- function(root, out = file.path(root, "results", "framing
     data.frame(Split = split, N = nrow(d), Hypertension = sum(d$status == 1),
                Competing_death = sum(d$status == 2), Censored = sum(d$status == 0),
                Median_followup_years = median(d$time)/365,
-               Hypertension_by_10y = sum(d$status == 1 & d$time <= tau),
-               Competing_death_by_10y = sum(d$status == 2 & d$time <= tau),
-               Censored_before_10y = sum(d$status == 0 & d$time < tau),
-               Observed_event_free_beyond_10y = sum(d$time > tau))
+               Hypertension_by_12y = sum(d$status == 1 & d$time <= tau),
+               Competing_death_by_12y = sum(d$status == 2 & d$time <= tau),
+               Censored_before_12y = sum(d$status == 0 & d$time < tau),
+               Observed_event_free_beyond_12y = sum(d$time > tau))
   }))
   utils::write.csv(outcome_summary, file.path(out, "outcome_counts.csv"), row.names = FALSE)
 
@@ -127,21 +127,21 @@ paper_run_framingham <- function(root, out = file.path(root, "results", "framing
   utils::write.csv(metrics, file.path(out, "metrics.csv"), row.names = FALSE)
   paper_write_md(metrics, file.path(out, "metrics.md"))
 
-  # Record actual support and the CIF step used at the requested 10-year horizon.
+  # Record actual support and the CIF step used at the requested 12-year horizon.
   # The package uses the last CIF knot <= t_star, not nearest-time matching.
   support <- do.call(rbind, lapply(c("Train", "Test"), function(split) {
     d <- if (split == "Train") train else test
     km <- survival::survfit(survival::Surv(time, status == 0) ~ 1, data = d)
     data.frame(Split = split, N = nrow(d), tau_days = tau, t_star_days = tau,
-               Maximum_followup_days = max(d$time), At_risk_at_10y = sum(d$time >= tau),
-               G_10y = if (tau <= max(d$time))
+               Maximum_followup_days = max(d$time), At_risk_at_12y = sum(d$time >= tau),
+               G_12y = if (tau <= max(d$time))
                  summary(km, times = tau, extend = TRUE)$surv else NA_real_)
   }))
-  stopifnot(all(support$Maximum_followup_days >= tau), all(support$At_risk_at_10y > 0),
-            all(is.finite(support$G_10y)), all(support$G_10y > 0))
+  stopifnot(all(support$Maximum_followup_days >= tau), all(support$At_risk_at_12y > 0),
+            all(is.finite(support$G_12y)), all(support$G_12y > 0))
   utils::write.csv(support, file.path(out, "followup_support.csv"), row.names = FALSE)
   # Event-observation R2 weights can depend on censoring AFTER the horizon.
-  # G(10y) alone is therefore not a diagnostic for this weighting strategy.
+  # G(12y) alone is therefore not a diagnostic for this weighting strategy.
   r2_ipcw <- getFromNamespace("tm_cr_event_ipcw", "TimeMetric")(
     test$time, test$status, censoring = "cox")
   r2_weights <- data.frame(RANDID = cohort$RANDID[-idx],
@@ -157,14 +157,14 @@ paper_run_framingham <- function(root, out = file.path(root, "results", "framing
                Maximum_CIF_grid_time = max(grid))
   }))
   utils::write.csv(horizon_knots, file.path(out, "analysis_settings.csv"), row.names = FALSE)
-  predictions_10y <- data.frame(RANDID = cohort$RANDID[-idx], time = test$time, status = test$status)
+  predictions_12y <- data.frame(RANDID = cohort$RANDID[-idx], time = test$time, status = test$status)
   for (m in names(predictions)) {
     p <- predictions[[m]]
     k <- max(which(p$cif_pred[, 1] <= tau))
-    predictions_10y[[paste0(m, "_CIF_10y")]] <- p$cif_pred[k, -1]
-    predictions_10y[[paste0(m, "_restricted_mean_days")]] <- p$pred
+    predictions_12y[[paste0(m, "_CIF_12y")]] <- p$cif_pred[k, -1]
+    predictions_12y[[paste0(m, "_restricted_mean_days")]] <- p$pred
   }
-  utils::write.csv(predictions_10y, file.path(out, "test_predictions_10y.csv"), row.names = FALSE)
+  utils::write.csv(predictions_12y, file.path(out, "test_predictions_12y.csv"), row.names = FALSE)
 
   # Use the same 200 held-out subjects in every panel, in years since examination 3.
   set.seed(seed)
@@ -193,37 +193,37 @@ paper_run_framingham <- function(root, out = file.path(root, "results", "framing
     ggplot2::theme_bw(base_size = 11) +
     ggplot2::labs(x = "Model risk score", y = "Years since third examination",
       title = "Framingham: prediction from the third examination",
-      subtitle = "10-year horizon; 200 held-out participants",
-      caption = paste("Line: integral of 1 - hypertension CIF from 0 to 10 years.",
-                      "Points: observed follow-up capped at 10 years; shapes retain original status.",
+      subtitle = "12-year horizon; 200 held-out participants",
+      caption = paste("Line: integral of 1 - hypertension CIF from 0 to 12 years.",
+                      "Points: observed follow-up capped at 12 years; shapes retain original status.",
                       "Descriptive display, not a calibration curve.", sep = "\n"))
-  ggplot2::ggsave(file.path(out, "framingham_visit3_10y.png"), plot, width = 10, height = 8, dpi = 150)
-  ggplot2::ggsave(file.path(out, "framingham_visit3_10y.pdf"), plot, width = 10, height = 8)
+  ggplot2::ggsave(file.path(out, "framingham_visit3_12y.png"), plot, width = 10, height = 8, dpi = 150)
+  ggplot2::ggsave(file.path(out, "framingham_visit3_12y.pdf"), plot, width = 10, height = 8)
   result <- list(settings = settings, cohort = membership, flow = prepared$flow,
                  outcome_counts = outcome_summary, models = models, predictions = predictions,
                  metrics = metrics, support = support, r2_weights = r2_weights,
                  horizon_knots = horizon_knots, plot = plot)
-  saveRDS(result, file.path(out, "framingham_visit3_10y.rds"))
+  saveRDS(result, file.path(out, "framingham_visit3_12y.rds"))
   writeLines(c(
     "Third-examination illustration; the visit is prespecified, not chosen relative to a future outcome.",
     "Population: baseline-eligible attendees without hypertension at examination 3, complete current covariates, and positive remaining follow-up.",
     "Examination 3 occurs at different actual times (approximately year 12); it is not an exact year-12 landmark.",
-    "Follow-up starts at each participant's actual third-examination date. No requirement to remain under observation for 10 years is imposed.",
+    "Follow-up starts at each participant's actual third-examination date. No requirement to remain under observation for 12 years is imposed.",
     "Full observed follow-up is used to fit models; prediction/evaluation use tau = t_star = 3650 days.",
     "Status 0 = censoring, 1 = hypertension, 2 = competing death. Endpoint ties retain the original death-first rule.",
-    "Generalized R2 uses event-observation IPCW from original follow-up, an intercept-only Cox censoring model and G floor 1e-4; original censoring rows have zero R2 weight even after 10 years.",
-    "R2 weights and censoring survival at original follow-up are in r2_original_followup_weights.csv; these weights can depend on follow-up beyond the 10-year outcome horizon.",
+    "Generalized R2 uses event-observation IPCW from original follow-up, an intercept-only Cox censoring model and G floor 1e-4; original censoring rows have zero R2 weight even after 12 years.",
+    "R2 weights and censoring survival at original follow-up are in r2_original_followup_weights.csv; these weights can depend on follow-up beyond the 12-year outcome horizon.",
     "All models use the same full-model complete-case cohort and seed-1234567 2:1 split.",
     "The reduced Fine-Gray model uses SEX, TOTCHOL, AGE, DIABP, matching the original code.",
     "Package CIF grids/quadrature are retained, including AFT's evaluation-time grid; actual probability knots are in analysis_settings.csv.",
-    "Restricted mean integrates 1 - hypertension CIF through 10 years, with competing deaths contributing to the no-hypertension state.",
-    "Outcome counts over full follow-up and within 10 years are distinguished in outcome_counts.csv.",
+    "Restricted mean integrates 1 - hypertension CIF through 12 years, with competing deaths contributing to the no-hypertension state.",
+    "Outcome counts over full follow-up and within 12 years are distinguished in outcome_counts.csv.",
     "Results are an illustration in third-examination attendees, not a baseline-cohort performance estimate."),
     file.path(out, "README.txt"))
   print(prepared$flow, row.names = FALSE)
   print(outcome_summary, row.names = FALSE)
   print(metrics, row.names = FALSE)
   print(support, row.names = FALSE)
-  cat("Framingham third-examination 10-year analysis PASS. Results:", out, "\n")
+  cat("Framingham third-examination 12-year analysis PASS. Results:", out, "\n")
   invisible(result)
 }
