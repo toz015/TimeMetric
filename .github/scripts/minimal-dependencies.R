@@ -11,7 +11,7 @@ required <- unique(c("TimeMetric", unlist(tools::package_dependencies(
 required <- setdiff(required, "R")
 missing <- setdiff(required, db[, "Package"])
 if (length(missing)) stop("Missing runtime dependencies: ", paste(missing, collapse = ", "))
-stopifnot("tidyr" %in% required)
+stopifnot(all(c("tidyr", "Hmisc", "pmcalibration", "prodlim") %in% required))
 lib <- tempfile("timemetric-hard-deps-")
 dir.create(lib)
 check <- function() {
@@ -29,8 +29,11 @@ check <- function() {
   km <- survival::survfit(survival::Surv(time, 1 - status) ~ 1, d)
   result <- tm_evaluate_two_phase(pred, km_cens_fit = km,
                                   case_weights = rep(1, nrow(d)))
-  stopifnot(nrow(result) == 5L, all(is.finite(result$Value)),
-            "td_auc" %in% result$Metric)
+  expected <- c("pseudo_r2", "harrell_c", "uno_c", "brier_score", "td_auc", "ici")
+  stopifnot(nrow(result) == length(expected),
+            setequal(result$Metric, expected), all(is.finite(result$Value)),
+            result$Value[result$Metric == "ici"] >= 0,
+            result$Value[result$Metric == "ici"] <= 1)
   print(result)
   cat("Default two-phase evaluation passed with required dependencies only.\n")
 }

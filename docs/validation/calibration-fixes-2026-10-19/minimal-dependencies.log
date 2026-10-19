@@ -1,0 +1,8 @@
+       Metric  Value
+1   pseudo_r2 0.2800
+2   harrell_c 0.6387
+3       uno_c 0.6432
+4 brier_score 0.2201
+5      td_auc 0.6465
+6         ici 0.0617
+Default two-phase evaluation passed with required dependencies only.

@@ -90,6 +90,8 @@ R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
 * Source suite: 917 assertions across 192 tests; 0 failures, 0 warnings,
   0 skips, including optional prediction backends.
+* Installed-package required-dependency smoke check passes all six default
+  two-phase metrics, including finite ICI within [0, 1].
 * Separate manuscript migration regression: 17 assertions pass using simulated
   saved predictions, with no clinical inputs or downloads required.
 * Prior main-branch manuscript validation (before adding ICI): all nine R listings execute. PBC and GBSG examples reproduce all

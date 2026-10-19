@@ -27,3 +27,10 @@ reproduce clinical results. Real-data ICI tables and full simulation figures
 still require their own analysis reruns. No clinical claims were updated.
 
 Checked tarball SHA256: c1c54c73e7330c77819f4c6932ea41abd2b4c49c25d53072050703afccf43c8c
+
+CI follow-up: the required-dependency smoke script still expected five default
+metrics after ICI was added. It now checks the exact six-metric set, finite
+values and ICI bounds, and verifies calibration dependencies are declared.
+The installed checked tarball passes this script locally with library access
+restricted to its Depends/Imports closure; see minimal-dependencies.log.
+This follow-up changes only CI and notes, outside the checked source tarball.
