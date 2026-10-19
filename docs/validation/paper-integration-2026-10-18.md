@@ -33,14 +33,23 @@ Seven textual conflicts were reconciled in source, documentation, ignore rules
 and snapshots. Generated Rd help was refreshed. Only the competing-risk
 snapshots differ from merged main; numerical tolerances were not relaxed.
 
+The independent follow-up review in `fa9183d` also corrects censoring left
+limits at tied times, including point R-squared at a censored horizon. The
+competing-risk censoring Cox fit uses Breslow ties to agree with its documented
+Nelson-Aalen reference. Cox models with strata-by-covariate interactions use
+subject-specific `survfit()` curves and require explicit `new_data`.
+The new tests reproduce failures on `1eaa36f` and pass on `fa9183d`.
+
 ## Validation
 
 Environment: R 4.5.3 on arm64 macOS Tahoe 26.5.1.
 
 | Check | Result |
 |---|---|
-| Full source tests, optional dependencies available, `NOT_CRAN=true` | 159 tests; 742 assertions; zero failures, warnings or skips |
+| Full source tests, optional dependencies available, `NOT_CRAN=true` | 165 tests; 766 assertions; zero failures, warnings or skips |
 | Independent scientific audit | 11/11 pass |
+| Additional interaction, tie-method and offset checks | 12 combinations agree with `survfit()` within 2.8e-16; Cox/AFT tied-row permutation checks pass |
+| Conditional Breslow censoring with tied times | Agrees with individual reference curves within 1.2e-16 |
 | Public API smoke test | All 17 current exports exercised |
 | Installed-package runtime dependency isolation | Default two-phase metrics pass with required dependencies only |
 | Matched NCC paper script | Hand-calculated one-control example passes |
@@ -54,9 +63,14 @@ URL checks and the PDF manual pass. Source-only tests are intentionally skipped
 when the installed tarball omits the analysis/development directories; the
 full source run above executes them.
 
-GitHub CI on the new paper PR checks Linux release/devel/oldrel-1, macOS release,
-Windows release/devel, all suggested dependencies, runtime dependencies only,
-and coverage. Its live checks are authoritative for platform results.
+All nine GitHub checks passed on `fa9183d`, covering Linux
+release/devel/oldrel-1, macOS release, Windows release/devel, all suggested
+dependencies, runtime dependencies only, and coverage. The full-dependency
+source test job skips no tests; its installed-package check reports
+`Status: OK`. The final release-preparation commit updates excluded notes and
+this report only; packaged source remains identical to the reviewed revision.
+The [PR checks](https://github.com/toz015/TimeMetric/pull/3/checks) record the
+subsequent checks on that documentation update.
 
 ## Reproduction and limits
 

@@ -38,15 +38,29 @@ offset centering with case weights and strata. Nested case-control `m` remains
 the number of controls per case. Independent reference tests cover these
 changes and retain the earlier numerical regression checks.
 
+The final review also corrected censoring weights at tied follow-up times:
+all subjects tied at a time now share the same censoring survival left limit.
+Point R-squared is tested when censoring occurs exactly at the evaluation
+horizon. The competing-risk Cox censoring model explicitly uses Breslow ties,
+matching the documented no-covariate Nelson-Aalen reference. Cox prediction
+supports strata-by-covariate interactions when evaluation data are supplied.
+Independent regression tests reproduce these defects on the previous revision
+and pass after the corrections.
+
 ## Local validation
 
 R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
-* Source test suite with NOT_CRAN=true: 742 assertions across 159 tests;
+* Source test suite with NOT_CRAN=true: 766 assertions across 165 tests;
   0 failures, 0 warnings, 0 skips, including optional prediction backends.
 * Independent numerical checks: 11/11 pass against fitted-model survival
   predictions, numerical integration, and hand-computable sampling/ranking
   references.
+* Additional checks cover 12 combinations of Cox interactions, tie methods
+  and offsets, including unequal case weights where supported. Probabilities
+  agree with 'survival' reference predictions within 2.8e-16. Cox and AFT
+  metric results are invariant to permutations of tied observations;
+  conditional Breslow censoring probabilities match reference curves.
 * All 17 current exported functions exercised by a public/simulated-data smoke
   test. Default two-phase metrics also pass with only required dependencies.
 * All 30 small paper simulation jobs returned finite results without job
@@ -65,10 +79,15 @@ Examples, tests, incoming URL checks and the PDF manual pass.
 
 ## Platform checks
 
-Fresh GitHub Actions checks on this PR cover Linux release/devel/oldrel-1,
-Windows release/devel, macOS release, and a separate full-dependency test job.
-The local results and checked tarball identity are recorded in
-`docs/validation/paper-integration-2026-10-18.md`.
+All nine GitHub Actions checks passed on the reviewed implementation
+(`fa9183d`): Linux release/devel/oldrel-1, Windows release/devel, macOS release,
+full suggested dependencies, required dependencies only, and test coverage.
+The full-dependency source test job skips no tests; its installed-package
+check reports `Status: OK`. Source-only checks are intentionally skipped
+when their analysis/development inputs are excluded from the installed
+package. The release-preparation changes only update excluded CRAN notes
+and the validation report; the packaged implementation is unchanged.
+See `docs/validation/paper-integration-2026-10-18.md` for reproduction details.
 
 ## Downstream dependencies
 
