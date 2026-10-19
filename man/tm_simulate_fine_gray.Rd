@@ -19,7 +19,7 @@ tm_simulate_fine_gray(
   mu.c.time = NULL,
   independent_c = TRUE,
   report.mu_and_sd = FALSE,
-  seed = 1234
+  seed = NULL
 )
 }
 \arguments{
@@ -55,7 +55,9 @@ it is calculated using `uniroot` to achieve the desired censoring.}
 \item{report.mu_and_sd}{A logical value. If TRUE, a summary of censoring parameters
 and event time quantiles is returned instead of the full dataset.}
 
-\item{seed}{An integer for the random number generator seed to ensure reproducibility.}
+\item{seed}{Optional integer. If supplied, the random number generator is
+seeded with it for reproducibility. The default \code{NULL} uses the current random number stream
+without resetting it; random draws advance its state.}
 }
 \value{
 A data frame containing the simulated data with columns `obs.times`, `obs.event`, and the covariates `X`.

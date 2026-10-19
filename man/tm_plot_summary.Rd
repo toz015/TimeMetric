@@ -19,7 +19,7 @@ tm_plot_summary(
   sample_size = NULL,
   restrict_time = NULL,
   legend_name = "Status",
-  seed = 12345
+  seed = NULL
 )
 }
 \arguments{
@@ -55,7 +55,10 @@ drawn, which keeps a few long follow-up times from compressing the plot.}
 
 \item{legend_name}{Character string for the legend title (default = "status").}
 
-\item{seed}{(option) random seed for sampling points.}
+\item{seed}{Optional integer. If supplied, the random number generator is
+seeded with it before \code{sample_size} subjects are drawn, so the
+sampled points are reproducible. The default \code{NULL} uses the current random number stream
+without resetting it; random draws advance its state.}
 }
 \value{
 A patchwork \code{ggplot} object combining all panels.

@@ -48,7 +48,7 @@
 #'
 #' @export
 
-tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predict = T) 
+tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predict = TRUE)
 {
   
   # Check inputs
@@ -91,21 +91,17 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
   delta <- censor.unsorted[y.order]
   p <- dim(as.matrix(x.matrix.unsorted))[2]
   
-  if(is.null(y.order.new)==F) {
+  if (!is.null(y.order.new)) {
     y.order <- y.order.new
   }
   
-  if (p == 1) {
-    x.matrix <- as.matrix(x.matrix.unsorted[y.order])
-  } else {
-    x.matrix <- x.matrix.unsorted[y.order, ]
-  }
+  x.matrix <- x.matrix.unsorted[y.order, , drop = FALSE]
   
   
   nsize <- length(y)
   fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)
   
-  if(is.null(y.order.new)==F){
+  if (!is.null(y.order.new)){
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 
@@ -126,8 +122,9 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
     }
     
     gtau <- (tau/temp.pred)^(1/model$scale)
+    # E[min(T, tau)] = E[T I(T <= tau)] + tau P(T > tau).
     t.predicted <- temp.pred * gamma(1 + model$scale) *
-      (1-expint::gammainc((1 + model$scale), gtau))
+      stats::pgamma(gtau, shape = 1 + model$scale) + tau * exp(-gtau)
   } else if (model$dist == "lognormal") {
     if(is.null(new_data)){
       temp.pred <- predict(model, type = "response")[y.order]
@@ -135,24 +132,26 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
       temp.pred <- predict(model, newdata = as.data.frame(x.matrix), type = "response")
     }
     gtau <- (log(tau)-log(temp.pred))/model$scale
-    t.predicted <- temp.pred * exp((model$scale)^2/2) * pnorm(gtau)
+    t.predicted <- temp.pred * exp((model$scale)^2/2) *
+      pnorm(gtau - model$scale) + tau * pnorm(gtau, lower.tail = FALSE)
   }
   
+  y.original <- y
+  delta.original <- delta
   if (!is.null(tau)) {
     delta <- ifelse(y <= tau, delta, 1)
     y <- pmin(y, tau)
     y.input <- ifelse(tau > y, y, tau)
   }
   
-  if(predict == T){
-    time_points <- y
-    time_points <- time_points[time_points <= tau] 
+  if (predict) {
+    time_points <- y.original
     
     pre_sp <- predictSurvProb2survreg(model, as.data.frame(x.matrix), time_points)
     t.predicted2 <- integrate_survival(pre_sp, y, delta, tau)
     return(list(pred = t.predicted, #t.predicted2,
-                times = y,
-                status = delta,
+                times = y.original,
+                status = delta.original,
                 surv_prob = pre_sp,
                 model = model,
                 new_data = new_data,
@@ -164,7 +163,7 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
   
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
-                           cat("Error in WLS fitting:", e$message, "\n")
+                           warning("Error in WLS fitting: ", conditionMessage(e), call. = FALSE)
                            return(c(NA, NA))
                          })
   calibrate.fitted <- tryCatch(predict(wls.fitted), error = function(e) {

@@ -23,10 +23,10 @@ computed directly from \code{predicted_probability}.}
 
 \item{event_time}{A numeric vector of observed survival times.}
 
-\item{predicted_probability}{A numeric vector of predicted survival probabilities (Note: Only models with discrete estimated survival probabilities can use this input.). with
+\item{predicted_probability}{Numeric matrix of predicted survival probabilities, with
 \itemize{
   \item rows = subjects.
-  \item columns = observed survival times
+  \item columns = sorted observed follow-up times, including duplicates
 }}
 
 \item{pred_mean_survival}{A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.}

@@ -52,7 +52,7 @@
 #' str(cox_pred$pred)
 #'
 #' @export
-tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict = T) 
+tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict = TRUE)
 {
   if(is.null(new_data)){
       x.matrix.unsorted <- model$x
@@ -78,14 +78,14 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
   y <- y.unsorted[y.order]
   delta <- censor.unsorted[y.order]
   p <- dim(as.matrix(x.matrix.unsorted))[2]
-  if(is.null(y.order.new)==F) y.order <- y.order.new
+  if (!is.null(y.order.new)) y.order <- y.order.new
   if (p == 1) {
     x.matrix <- as.matrix(x.matrix.unsorted[y.order, ])
   } else {
     x.matrix <- as.matrix( x.matrix.unsorted[y.order, ])
   }
   fit.km.censoring <- survfit(Surv(y, 1 - delta) ~ 1)
-  if(is.null(y.order.new)==F){
+  if (!is.null(y.order.new)){
     y <- y.unsorted.new[y.order]
     delta <- censor.unsorted.new[y.order]
   } 
@@ -95,28 +95,25 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
   ratio.km <- delta/km.censoring.minus
   ratio.km[is.nan(ratio.km)] <- 0
   weight.km <- ratio.km/(sum(ratio.km))
-  y.length <- length(y)
-  yi.matrix <- matrix(rep(y, each = y.length), nrow = y.length)
-  yj.matrix <- t(yi.matrix)
-  R <- ((yj.matrix >= yi.matrix) * 1)
   if(is.null(new_data)){
     #temp_rs <- x.matrix %*% my.beta
     temp_rs <- predict(model, type = "lp")[y.order]
   }else{
     temp_rs <- predict(model, new_data[, covs, drop = FALSE], type = "lp")[y.order]
   }
-  my.Lambda <- R %*% ((delta)/t(t(exp(temp_rs)) %*% R))
-  rm(R)
-  my.power <- matrix(rep(t(exp(temp_rs)), each = y.length), 
-                     nrow = y.length)
-  my.factor <- (max(my.Lambda)/100)
-  my.Lambda2 <- t(matrix(rep(exp(-my.Lambda/my.factor), each = y.length), 
-                         nrow = y.length))
-  S.hat.x <- my.Lambda2^(my.factor * my.power)
-  rm(my.Lambda)
-  rm(my.power)
-  rm(my.Lambda2)
-  
+  # Predict from the training fit. Re-estimating a baseline from y/delta here
+  # leaks validation outcomes into predictions and discards fitted case weights.
+  prediction_data <- if (is.null(new_data)) {
+    stats::model.frame(model)[y.order, , drop = FALSE]
+  } else {
+    new_data[y.order, , drop = FALSE]
+  }
+  survival_fit <- survival::survfit(model, newdata = prediction_data,
+                                   se.fit = FALSE)
+  survival_at_times <- summary(survival_fit, times = y, extend = TRUE)$surv
+  S.hat.x <- matrix(survival_at_times, nrow = length(y),
+                    ncol = nrow(prediction_data))
+
   # Truncate data if tau is provided
   delta.origin <- delta
   y.origin <- y

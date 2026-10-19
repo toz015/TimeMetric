@@ -149,7 +149,10 @@ tm_plot_pred <- function(data,
 #' @param restrict_time Optional numeric. If supplied, observed times above
 #'   this value are capped at it and a dashed horizontal reference line is
 #'   drawn, which keeps a few long follow-up times from compressing the plot.
-#' @param seed (option) random seed for sampling points. 
+#' @param seed Optional integer. If supplied, the random number generator is
+#'   seeded with it before \code{sample_size} subjects are drawn, so the
+#'   sampled points are reproducible. The default \code{NULL} uses the current random number stream
+#'   without resetting it; random draws advance its state.
 #'
 #' @return A patchwork \code{ggplot} object combining all panels.
 #' @importFrom patchwork plot_annotation wrap_plots plot_layout
@@ -187,8 +190,7 @@ tm_plot_summary <- function(data_list,
                               shape_style = NULL,
                               sample_size = NULL,
                               restrict_time = NULL,
-                              legend_name = "Status", seed=12345) {
-  set.seed(seed)
+                              legend_name = "Status", seed = NULL) {
   if(is.null(shape_style) & length(label_name) == 2) shape_style = c(1, 19)
   if(is.null(shape_style) & length(label_name) == 3) shape_style = c(2, 19, 1)
   if(is.null(levels)) levels = c(0:(length(label_name)-1))
@@ -209,6 +211,7 @@ tm_plot_summary <- function(data_list,
     stop("invert_linear must be length 1 or length(data_list).")
   
   if(!is.null(sample_size)){
+    if (!is.null(seed)) set.seed(seed)
     sample_index <- sample(1:length(data_list[[1]][["times"]]), size = sample_size)
   }else{
     sample_index <- 1:length(data_list[[1]][["times"]])

@@ -8,10 +8,10 @@
 #'
 #' @param event_time A numeric vector of observed survival times.
 #' @param pred_mean_survival A numeric vector of predicted mean survival. If input this value, \code{predicted_probability} value would be ignored.
-#' @param predicted_probability A numeric vector of predicted survival probabilities (Note: Only models with discrete estimated survival probabilities can use this input.). with
+#' @param predicted_probability Numeric matrix of predicted survival probabilities, with
 #'   \itemize{
 #'     \item rows = subjects.
-#'     \item columns = observed survival times
+#'     \item columns = sorted observed follow-up times, including duplicates
 #'   }
 #' @param status A numeric vector indicating event occurrence (1 for event, 0 for censoring).
 #' @param covariates A character vector specifying the names of the covariates used in the model.
@@ -130,7 +130,6 @@ tm_survival_eval <- function (model, event_time,
   #}
   
   
-  #print(predicted_data)
   if (is.null(t_star)) t_star <- quantile(event_time, 0.5)
   t_idx <- tm_nearest_time_index(event_time, t_star)
   risk_scores <- 1 - predicted_probability[, t_idx] 
@@ -154,8 +153,9 @@ tm_survival_eval <- function (model, event_time,
   if("pseudo_r2_point" %in% metrics ||
      "r2_point" %in% metrics || 
      "l2_point" %in% metrics) {
-    i.obs <- ifelse(event_time < t_star & status == 1, 1, 0)
-    i.predict <- predicted_probability[, t_idx]
+    i.obs <- ifelse(event_time <= t_star & status == 1, 1, 0)
+    # Compare an event indicator with event probability, not survival.
+    i.predict <- 1 - predicted_probability[, t_idx]
     restricted <- restricted_data_gen(event_time, status, t_star)
     event_time.R2.point <- restricted$time
     status.R2.point <- restricted$status
@@ -406,6 +406,5 @@ integrate_survival <- function(predicted_probability, event_time, status, tau = 
   delta.t <- t1 - t2       
   
   cumulative_prediction <- colSums(delta.t %*% t(predicted_probability))
-  #print(order_idx)
   return(cumulative_prediction)
 }

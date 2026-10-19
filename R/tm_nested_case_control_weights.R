@@ -10,6 +10,17 @@
 #' @param status Numeric \{0,1\}, 1 = event, 0 = censored.
 #' @param strata Optional factor/character for matching sets (matched NCC).
 #' @param m Integer, number of controls per case (required).
+#' @details
+#' Supply full-cohort follow-up and event information, not only sampled rows.
+#' Controls are sampled without replacement within each case's risk set and
+#' independently across cases. At tied failure times, all simultaneous cases
+#' are excluded from the eligible controls. Events precede censoring at ties.
+#' Matching restricts both cases and controls to the same stratum. If fewer
+#' than \code{m} controls are eligible, all eligible controls are sampled.
+#' A non-case with no sampling opportunity has infinite inverse probability;
+#' such a subject cannot belong to the sampled analysis dataset. Subset the
+#' returned weights to the subjects actually sampled and align their order
+#' with the prediction objects before evaluation.
 #' @return Numeric vector of weights.
 #' @export
 #' @examples

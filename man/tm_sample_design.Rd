@@ -59,8 +59,12 @@ pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
 
 # case-cohort sampling weights, and the censoring distribution they need
 set.seed(2025)
-w  <- tm_case_cohort_weights(time = d$time, status = d$status,
-                             subcohort = stats::rbinom(nrow(d), 1, 0.4))
+in_subcohort <- stats::rbinom(nrow(d), 1, 0.4) == 1
+w <- tm_case_cohort_weights(d$time, d$status, subcohort = in_subcohort)
+keep <- which(in_subcohort | d$status == 1)
+keep <- keep[order(d$time[keep])]
+pred <- tm_predict_coxph(fit, c("x1", "x2"), new_data = d[keep, ])
+w <- w[keep]
 km <- survival::survfit(survival::Surv(d$time, 1 - d$status) ~ 1)
 
 # the wide summary of the same two-phase evaluation

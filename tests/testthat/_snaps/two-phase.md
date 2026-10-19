@@ -9,12 +9,12 @@
 
 # tm_nested_case_control_weights requires m and returns one weight per subject
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAACj/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEAgfSPU8V59
-    P/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/PeYlY2bXpAIt+l9BrvcEATh0aIeo1l
+    WAoAAAACAAQFAwACAwAAAAAOAAAACj/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEARgwPAfuCx
+    P/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/CcNYr8R+VAE+HI6r/820AFtP557gKn
 
 ---
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAAAUB12snAqNIc
+    WAoAAAACAAQFAwACAwAAAAAOAAAAAUBwpobLlmvo
 
 # two-phase evaluation works for a case-cohort design
 
@@ -33,8 +33,8 @@
 
 ---
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAABT/Qo9cKPXCkP+OkP+XJHRU/5Ewvg3tKIz/HLkjopx3n
-    P+h3mmtQsPI=
+    WAoAAAACAAQFAwACAwAAAAAOAAAABT/Qo9cKPXCkP+RR64UeuFI/5IcrAgxJuj/IPkJa7mMg
+    P+gdfb9If8w=
 
 # tm_sample_design summarises a two-phase design
 

@@ -14,11 +14,10 @@ tm_evaluate_two_phase(
 )
 }
 \arguments{
-\item{pred_results}{A numeric vector of predicted survival probabilities with (can be calculate by `tm_predict_coxph()`) :
-- `Prob`: predicted survival probabilities over time.
-- `pred`: predicted risk scores.
-- `time`: time points for `Prob` rows.
-- `status`: indicating event occurrence (1 for event, 0 for censoring, 2 for competing events).}
+\item{pred_results}{A prediction list, such as the output of
+\code{tm_predict_coxph()}, with \code{times} (or legacy \code{time}),
+\code{status} (0 = censored, 1 = event), \code{pred} (predicted mean
+survival times), and \code{surv_prob} (subjects by sorted observed times).}
 
 \item{t_star}{(Optional) A numeric value specifying the evaluation time for Brier Score and time-dependent AUC. 
 If NULL, it defaults to the median survival time.}
@@ -29,9 +28,13 @@ If NULL, it defaults to the maximum observed survival time.}
 \item{km_cens_fit}{Kaplan-Meier estimate of the censoring distribution, a
 `survival::survfit` object.}
 
-\item{case_weights}{Numeric vector of case weights (from `weighted_param()`).}
+\item{case_weights}{Numeric sampling weights in the same subject order as
+\code{pred_results}. Prediction helpers sort subjects by observed time;
+reorder weights using \code{order(new_data$time)} as well.}
 
-\item{metrics}{Character vector of metrics to compute.}
+\item{metrics}{Character vector of metrics. \code{NULL} uses the default
+five metrics; \code{"all"} additionally returns \code{r_square} and
+\code{l_square}.}
 }
 \value{
 A tibble with columns:
@@ -56,8 +59,12 @@ pred <- tm_predict_coxph(model = fit, covs = c("x1", "x2"), new_data = d)
 
 # case-cohort sampling weights, and the censoring distribution they need
 set.seed(2025)
-w  <- tm_case_cohort_weights(time = d$time, status = d$status,
-                             subcohort = stats::rbinom(nrow(d), 1, 0.4))
+in_subcohort <- stats::rbinom(nrow(d), 1, 0.4) == 1
+w <- tm_case_cohort_weights(d$time, d$status, subcohort = in_subcohort)
+keep <- which(in_subcohort | d$status == 1)
+keep <- keep[order(d$time[keep])]
+pred <- tm_predict_coxph(fit, c("x1", "x2"), new_data = d[keep, ])
+w <- w[keep]
 km <- survival::survfit(survival::Surv(d$time, 1 - d$status) ~ 1)
 
 tm_evaluate_two_phase(pred_results = pred, km_cens_fit = km,

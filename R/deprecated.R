@@ -1,7 +1,7 @@
 #' Deprecated function names
 #'
 #' @description
-#' The `pam.` prefix carried over from the predecessor PAmeasure package and
+#' The `pam.` prefix carried over from the predecessor PAmeasures package and
 #' contained two misspellings (`survial` for `survival`, `surverg` for
 #' `survreg`). Every exported function now uses a `tm_` prefix instead.
 #'

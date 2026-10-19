@@ -22,6 +22,18 @@ Numeric vector of weights.
 Computes inverse-selection weights for NCC designs. If `strata` is
 provided, matched NCC weights are computed.
 }
+\details{
+Supply full-cohort follow-up and event information, not only sampled rows.
+Controls are sampled without replacement within each case's risk set and
+independently across cases. At tied failure times, all simultaneous cases
+are excluded from the eligible controls. Events precede censoring at ties.
+Matching restricts both cases and controls to the same stratum. If fewer
+than \code{m} controls are eligible, all eligible controls are sampled.
+A non-case with no sampling opportunity has infinite inverse probability;
+such a subject cannot belong to the sampled analysis dataset. Subset the
+returned weights to the subjects actually sampled and align their order
+with the prediction objects before evaluation.
+}
 \examples{
 # Nested case-control design with m = 2 matched controls per case.
 d <- tm_sim_cox_weibull(n = 150, pi_c = 0.3, v = 2,
