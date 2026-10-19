@@ -152,3 +152,42 @@ test_that("held-out AUC does not hide reversed discrimination", {
   expect_lt(result$td_auc, 0.5)
   expect_equal(result$td_auc, round(reference, 2))
 })
+
+tail_support_data <- function() {
+  set.seed(99)
+  train <- data.frame(time = seq_len(40),
+    status = rep(c(1, 1, 0, 1), 10), x1 = stats::rnorm(40), x2 = stats::rnorm(40))
+  train$status[40] <- 0
+  evaluation <- train[1:12, ]
+  evaluation$time[12] <- 45
+  evaluation$status[12] <- 1
+  list(train = train, evaluation = evaluation)
+}
+
+test_that("metric subsets avoid unused R-squared outside censoring support", {
+  d <- tail_support_data()
+  result <- expect_no_warning(tm_fit_and_eval(d$train, c("x1", "x2"),
+    predicted_data = d$evaluation, models = "all",
+    metrics = c("brier_score", "harrell_c"), t_star = 5))
+  expect_identical(names(result), c("Model", "brier_score", "harrell_c"))
+  expect_true(all(is.finite(as.matrix(result[, -1]))))
+})
+
+test_that("undefined censoring weights return missing R-squared with a diagnostic", {
+  d <- tail_support_data()
+  formula <- survival::Surv(time, status) ~ x1 + x2
+  for (kind in c("coxph", "exponential", "weibull", "lognormal")) {
+    fit <- if (kind == "coxph") {
+      survival::coxph(formula, data = d$train, x = TRUE, y = TRUE)
+    } else {
+      survival::survreg(formula, data = d$train, dist = kind, x = TRUE, y = TRUE)
+    }
+    fun <- if (kind == "coxph") tm_predict_coxph else tm_predict_survreg
+    expect_warning(result <- fun(fit, c("x1", "x2"), new_data = d$evaluation,
+      predict = FALSE), "require positive censoring survival")
+    expect_true(all(is.na(unlist(result))))
+    prediction <- expect_no_warning(fun(fit, c("x1", "x2"),
+      new_data = d$evaluation, predict = TRUE))
+    expect_true(all(is.finite(prediction$surv_prob)))
+  }
+})

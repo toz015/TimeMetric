@@ -46,6 +46,9 @@ while L-squared measures the proportion of prediction error explained by a corre
 Probabilities use the fitted training baseline, including its case
   weights, strata, tie method and offsets. Offset centering follows the
   weighted training mean used by [survival::survfit()].
+  With `predict = FALSE`, R-squared metrics return missing values with a
+  warning if censoring weights cannot be normalized, for example when the
+  training censoring survival is zero at an observed evaluation event.
 }
 \examples{
 data(pbc, package = "survival")

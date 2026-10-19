@@ -8,6 +8,10 @@
 #' @param tau (Optional) A restriction time for computing restricted survival time. If provided, the function evaluates predictions up to this time point. Default is 10e10.
 #' @param new_data (Optional) A new dataset for evaluating the model. If NULL, the function uses the training data stored in model.
 #' @param predict (Optional) A logical value indicating whether to return individual predictions. Default is TRUE. 
+#' @details With `predict = FALSE`, R-squared metrics return missing values
+#'   with a warning if censoring weights cannot be normalized, for example
+#'   when the training censoring survival is zero at an observed evaluation
+#'   event. Individual predictions remain available with `predict = TRUE`.
 #' @return
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
@@ -159,6 +163,12 @@ tm_predict_survreg <- function(model, covs, tau = 10e10,  new_data = NULL, predi
                 covs = covs))
   }
   
+  if (any(!is.finite(weight.km)) || !any(weight.km > 0)) {
+    warning("R-squared metrics require positive censoring survival at observed ",
+            "evaluation events and at least one observed event.", call. = FALSE)
+    return(list(R.squared = NA_character_, L.squared = NA_character_,
+                Psuedo.R = NA_character_))
+  }
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
                            warning("Error in WLS fitting: ", conditionMessage(e), call. = FALSE)

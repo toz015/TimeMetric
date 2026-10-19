@@ -37,6 +37,9 @@
 * `tm_predict_coxph()` supports strata-by-covariate interactions such as
   `x * strata(g)` when `new_data` is given, and no longer repeats survival's
   interaction warning on every call.
+* `tm_fit_and_eval()` computes R-squared only when requested. Cox/AFT
+  R-squared with undefined censoring weights returns missing values with a
+  suppressible diagnostic instead of recycling shorter calibration vectors.
 * Added independent prediction/inclusion-probability checks and paper analysis
   scripts. PBC is compared before/after within 0.2.1; full simulation execution
   is an explicit separate action. See the paper workflow in `README.md`.

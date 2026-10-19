@@ -15,6 +15,9 @@
 #' @details Probabilities use the fitted training baseline, including its case
 #'   weights, strata, tie method and offsets. Offset centering follows the
 #'   weighted training mean used by [survival::survfit()].
+#'   With `predict = FALSE`, R-squared metrics return missing values with a
+#'   warning if censoring weights cannot be normalized, for example when the
+#'   training censoring survival is zero at an observed evaluation event.
 #' @return
 #' A **named list** of model-specific prediction objects.  
 #' Each element of the returned list corresponds to one fitted model and contains:
@@ -152,6 +155,12 @@ tm_predict_coxph <- function(model, covs, tau = 10e10, new_data = NULL, predict 
                           covs = covs
                                      ))}
 
+  if (any(!is.finite(weight.km)) || !any(weight.km > 0)) {
+    warning("R-squared metrics require positive censoring survival at observed ",
+            "evaluation events and at least one observed event.", call. = FALSE)
+    return(list(R.squared = NA_character_, L.squared = NA_character_,
+                Psuedo.R = NA_character_))
+  }
   wls.fitted <- tryCatch(lm(y ~ t.predicted, weights = weight.km), 
                          error = function(e) {
                            return(c(NA, NA))

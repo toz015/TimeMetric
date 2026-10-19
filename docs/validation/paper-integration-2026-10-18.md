@@ -40,17 +40,24 @@ Nelson-Aalen reference. Cox models with strata-by-covariate interactions use
 subject-specific `survfit()` curves and require explicit `new_data`.
 The new tests reproduce failures on `1eaa36f` and pass on `fa9183d`.
 
+The final API smoke run identified an additional unused R-squared calculation
+when only Brier score/concordance was requested. `tm_fit_and_eval()` now
+calculates only the requested metric groups. With undefined censoring weights,
+Cox/AFT R-squared returns missing values and one suppressible diagnostic;
+individual predictions remain available. Regression tests cover all four
+model types and evaluation follow-up beyond training censoring support.
+
 ## Validation
 
 Environment: R 4.5.3 on arm64 macOS Tahoe 26.5.1.
 
 | Check | Result |
 |---|---|
-| Full source tests, optional dependencies available, `NOT_CRAN=true` | 165 tests; 766 assertions; zero failures, warnings or skips |
+| Full source tests, optional dependencies available, `NOT_CRAN=true` | 167 tests; 785 assertions; zero failures, warnings or skips |
 | Independent scientific audit | 11/11 pass |
 | Additional interaction, tie-method and offset checks | 12 combinations agree with `survfit()` within 2.8e-16; Cox/AFT tied-row permutation checks pass |
 | Conditional Breslow censoring with tied times | Agrees with individual reference curves within 1.2e-16 |
-| Public API smoke test | All 17 current exports exercised |
+| Public API smoke test | All 17 current exports exercised with warnings treated as errors |
 | Installed-package runtime dependency isolation | Default two-phase metrics pass with required dependencies only |
 | Matched NCC paper script | Hand-calculated one-control example passes |
 | Small paper simulations | 30 jobs; zero failures; zero non-finite jobs |
@@ -67,10 +74,9 @@ All nine GitHub checks passed on `fa9183d`, covering Linux
 release/devel/oldrel-1, macOS release, Windows release/devel, all suggested
 dependencies, runtime dependencies only, and coverage. The full-dependency
 source test job skips no tests; its installed-package check reports
-`Status: OK`. The final release-preparation commit updates excluded notes and
-this report only; packaged source remains identical to the reviewed revision.
-The [PR checks](https://github.com/toz015/TimeMetric/pull/3/checks) record the
-subsequent checks on that documentation update.
+`Status: OK`. The final release adds the metric-subset and censoring-support
+guards described above. The [PR checks](https://github.com/toz015/TimeMetric/pull/3/checks)
+record the subsequent checks on that final revision.
 
 ## Reproduction and limits
 

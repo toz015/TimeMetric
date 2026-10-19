@@ -47,11 +47,18 @@ supports strata-by-covariate interactions when evaluation data are supplied.
 Independent regression tests reproduce these defects on the previous revision
 and pass after the corrections.
 
+The final API smoke check also found an unused R-squared calculation when
+only Brier score or concordance was requested. Metric subsets now avoid that
+calculation. If R-squared is requested with undefined censoring weights, the
+Cox/AFT helpers return missing values and one suppressible diagnostic rather
+than recycling shorter calibration vectors. Tests cover all four model types;
+individual survival predictions remain available.
+
 ## Local validation
 
 R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
 
-* Source test suite with NOT_CRAN=true: 766 assertions across 165 tests;
+* Source test suite with NOT_CRAN=true: 785 assertions across 167 tests;
   0 failures, 0 warnings, 0 skips, including optional prediction backends.
 * Independent numerical checks: 11/11 pass against fitted-model survival
   predictions, numerical integration, and hand-computable sampling/ranking
@@ -62,7 +69,8 @@ R 4.5.3, aarch64-apple-darwin25.3.0, macOS Tahoe 26.5.1:
   metric results are invariant to permutations of tied observations;
   conditional Breslow censoring probabilities match reference curves.
 * All 17 current exported functions exercised by a public/simulated-data smoke
-  test. Default two-phase metrics also pass with only required dependencies.
+  test with warnings treated as errors. Default two-phase metrics also pass
+  with only required dependencies.
 * All 30 small paper simulation jobs returned finite results without job
   failures. These are workflow checks, not the full manuscript simulation.
 
@@ -85,8 +93,8 @@ full suggested dependencies, required dependencies only, and test coverage.
 The full-dependency source test job skips no tests; its installed-package
 check reports `Status: OK`. Source-only checks are intentionally skipped
 when their analysis/development inputs are excluded from the installed
-package. The release-preparation changes only update excluded CRAN notes
-and the validation report; the packaged implementation is unchanged.
+package. The final release adds the metric-subset/censoring-support safeguards
+described above; fresh checks on that commit are recorded on PR #3.
 See `docs/validation/paper-integration-2026-10-18.md` for reproduction details.
 
 ## Downstream dependencies
