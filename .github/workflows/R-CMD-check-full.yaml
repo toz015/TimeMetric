@@ -43,6 +43,8 @@ jobs:
           extra-packages: |
             any::rcmdcheck
             any::testthat
+            any::urlchecker
+            any::xml2
             any::randomForestSRC
             any::cmprsk
             any::pec
@@ -66,6 +68,19 @@ jobs:
 
       - name: Test migration of pre-ICI manuscript results
         run: testthat::test_file("analysis/tests/test-calibration-migration.R", stop_on_failure = TRUE)
+        shell: Rscript {0}
+
+      - name: Check document links in the built source archive
+        run: |
+          status <- system2(file.path(R.home("bin"), "R"),
+                            c("CMD", "build", "--no-build-vignettes", "."))
+          stopifnot(status == 0L)
+          meta <- read.dcf("DESCRIPTION")
+          archive <- paste0(meta[1, "Package"], "_", meta[1, "Version"], ".tar.gz")
+          status <- system2(file.path(R.home("bin"), "Rscript"),
+            c(".github/scripts/check-package-links.R", shQuote(archive)))
+          stopifnot(status == 0L)
+          urlchecker::url_check(archive, fail = TRUE)
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2

@@ -1,0 +1,6 @@
+Inspected 99 unique document links in TimeMetric_0.2.1.tar.gz 
+    Parent                            URI
+ README.md docs/development-2026-10-18.md
+ README.md         docs/simulation-ici.md
+Error: Invalid local file URIs in the built package.
+Execution halted

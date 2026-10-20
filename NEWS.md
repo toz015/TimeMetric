@@ -1,3 +1,11 @@
+# TimeMetric 0.2.2
+
+* Replace README links to excluded development/simulation documents with
+  absolute GitHub URLs so they also work in the CRAN source archive.
+* Check local document links against the built tarball in CI, alongside
+  remote URL checks, to prevent missing-file links from passing validation.
+* Statistical functions and their numerical results are unchanged from 0.2.1.
+
 # TimeMetric 0.2.1
 
 * Correct cause-specific AFT CIF integration near time zero using adaptive quadrature on the target-event probability scale. Fixed-scale Weibull models with scale greater than one no longer lose the initial probability mass.
