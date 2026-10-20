@@ -1,16 +1,42 @@
-# Simulation ICI uses the same grid convention as tm_survival_eval().
-# Keep its unrounded estimate for replication means, errors and MCSEs.
-paper_simulation_calibration <- function(pred, t_star, calibration_args) {
+# Evaluate simulation calibration at the requested outcome horizon, using the
+# original fitted model rather than a grid defined by validation follow-up.
+paper_simulation_risk_at <- function(model, new_data, t_star) {
+  if (!is.numeric(t_star) || length(t_star) != 1L || !is.finite(t_star) ||
+      t_star <= 0) stop("Calibration time must be one positive finite value.")
+  if (inherits(model, "coxph")) {
+    lp <- as.numeric(stats::predict(model, newdata = new_data,
+      type = "lp", reference = "sample"))
+    survival_at <- getFromNamespace("tm_cox_survival", "TimeMetric")
+    survival_probability <- survival_at(model, new_data, lp, t_star)
+  } else if (inherits(model, "survreg")) {
+    survival_at <- getFromNamespace("predictSurvProb2survreg", "TimeMetric")
+    survival_probability <- survival_at(model, new_data, t_star)
+  } else {
+    survival_probability <- pec::predictSurvProb(model, newdata = new_data,
+                                                times = t_star)
+  }
+  p <- 1 - as.numeric(survival_probability)
+  if (length(p) != nrow(new_data) || any(!is.finite(p)) ||
+      any(p < 0 | p > 1)) stop("Invalid exact-time simulation probabilities.")
+  p
+}
+
+# Keep its unrounded estimate for replication means, errors and MCSEs. Model
+# adapters sort Cox/AFT subjects by observed time; RF retains input row order.
+paper_simulation_calibration <- function(pred, t_star, calibration_args,
+                                          model, new_data) {
   grid_time <- NA_real_
   method <- NA_character_
   error <- ""
   ici <- tryCatch({
-    grid <- sort(pred$times)
-    grid_risk <- getFromNamespace("tm_calibration_grid_risk", "TimeMetric")
-    p <- grid_risk(pred$surv_prob, grid, t_star, length(pred$times),
-                   survival = TRUE)
-    at <- findInterval(t_star, grid)
-    grid_time <- if (at == 0L) 0 else grid[at]
+    if (inherits(model, c("coxph", "survreg")))
+      new_data <- new_data[order(new_data$time), , drop = FALSE]
+    if (!identical(as.numeric(new_data$time), as.numeric(pred$times)) ||
+        !identical(as.numeric(new_data$status), as.numeric(pred$status)))
+      stop("Calibration subjects and outcomes are not aligned.")
+    p <- paper_simulation_risk_at(model, new_data, t_star)
+    # Retain the existing diagnostic column name, now always equal to t_star.
+    grid_time <- t_star
     cal <- do.call(tm_calibration, c(list(p = p, event_time = pred$times,
       status = pred$status, t_star = t_star), calibration_args))
     method <- cal$method

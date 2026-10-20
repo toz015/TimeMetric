@@ -47,6 +47,20 @@
 
 ## Paper integration
 
+* Simulation 1 now uses common random numbers: all 16 scenarios share the
+  training seed 1234 (as in Simulation 2) and test seed r for repetition r,
+  replacing scenario-specific seeds. Its Cox training fits use
+  `timefix = FALSE`, because with 1/v = 2 the default merged thousands of
+  distinct times into ties and shrank the beta = 1.5 coefficients by about
+  16%. Simulation 3 keeps the Simulation 1 beta = 1, v = 1 model, which is now
+  the seed-1234 fit.
+
+* Simulation ICI now requests fitted-model probabilities at exactly its outcome
+  horizon, rather than the preceding test-follow-up grid point. Other metrics
+  retain their existing evaluation procedures. The Simulation 3 reference
+  remains the mean across the uncensored n=3000 repetitions. A paired replay
+  script compares saved and corrected ICI without refitting prediction models.
+
 * Simulation 1, both Simulation 2 parts and Simulation 3 now include ICI at
   their existing evaluation horizons, with five-knot Cox spline calibration.
   ICI is stored without rounding and enters replication summaries, Simulation

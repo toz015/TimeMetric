@@ -2,13 +2,40 @@
 
 The code includes ICI in Simulation 1, both parts of Simulation 2 and
 Simulation 3. These are the existing right-censored designs. The data-generating
-mechanisms, seeds, sample sizes, fitted prediction models and evaluation horizons
-are unchanged. No competing-risks or sampling-design simulation is added here.
+mechanisms, sample sizes and evaluation horizons are unchanged. No
+competing-risks or sampling-design simulation is added here.
+
+Simulation 1 uses common random numbers. Every scenario fits its Cox model to
+training data generated with seed 1234 (the Simulation 2 training seed), and
+repetition r of every scenario uses test seed r. The scenarios therefore differ
+only through v and beta. Because v enters only through a monotone transform of
+event time, the Cox fit, Brier score, AUC, C-index and ICI are the same across v
+for a given beta, while R-squared changes. The Simulation 1 Cox training fits
+use `timefix = FALSE`: with 1/v = 2 the default tie correction merged
+thousands of distinct times. Simulation 3 uses the Simulation 1 beta = 1, v = 1
+fit, which is now the seed-1234 model. Small differences across v can remain
+for beta = 1.5 at 1/v = 2, where the C-index and calibration backends apply
+their own default tie correction to test times.
 
 ICI uses `tm_calibration()` with `nk = 5`. Its outcome horizon is the existing
-`t_star` for each job. Predicted risks come from the last supplied grid point at
-or before that horizon. ICI values are saved without rounding. Other metrics
+`t_star` for each job. Predicted risks are requested directly from the fitted
+model at exactly that horizon, rather than selected from the test-follow-up
+grid. Cox probabilities use the fitted training baseline; AFT probabilities
+use the fitted distribution, and RF uses its prediction adapter at `t_star`.
+ICI values are saved without rounding. Other metrics
 retain their previous rounding. E50 and E90 are not added to simulation outputs.
+
+This time-alignment correction changes the computation version. Preserve
+`ici_full` and use a new output directory, such as `ici_crn`, for a new
+run. To compare the old and corrected ICI on the saved uncensored Simulation 3
+replicates without refitting prediction models or recomputing other metrics:
+
+```sh
+Rscript --vanilla analysis/check_sim3_ici_time_alignment.R --input=results/simulations/ici_full --output=results/simulations/ici_time_alignment_check
+```
+
+The comparison retains the reference definition: each version uses its own
+mean across the 100 uncensored `n=3000` repetitions at the same horizon.
 
 ## Terminal
 
@@ -19,7 +46,7 @@ Run from the `TimeMetric-paper` directory:
 Rscript --vanilla figures/run_simulations.R --mode=plan
 
 # Full run with 100 repetitions per cell, including ICI.
-Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_full
+Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_crn
 ```
 
 On the current development machine, `pmcalibration` is available in
@@ -27,7 +54,7 @@ On the current development machine, `pmcalibration` is available in
 full-run command is:
 
 ```sh
-R_LIBS=/tmp/timemetric-calibration-lib Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_full
+R_LIBS=/tmp/timemetric-calibration-lib Rscript --vanilla figures/run_simulations.R --mode=full --output=results/simulations/ici_crn
 ```
 
 If the temporary library is no longer available, install `pmcalibration` in your
@@ -65,7 +92,7 @@ Sys.setenv(R_LIBS = paste(.libPaths(), collapse = .Platform$path.sep))
 status <- system2(
   file.path(R.home("bin"), "Rscript"),
   c("--vanilla", "figures/run_simulations.R", "--mode=full",
-    "--output=results/simulations/ici_full")
+    "--output=results/simulations/ici_crn")
 )
 stopifnot(status == 0L)
 ```
@@ -90,15 +117,32 @@ retried when the run is resumed. The report requires complete ICI results.
 The runner generates figures automatically. To redraw completed results later:
 
 ```sh
-Rscript --vanilla figures/redraw_original.R --section=simulations --sim-output=results/simulations/ici_full
+Rscript --vanilla figures/redraw_original.R --section=simulations --sim-output=results/simulations/ici_crn
 ```
+
+Both commands use the manuscript presentation: gray bars without numeric bar
+labels, the original metric/model order, R/L component dots in Simulation 2,
+and gray/white horizon boxplots in three censoring rows for Simulation 3.
+ICI is appended in a right-hand column. The existing four bar-chart panels
+keep their original 2-by-2 positions and physical dimensions; Simulation 3
+keeps its original five columns and adds ICI as the sixth.
+The lower-level `analysis/run_simulations.R` produces generic diagnostics;
+the figure entry points preserve these under `figures/diagnostics/analysis_format/`.
+
+An incomplete simulation part does not prevent completed parts from receiving
+manuscript figures. Incomplete parts are drawn under
+`figures/original_format_preview/`, with an explicit preview caption and
+`replication_counts.csv`; they are not published as final manuscript figures.
+The computation command still returns a failure status for incomplete results.
+Redrawing uses saved tables only and does not rerun simulations or require
+loading the package's calibration dependencies.
 
 After all four parts finish, render the report using:
 
 ```r
 rmarkdown::render(
   "paper.code.Rmd", output_dir = "results/report",
-  params = list(simulation_output = "results/simulations/ici_full")
+  params = list(simulation_output = "results/simulations/ici_crn")
 )
 ```
 

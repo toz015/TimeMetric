@@ -38,12 +38,19 @@ settings <- list(mode = opt$mode, train_n = if (smoke) 240L else 10000L,
                  rf_seed = 1234L, legacy_integration = TRUE,
                  metrics = paper_simulation_metrics,
                  calibration_args = list(nk = 5L),
-                 calibration_grid = "last at or before t_star",
-                 calibration_precision = "unrounded")
+                 calibration_grid = "fitted-model prediction at exact t_star",
+                 calibration_precision = "unrounded",
+                 sim1_random_numbers = "common: training seed 1234, test seed = rep",
+                 sim1_cox_timefix = FALSE)
 scenarios <- expand.grid(v = 1/c(0.5, 1, 1.5, 2), beta = c(0.5, 0.7, 1, 1.5))
 scenarios$scenario <- seq_len(nrow(scenarios))
+# Common random numbers: every scenario shares the training seed (1234, as in
+# Simulation 2) and, for repetition r, the test seed r. Scenarios then differ
+# only through v and beta, so metrics invariant to monotone time transforms
+# are identical across v for a given beta.
+sim1_train_seed <- 1234L
 sim1 <- expand.grid(scenario = seq_len(nrow(scenarios)), rep = 1:100)
-sim1$part <- "sim1"; sim1$seed <- seq_len(nrow(sim1))
+sim1$part <- "sim1"; sim1$seed <- sim1$rep
 sim1$v <- scenarios$v[sim1$scenario]; sim1$beta <- scenarios$beta[sim1$scenario]
 sim1$n <- settings$test_n; sim1$censor <- 0; sim1$quantile <- 0
 make_sim2_jobs <- function(name, v) {
@@ -89,7 +96,8 @@ compact_model <- function(fit) {
 }
 model_cache <- new.env(parent = emptyenv())
 get_models <- function(job) {
-  # Simulation 3 uses Simulation 1's beta=(1,-1), v=1 training fit (scenario 10).
+  # Simulation 3 uses Simulation 1's beta=(1,-1), v=1 training fit (scenario 10),
+  # which shares seed 1234 with the Simulation 2 linear Cox training data.
   key <- if (job$part == "sim3") "sim1_10" else
     if (job$part == "sim1") paste0("sim1_", job$scenario) else job$part
   if (exists(key, model_cache, inherits = FALSE)) return(model_cache[[key]])
@@ -100,9 +108,13 @@ get_models <- function(job) {
     if (startsWith(key, "sim1_")) {
       k <- as.integer(sub("sim1_", "", key))
       train <- simulate(settings$train_n, 0, scenarios$v[k],
-                         scenarios$beta[k] * c(1, -1), k)
+                         scenarios$beta[k] * c(1, -1), sim1_train_seed)
+      # With large 1/v, times span many orders of magnitude and the default
+      # timefix merges thousands of distinct times into ties (beta=1.5,
+      # 1/v=2: 10000 -> 6304), shrinking the coefficients by about 16%.
       models <- list(Cox = compact_model(survival::coxph(
-        survival::Surv(time, status) ~ x1 + x2, train, x = TRUE, y = TRUE)))
+        survival::Surv(time, status) ~ x1 + x2, train, x = TRUE, y = TRUE,
+        control = survival::coxph.control(timefix = settings$sim1_cox_timefix))))
     } else {
       nonlinear <- key == "sim2_nonlinear"
       train <- simulate(settings$train_n, 0, if (nonlinear) 3 else 1,
@@ -170,7 +182,8 @@ evaluate_job <- function(job) {
       # Preserve the existing metrics and their historical rounding.
       table <- tm_summarize(setNames(list(pred), m), metrics = setdiff(settings$metrics, "ici"),
                             tau = tau, t_star = t_star, digits = 4)
-      cal <- paper_simulation_calibration(pred, t_star, settings$calibration_args)
+      cal <- paper_simulation_calibration(pred, t_star, settings$calibration_args,
+                                           model = fit, new_data = test)
       rows[[m]] <- rbind(
         data.frame(Model = m, Metric = table$Metric, Value = table[[m]]),
         data.frame(Model = m, Metric = "ici", Value = cal$ici))

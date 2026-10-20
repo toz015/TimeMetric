@@ -21,10 +21,13 @@ if (!section %in% c("all","real","simulations")) stop("section: all, real, simul
 if (section %in% c("all", "real") && !any(startsWith(commandArgs(trailingOnly = TRUE), "--real-output="))) {
   real_out <- paper_current_real_run(root, paper_out)
 }
-paper_load(root)
 if (section %in% c("all","real")) {
+  paper_load(root)
   print(paper_original_real(root,real_out), row.names=FALSE)
   print(paper_publish_real_outputs(root,real_out,paper_out), row.names=FALSE)
 }
-if (section %in% c("all","simulations")) paper_original_simulations(root,sim_out,preview)
+if (section %in% c("all","simulations")) {
+  paper_preserve_simulation_diagnostics(sim_out)
+  paper_original_simulations(root,sim_out,preview)
+}
 cat("Original-format redraw finished. Statistical results were not recomputed.\n")
