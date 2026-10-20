@@ -1,0 +1,22 @@
+TimeMetric 0.2.2 independent-review corrections, 2026-10-20
+Base reviewed commit: 11dfe504dd66df6c7d1e811767b9f4176e3b4c5f
+Archive SHA256: 7ee90f4f4de931263283c84fa47d1bbf5a6143f5dff9fe2840bbde0a6f9a4e41
+
+193 tests / 922 assertions, zero failures/warnings/skips with survival 3.8-11.
+193 tests / 922 assertions, zero failures/warnings/skips with survival 3.8-3.
+Fresh-session competing-risk AUC and Brier and hard-dependency-only tests pass
+with survival 3.8-3; survival is not attached to the search path.
+50 archive-link regression assertions pass on macOS; Linux additionally
+checks case-mismatched file targets.
+111 source-archive document links inspected; no invalid local targets.
+Remote URL checks pass. Original submitted 0.2.1 still fails on exactly the
+two README links reported by CRAN.
+Network-enabled R CMD check --as-cran --run-donttest: 0 errors, 0 warnings,
+2 NOTEs: new submission; local HTML Tidy too old and V8 unavailable.
+All 25 R source files byte-identical to submitted 0.2.1. DESCRIPTION now
+requires survival >= 3.8-3; CITATION version is derived from DESCRIPTION.
+
+This archive supersedes the previous 0.2.2 build (SHA256 8137be15...).
+This record covers local validation. Final GitHub results belong to the
+new PR head and are recorded in the PR description after all nine complete.
+No merge or CRAN submission is authorized for this task.

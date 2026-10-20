@@ -1,0 +1,17 @@
+CRAN URI correction, 2026-10-20
+Base main: 1444ff6773af8fef16930a40fbc9a4e121590f57
+Package: TimeMetric 0.2.2
+SHA256: 8137be1500a208ae6344a16cdfbd11a9a251ce8d45f4b8d1be6d94fa38d425d7
+
+The new built-archive audit fails on 0.2.1 with the exact two CRAN findings.
+It passes on 0.2.2 after replacing both README links with full GitHub URLs.
+99 unique document links inspected. Remote URL checking also passes.
+917 assertions across 192 package tests pass; zero failures/warnings/skips.
+Network-enabled R CMD check --as-cran --run-donttest: 0 errors, 0 warnings,
+3 NOTEs (new submission, external time verification, local Tidy/V8).
+84 R/man/test files are byte-identical to the submitted 0.2.1 archive.
+
+The checks and reports examine the built archive, not merely the checkout.
+CI now enforces archive-local target checks and external URL checks in its
+existing full-dependency job. No extra GitHub job is introduced.
+Pending final PR checks and resubmission; see later submission receipt.

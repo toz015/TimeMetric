@@ -1,0 +1,4 @@
+       Metric  Value
+1 brier_score 0.1300
+2      td_auc 0.3866
+PASS: competing-risk AUC and Brier with survival 3.8-3, namespace only.

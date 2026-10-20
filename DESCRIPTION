@@ -2,8 +2,8 @@ Package: TimeMetric
 Type: Package
 Title: Unified Performance Metrics for Survival Models with Right-Censoring,
     Competing Risks, and Two-Phase Designs
-Version: 0.2.1
-Date: 2026-10-19
+Version: 0.2.2
+Date: 2026-10-20
 Authors@R: c(
     person("Tong", "Zhu", email = "toz015@ucla.edu", role = c("aut", "cre")),
     person("Zian", "Zhuang", role = "aut"),
@@ -30,7 +30,7 @@ Description: Evaluates the predictive performance of survival models in a
 Depends: R (>= 4.1.0)
 Imports:
     Hmisc,
-    survival,
+    survival (>= 3.8-3),
     stats,
     utils,
     tdROC,

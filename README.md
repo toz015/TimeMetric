@@ -271,7 +271,7 @@ rmarkdown::render("paper.code.Rmd", output_dir = "results/report")
 
 Rendering requires all four full simulation parts and all three real-data
 exports; smoke or incomplete results are rejected. See
-[the current development record](docs/development-2026-10-18.md) for method
+[the current development record](https://github.com/toz015/TimeMetric/blob/main/docs/development-2026-10-18.md) for method
 changes and validation. Earlier development/audit records are preserved under
 `docs/superpowers/`.
 
@@ -317,7 +317,7 @@ To select a part or a repetition range, append
 `--part=sim2_linear,sim2_nonlinear` or `--repeats=1:10` to the full-run command.
 Repeat the same command to resume an unchanged run. Before launching, ensure
 `pmcalibration`, `Hmisc` and the other package dependencies are available in
-the R library used by `Rscript`. See [simulation launch instructions](docs/simulation-ici.md)
+the R library used by `Rscript`. See [simulation launch instructions](https://github.com/toz015/TimeMetric/blob/main/docs/simulation-ici.md)
 for terminal and RStudio commands.
 
 To run package checks without creating paper results:

@@ -21,9 +21,18 @@ jobs:
         with:
           dependencies: '"hard"'
           cache-version: 'minimal-1'
+      - name: Install the minimum supported survival version
+        run: |
+          install.packages("https://cran.r-project.org/src/contrib/Archive/survival/survival_3.8-3.tar.gz",
+                           repos = NULL, type = "source")
+          stopifnot(packageVersion("survival") == "3.8.3")
+        shell: Rscript {0}
       - name: Install package
         run: R CMD INSTALL .
         shell: bash
       - name: Exercise default two-phase metrics with required dependencies only
         run: Rscript .github/scripts/minimal-dependencies.R
+        shell: bash
+      - name: Competing-risk regression with minimum survival in a fresh session
+        run: Rscript .github/scripts/check-cr-minimum-survival.R
         shell: bash
