@@ -133,6 +133,13 @@ An incomplete simulation part does not prevent completed parts from receiving
 manuscript figures. Incomplete parts are drawn under
 `figures/original_format_preview/`, with an explicit preview caption and
 `replication_counts.csv`; they are not published as final manuscript figures.
+One exception applies to Simulation 3: ICI is not estimable in a test sample
+with no subject followed to the horizon (recorded in
+`calibration_diagnostics.csv` with `at_risk = 0`). If those are the only
+missing values, the final Figure 6 is drawn from the finite repetitions
+without on-figure labels. The affected cells and finite counts are written to
+`figures/paper.fig6.partial_repetitions.csv` for the manuscript caption
+(currently n = 300, 70% censoring, 90% horizon: 52/100).
 The computation command still returns a failure status for incomplete results.
 Redrawing uses saved tables only and does not rerun simulations or require
 loading the package's calibration dependencies.

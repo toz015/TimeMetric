@@ -129,6 +129,16 @@ paper_original_simulations <- function(root, out, preview = FALSE,
     raw[c("part", "scenario", "n", "censor", "quantile", "Model", "Metric")], sum)
   names(counts)[ncol(counts)] <- "finite_repetitions"
   counts <- counts[counts$part %in% parts, ]
+  # Simulation 3 ICI is not estimable when no test subject is followed to
+  # t_star. Only these recorded cases may be missing from a final figure; their
+  # finite counts are written beside Figure 6 for the manuscript caption.
+  diagnostics_file <- file.path(out, "tables", "calibration_diagnostics.csv")
+  unestimable <- if (file.exists(diagnostics_file)) {
+    x <- utils::read.csv(diagnostics_file)
+    x <- x[x$part == "sim3" & x$at_risk == 0 &
+           grepl("within observed follow-up", x$error, fixed = TRUE), ]
+    paste(x$id, x$Model)
+  } else character()
   completion_file <- file.path(out, "completion.csv")
   smoke <- file.exists(completion_file) &&
     any(utils::read.csv(completion_file)$mode == "smoke")
@@ -172,9 +182,11 @@ paper_original_simulations <- function(root, out, preview = FALSE,
     }
     if (preview) return(TRUE)
     keys <- c("scenario", "n", "censor", "quantile", "Model", "Metric")
+    d$usable <- is.finite(d$Value) |
+      (d$Metric == "ici" & paste(d$id, d$Model) %in% unestimable)
     cells <- split(d, interaction(d[keys], drop = TRUE))
     if (!all(vapply(cells, function(x) nrow(x) == 100L && setequal(x$rep, 1:100) &&
-                   all(is.finite(x$Value)), logical(1)))) {
+                   all(x$usable), logical(1)))) {
       message(part, ": incomplete results; manuscript figure skipped; drawing a labeled preview instead.")
       paper_original_simulations(root, out, preview = TRUE, parts = part)
       return(FALSE)
@@ -272,6 +284,9 @@ paper_original_simulations <- function(root, out, preview = FALSE,
     # Use the NEW error calculations. Styling never recalculates their reference.
     d$quantile <- factor(d$quantile, levels = c(90, 50))
     censoring <- sort(unique(d$censor))
+    finite <- stats::aggregate(list(B = is.finite(d$error)),
+      d[c("Metric", "n", "censor", "quantile")], sum)
+    partial <- finite[finite$B < 100L, ]
     rows <- lapply(seq_along(censoring), function(i) {
       label <- paste0("(", letters[i], ") censoring ", round(100*censoring[i]), "%")
       label_plot <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 1, label = label,
@@ -301,6 +316,10 @@ paper_original_simulations <- function(root, out, preview = FALSE,
     xlab <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0.5, y = 0.5, label = "Sample size", size = 5) +
       ggplot2::theme_void()
     save_plot(patchwork::wrap_plots(big, xlab, ncol = 1, heights = c(1,0.05)), "paper.fig6.updated", 15.5, 6)
+    # Boxes from fewer than 100 finite repetitions are reported for the
+    # manuscript caption rather than drawn on the figure.
+    utils::write.csv(partial, file.path(destination, "paper.fig6.partial_repetitions.csv"),
+                     row.names = FALSE)
   }
   if (preview) {
     utils::write.csv(counts, file.path(destination, "replication_counts.csv"), row.names = FALSE)

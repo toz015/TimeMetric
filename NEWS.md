@@ -55,6 +55,12 @@
   16%. Simulation 3 keeps the Simulation 1 beta = 1, v = 1 model, which is now
   the seed-1234 fit.
 
+* Figure 6 is drawn as a final figure when its only missing values are
+  Simulation 3 ICI repetitions with no follow-up at the horizon. Those boxes
+  use the finite repetitions; the cells and counts are written to
+  `paper.fig6.partial_repetitions.csv` (n = 300, 70% censoring, 90% horizon:
+  52/100) for the manuscript caption.
+
 * Simulation ICI now requests fitted-model probabilities at exactly its outcome
   horizon, rather than the preceding test-follow-up grid point. Other metrics
   retain their existing evaluation procedures. The Simulation 3 reference
