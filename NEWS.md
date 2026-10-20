@@ -4,7 +4,10 @@
   absolute GitHub URLs so they also work in the CRAN source archive.
 * Check local document links against the built tarball in CI, alongside
   remote URL checks, to prevent missing-file links from passing validation.
-* Statistical functions and their numerical results are unchanged from 0.2.1.
+* Require survival >= 3.8-3 so competing-risk AUC and Brier score work
+  without attaching survival explicitly. Statistical implementations are unchanged.
+* Extend archive link checks to Windows paths, DESCRIPTION and CITATION;
+  keep the citation version synchronized with DESCRIPTION.
 
 # TimeMetric 0.2.1
 

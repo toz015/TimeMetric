@@ -70,6 +70,10 @@ jobs:
         run: testthat::test_file("analysis/tests/test-calibration-migration.R", stop_on_failure = TRUE)
         shell: Rscript {0}
 
+      - name: Regression tests for archive link auditing
+        run: testthat::test_file(".github/scripts/tests/test-package-links.R", stop_on_failure = TRUE)
+        shell: Rscript {0}
+
       - name: Check document links in the built source archive
         run: |
           status <- system2(file.path(R.home("bin"), "R"),

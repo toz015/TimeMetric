@@ -1,12 +1,8 @@
 # Check local link targets in the built archive, not the development checkout.
 # Remote URLs are checked separately with urlchecker::url_check().
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 1L || !file.exists(args[1]))
-  stop("Usage: Rscript .github/scripts/check-package-links.R PACKAGE_VERSION.tar.gz")
-if (!nzchar(Sys.which("pandoc"))) stop("Pandoc is required; do not skip Markdown links.")
-if (!requireNamespace("xml2", quietly = TRUE)) stop("xml2 is required.")
-
 check_archive <- function(archive) {
+  if (!nzchar(Sys.which("pandoc"))) stop("Pandoc is required; do not skip Markdown links.")
+  if (!requireNamespace("xml2", quietly = TRUE)) stop("xml2 is required.")
   unpack <- tempfile("package-links-")
   dir.create(unpack)
   on.exit(unlink(unpack, recursive = TRUE), add = TRUE)
@@ -36,6 +32,23 @@ check_archive <- function(archive) {
         paste0("//*[@", attribute, "]")), attribute))
     }
   }
+  meta <- read.dcf(file.path(root, "DESCRIPTION"))[1, ]
+  # DESCRIPTION URL fields allow comma/whitespace-separated targets, optionally
+  # followed by parenthesized labels. Include local targets, not just https URLs.
+  for (field in intersect(c("URL", "BugReports"), names(meta))) {
+    values <- gsub("[[:space:]]+\\([^)]*\\)", "", meta[[field]])
+    add("DESCRIPTION", strsplit(trimws(values), "[[:space:],]+")[[1]])
+  }
+  if ("Description" %in% names(meta)) {
+    tokens <- regmatches(meta[["Description"]],
+      gregexpr("<[^<>]+>", meta[["Description"]]))[[1]]
+    add("DESCRIPTION", sub(">$", "", sub("^<", "", tokens)))
+  }
+  citation_file <- file.path(root, "inst", "CITATION")
+  if (file.exists(citation_file)) {
+    citations <- utils::readCitationFile(citation_file, meta = as.list(meta))
+    add("inst/CITATION", unlist(citations$url, use.names = FALSE))
+  }
   rd <- tools::Rd_db(dir = root)
   walk_rd <- function(node, parent) {
     tag <- attr(node, "Rd_tag")
@@ -52,6 +65,14 @@ check_archive <- function(archive) {
   for (i in seq_len(nrow(links))) {
     uri <- trimws(links$URI[i])
     if (!nzchar(uri) || startsWith(uri, "#")) next
+    # Check drive letters before treating the prefix as a URI scheme.
+    # Decode first so encoded separators cannot hide a host-specific path.
+    decoded <- utils::URLdecode(uri)
+    if (grepl("^[A-Za-z]:", decoded) || startsWith(decoded, "\\") ||
+        startsWith(decoded, "/") || startsWith(decoded, "~")) {
+      bad[i] <- TRUE
+      next
+    }
     scheme <- grepl("^[A-Za-z][A-Za-z0-9+.-]*:", uri)
     if (scheme && !grepl("^file:", uri, ignore.case = TRUE)) next
     # Host-specific absolute paths and file: URLs cannot work for recipients.
@@ -73,4 +94,9 @@ check_archive <- function(archive) {
   }
   cat("PASS: no invalid local file URIs in the built package.\n")
 }
-check_archive(normalizePath(args[1], mustWork = TRUE))
+if (sys.nframe() == 0L) {
+  args <- commandArgs(trailingOnly = TRUE)
+  if (length(args) != 1L || !file.exists(args[1]))
+    stop("Usage: Rscript .github/scripts/check-package-links.R PACKAGE_VERSION.tar.gz")
+  check_archive(normalizePath(args[1], mustWork = TRUE))
+}

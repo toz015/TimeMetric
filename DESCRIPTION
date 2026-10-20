@@ -30,7 +30,7 @@ Description: Evaluates the predictive performance of survival models in a
 Depends: R (>= 4.1.0)
 Imports:
     Hmisc,
-    survival,
+    survival (>= 3.8-3),
     stats,
     utils,
     tdROC,
